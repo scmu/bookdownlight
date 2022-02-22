@@ -1,0 +1,10 @@
+
+.DS_Store
+
+.ghci
+
+.stack-work/
+
+stack.yaml.lock
+
+*.inp
