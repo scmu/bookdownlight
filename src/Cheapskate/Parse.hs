@@ -1,6 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Cheapskate.Parse (
          markdown
+
+       , processLine -- SCM: for testing
+       , processLines
+       , processDocument
+       , ContainerType(..)
+       , Container(..)
+       , ContainerStack(..)
        ) where
 import Cheapskate.ParserCombinators
 import Cheapskate.Util
@@ -64,6 +71,7 @@ markdown opts
 
 data ContainerStack =
   ContainerStack Container {- top -} [Container] {- rest -}
+ deriving Show -- SCM: for testing
 
 type LineNumber   = Int
 
@@ -76,6 +84,7 @@ data Container = Container{
                      containerType :: ContainerType
                    , children      :: Seq Elt
                    }
+  deriving Show
 
 data ContainerType = Document
                    | BlockQuote
@@ -85,14 +94,15 @@ data ContainerType = Document
                    | FencedCode { startColumn :: Int
                                 , fence :: Text
                                 , info :: Text }
+                   | FencedDIV Text  -- raw attributes
                    | IndentedCode
                    | RawHtmlBlock
                    | Reference
                    deriving (Eq, Show)
 
-instance Show Container where
-  show c = show (containerType c) ++ "\n" ++
-    nest 2 (intercalate "\n" (map showElt $ toList $ children c))
+-- instance Show Container where
+--   show c = show (containerType c) ++ "\n" ++
+--     nest 2 (intercalate "\n" (map showElt $ toList $ children c))
 
 nest :: Int -> String -> String
 nest num = intercalate "\n" . map ((replicate num ' ') ++) . lines
@@ -129,6 +139,7 @@ containerStart :: Bool -> Parser ContainerType
 containerStart _lastLineIsText = scanNonindentSpace *>
    (  (BlockQuote <$ scanBlockquoteStart)
   <|> parseListMarker
+  <|> parseDIVFence
    )
 
 -- Defines parsers that open new verbatim containers (containers
@@ -264,6 +275,15 @@ processElts refmap (C (Container ct cs) : rest) =
     BlockQuote -> singleton (Blockquote $ processElts refmap (toList cs)) <>
                   processElts refmap rest
 
+    FencedDIV rawattr ->  -- SCM: parse attrs later.
+        -- SCM: tracing
+        -- error ("ERR: \ncs: ---\n" ++
+        --        show (toList cs) ++ "\nprocessElts cs ----\n" ++
+        --        show (processElts refmap (toList cs)) ++ "\n")
+        let attrs = either (const []) id $ parse pAttrs rawattr
+        in singleton (DIV attrs $ processElts refmap (toList cs)) <>
+             processElts refmap rest
+
     -- List item?  Gobble up following list items of the same type
     -- (skipping blank lines), determine whether the list is tight or
     -- loose, and generate a List.
@@ -296,13 +316,15 @@ processElts refmap (C (Container ct cs) : rest) =
 
                     isTight = tightListItem xs && all tightListItem items
 
-    FencedCode _ _ info' -> singleton (CodeBlock attr txt) <>
+    FencedCode _ _ info' -> singleton (CodeBlock attrs txt) <>
                                processElts refmap rest
                   where txt = joinLines $ map extractText $ toList cs
-                        attr = CodeAttr x (T.strip y)
-                        (x,y) = T.break (==' ') info'
+                        attrs = either (const []) id $
+                                 parse (pAttrs <|> pCodeLangId) info'
+                        -- attr = CodeAttr x (T.strip y)
+                        -- (x,y) = T.break (==' ') info'
 
-    IndentedCode -> singleton (CodeBlock (CodeAttr "" "") txt)
+    IndentedCode -> singleton (CodeBlock [] txt)
                     <> processElts refmap rest'
                   where txt = joinLines $ stripTrailingEmpties
                               $ concatMap extractCode cbs
@@ -396,6 +418,8 @@ processLine (lineNumber, txt) = do
          then closeContainer
          else addLeaf lineNumber (TextLine t')
 
+    FencedDIV{} | isFenceClose t' -> closeContainer
+
     -- otherwise, parse the remainder to see if we have new container starts:
     _ -> case tryNewContainers lastLineIsText (T.length txt - T.length t') t' of
 
@@ -428,6 +452,11 @@ processLine (lineNumber, txt) = do
              -- don't add extra blank at beginning of fenced code block
              (FencedCode{}:_,  BlankLine{}) -> return ()
              _ -> addLeaf lineNumber lf
+
+isFenceClose :: Text -> Bool
+isFenceClose t =
+  (":::" `T.isPrefixOf` t) &&
+  (T.all isWhitespace (T.dropWhile (':'==) t))
 
 -- Try to match the scanners corresponding to any currently open containers.
 -- Return remaining text after matching scanners, plus the number of open
@@ -533,9 +562,22 @@ parseCodeFence = do
   scanSpaces
   rawattr <- takeWhile (\c -> c /= '`' && c /= '~')
   endOfInput
+   -- SCM: if there are trailing ` or ~ after rawattr,
+   --      endOfInput fails. Not sure whether it's a bug.
   return $ FencedCode { startColumn = col
                       , fence = cs
                       , info = rawattr }
+
+parseDIVFence :: Parser ContainerType
+parseDIVFence = do
+    cs <- takeWhile1 (==':')
+    guard $ T.length cs >= 3
+    scanSpaces
+    char '{'
+    rawattr <- takeWhile (\c -> c /= '}')
+    char '}'
+    endOfInput
+    return $ FencedDIV ("{" <> rawattr <> "}")
 
 -- Parse the start of an HTML block:  either an HTML tag or an
 -- HTML comment, with no indentation.

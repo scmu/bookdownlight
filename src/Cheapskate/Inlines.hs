@@ -3,7 +3,9 @@ module Cheapskate.Inlines (
         parseInlines
       , pHtmlTag
       , pReference
-      , pLinkLabel)
+      , pLinkLabel
+      , pAttrs
+      , pCodeLangId)
 where
 import Cheapskate.ParserCombinators
 import Cheapskate.Util
@@ -152,14 +154,17 @@ pInline refmap =
        <|> pEnclosure '*' refmap  -- strong/emph
        <|> (notAfter isAlphaNum *> pEnclosure '_' refmap)
        <|> pCode
-       <|> pAttrs
+       <|> pHsCode
+       <|> pAttributes
        <|> pCiteP
+       <|> pCiteT
        <|> pLink refmap
        <|> pImage refmap
        <|> pRawHtml
        <|> pAutolink
        <|> pFootnote refmap
        <|> pRef
+       <|> pEqRef
        <|> pIndex
        <|> pEntity
        <|> pSym
@@ -185,7 +190,7 @@ isAsciiAlphaNum c =
   (c >= '0' && c <= '9')
 
 isLabelAlpha :: Char -> Bool
-isLabelAlpha c = isAsciiAlphaNum c || c == ':' || c == '_'
+isLabelAlpha c = isAsciiAlphaNum c || c == ':' || c == '_' || c == '-'
 
 pAsciiStr :: Parser Inlines
 pAsciiStr = do
@@ -204,7 +209,7 @@ pContStr = do t <- takeWhile1 isContChar
 
 specialSet :: Set.Set Char
 specialSet = Set.fromList (specials ++ whitespaces)
-  where specials = "\\`*_{}[]#+-.!|&^"
+  where specials = "\\`*_{}[]#+-.!|&^@"
         whitespaces = " \t\n"
 
 -- Catch all -- parse an escaped character, an escaped
@@ -353,6 +358,16 @@ pCode' = do
   contents <- T.concat <$> manyTill (nonBacktickSpan <|> backtickSpan) end
   return (singleton . Code . T.strip $ contents, ticks <> contents <> ticks)
 
+pHsCode :: Parser Inlines
+pHsCode = do char '|'
+             hs <- pHsCodeAux
+             return (singleton . HsCode . T.concat $ hs)
+  where pHsCodeAux :: Parser [Text]
+        pHsCodeAux =
+          (takeWhile1 ('|' /=) >>= \tx -> (tx :) <$> pHsCodeAux) <|>
+          (string "||" >> (("||":) <$> pHsCodeAux)) <|>
+          (char '|' >> nfb (char '|') >> return [])
+
 pLink :: ReferenceMap -> Parser Inlines
 pLink refmap = do
   lab <- pLinkLabel
@@ -372,19 +387,21 @@ pInlineLink lab = do
   return $ singleton $ Link lab url tit
 
 -- attribute block: {#id .class .class attr="val"}
-pAttrs :: Parser Inlines
+pAttributes :: Parser Inlines
+pAttributes = singleton . Attrs <$> pAttrs
+
+pAttrs :: Parser [Attr]
 pAttrs = do
   char '{'
   scanSpaces
-  attrs <- pAttr
-  return $ singleton $ Attrs attrs
+  pAttrsAux
  where
-   pAttr :: Parser [Attr]
-   pAttr = do attr <- (pAtrClass <|> pAtrId <|> pAtr)
-              ((scanSpaces >> char '}' >> return [attr]) <|>
-               (do char ' '
-                   scanSpaces
-                   (attr :) <$> pAttr))
+   pAttrsAux :: Parser [Attr]
+   pAttrsAux = do attr <- (pAtrClass <|> pAtrId <|> pAtr)
+                  ((scanSpaces >> char '}' >> return [attr]) <|>
+                   (do char ' '
+                       scanSpaces
+                       (attr :) <$> pAttrsAux))
    pAtrClass :: Parser Attr
    pAtrClass = do char '.'
                   AtrClass <$> takeWhile1 isLabelAlpha
@@ -397,12 +414,26 @@ pAttrs = do
              val <- pLinkTitle
              return (Atr atr val)
 
+-- if there is only one single word at the beginning of fenced code,
+-- it's taken as the language identifier
+pCodeLangId :: Parser [Attr]
+pCodeLangId = do
+   scanSpaces
+   lang <- takeWhile1 isLabelAlpha
+   endOfInput
+   return [AtrClass lang]
 
 pRef :: Parser Inlines
 pRef = do string "\\@ref{"
           t <- takeWhile1 isLabelAlpha
           char '}'
           return $ singleton $ Ref t
+
+pEqRef :: Parser Inlines
+pEqRef = do string "\\@eqref{"
+            t <- takeWhile1 isLabelAlpha
+            char '}'
+            return $ singleton $ EqRef t
 
 pIndex :: Parser Inlines
 pIndex = do string "\\index{"
@@ -422,6 +453,7 @@ pFootnote refmap = do
   -- char ']'
   -- return $ singleton $ Footnote t
 
+-- [@label, options; @label, options]
 pCiteP :: Parser Inlines
 pCiteP = do string "[@"
             -- ref <- takeWhile1 isLabelAlpha
@@ -444,6 +476,15 @@ pCiteP = do string "[@"
                         cs <- pCites
                         return (this:cs))
 
+-- @label[options]
+pCiteT :: Parser Inlines
+pCiteT = do char '@'
+            ref <- takeWhile1 isLabelAlpha
+            ((do char '['
+                 opts <- takeWhile (']'/=)
+                 char ']'
+                 return $ singleton $ CiteT ref (Just opts)) <|>
+             (return $ singleton $ CiteT ref Nothing))
 
 lookupLinkReference :: ReferenceMap
                     -> Text                -- reference label

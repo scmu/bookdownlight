@@ -22,9 +22,10 @@ data Block = Para Inlines
            | Header Int [Attr] Inlines
            | Blockquote Blocks
            | List Bool ListType [Blocks]
-           | CodeBlock CodeAttr Text
+           | CodeBlock [Attr] Text
            | HtmlBlock Text
            | HRule
+           | DIV [Attr] Blocks
            deriving (Show, Data, Typeable)
 
 -- | Attributes for fenced code blocks.  'codeLang' is the
@@ -51,6 +52,7 @@ data Inline = Str Text
             | Emph Inlines
             | Strong Inlines
             | Code Text
+            | HsCode Text
             | Link Inlines Text {- URL -} Text {- title -}
             | Image Inlines Text {- URL -} Text {- title -}
             | Entity Text
@@ -59,6 +61,7 @@ data Inline = Str Text
             | Footnote Inlines
             | Index Text
             | Ref Text
+            | EqRef Text
             | CiteP [(Text, Maybe Text)]  -- (citation, options)
             | CiteT Text (Maybe Text)     -- Name (year, options)
             deriving (Show, Data, Typeable)
@@ -87,7 +90,38 @@ instance Default Options where
 data Attr = AtrClass Text    -- .class
           | AtrID Text       -- #id
           | Atr Text Text    -- attr="val"
-  deriving (Show, Data, Typeable)
+  deriving (Show, Data, Typeable, Eq)
+
+isAtrId (AtrID _) = True
+isAtrId _         = False
+unAtrID (AtrID xs) = xs
+
+isAtrCls (AtrClass _) = True
+isAtrCls _            = False
+unAtrClass (AtrClass xs) = xs
+
+isAtrAV (Atr _ _) = True
+isAtrAV _         = False
+unAtrAv (Atr atr val) = (atr, val)
+
+attrsId :: [Attr] -> [Text]
+attrsId = map unAtrID . filter isAtrId
+
+attrsClass :: [Attr] -> [Text]
+attrsClass = map unAtrClass . filter isAtrCls
+
+attrsAVs :: [Attr] -> [(Text, Text)]
+attrsAVs = map unAtrAv . filter isAtrAV
+
+lookupAttrs :: Text -> [Attr] -> Maybe Text
+lookupAttrs atr [] = Nothing
+lookupAttrs atr (Atr atr' val : attrs)
+   | atr == atr' = Just val
+   | otherwise   = lookupAttrs atr attrs
+lookupAttrs atr (_ : attrs) = lookupAttrs atr attrs
+
+hasClass :: Text -> [Attr] -> Bool
+hasClass cls attrs = AtrClass cls `elem` attrs
 
 deriving instance Generic Doc
 instance NFData Doc
