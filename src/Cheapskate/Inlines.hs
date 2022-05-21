@@ -155,6 +155,7 @@ pInline refmap =
        <|> (notAfter isAlphaNum *> pEnclosure '_' refmap)
        <|> pCode
        <|> pHsCode
+       <|> pTexMath
        <|> pAttributes
        <|> pCiteP
        <|> pCiteT
@@ -209,7 +210,7 @@ pContStr = do t <- takeWhile1 isContChar
 
 specialSet :: Set.Set Char
 specialSet = Set.fromList (specials ++ whitespaces)
-  where specials = "\\`*_{}[]#+-.!|&^@"
+  where specials = "\\`*_{}[]#+-.!|&^@$"
         whitespaces = " \t\n"
 
 -- Catch all -- parse an escaped character, an escaped
@@ -219,10 +220,17 @@ pSym = do
   c <- anyChar
   let ch = singleton . Str . T.singleton
   if c == '\\'
-     then ch <$> satisfy isEscapable
+     then ch <$> satisfy isEscapable'
           <|> singleton LineBreak <$ satisfy (=='\n')
           <|> return (ch '\\')
      else return (ch c)
+ where isEscapable' :: Char -> Bool
+       isEscapable' c = isAscii c &&
+                        not (c `elem` ['"','\'','`']) &&
+                        (isSymbol c || isPunctuation c)
+       -- we need to rule out " ` '
+       -- to allow latex commands \" \' and \`
+
 
 -- http://www.iana.org/assignments/uri-schemes.html plus
 -- the unofficial schemes coap, doi, javascript.
@@ -368,6 +376,17 @@ pHsCode = do char '|'
           (string "||" >> (("||":) <$> pHsCodeAux)) <|>
           (char '|' >> nfb (char '|') >> return [])
 
+
+pTexMath :: Parser Inlines
+pTexMath = do char '$'
+              hs <- pHsCodeAux
+              return (singleton . Tex . T.concat $ hs)
+  where pHsCodeAux :: Parser [Text]
+        pHsCodeAux =
+          (takeWhile1 ('$' /=) >>= \tx -> (tx :) <$> pHsCodeAux) <|>
+          (string "\\$" >> (("\\$":) <$> pHsCodeAux)) <|>
+          (char '$' >> return [])
+
 pLink :: ReferenceMap -> Parser Inlines
 pLink refmap = do
   lab <- pLinkLabel
@@ -435,11 +454,40 @@ pEqRef = do string "\\@eqref{"
             char '}'
             return $ singleton $ EqRef t
 
+-- pIndex :: Parser Inlines
+-- pIndex = do string "\\index{"
+--             t <- takeWhile1 (not . ('}'==))
+--             char '}'
+--             return $ singleton $ Index t
+
 pIndex :: Parser Inlines
-pIndex = do string "\\index{"
-            t <- takeWhile1 (not . ('}'==))
-            char '}'
-            return $ singleton $ Index t
+pIndex = do string "\\index"
+            txt <- T.concat <$> pNest '{' '}'
+            return $ singleton $ Index txt
+
+pNest :: Char -> Char -> Parser [Text]
+pNest open close = do
+  char open *> pNests open close <* char close
+
+--  S = A | A(S)S
+
+pNests :: Char -> Char -> Parser [Text]
+pNests open close = do
+  txt <- takeWhile (\c -> c /= open && c /= close)
+  ((do char open
+       ts1 <- pNests open close
+       char close
+       ts2 <- pNests open close
+       return (txt : T.singleton open : ts1 ++ [T.singleton close] ++ ts2)) <|>
+    (return [txt]))
+
+
+-- LaTeX commands such as \", \', \`
+--  Just return them verbatim
+-- pTexSymCommand :: Parser Inlines
+-- pTexSymCommand = do char '\\'
+--                     ch <- nextch
+--                     return
 
 -- (inline) footnote: ^[...]
 -- modified from pOne

@@ -53,6 +53,7 @@ data Inline = Str Text
             | Strong Inlines
             | Code Text
             | HsCode Text
+            | Tex Text
             | Link Inlines Text {- URL -} Text {- title -}
             | Image Inlines Text {- URL -} Text {- title -}
             | Entity Text

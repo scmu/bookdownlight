@@ -1,7 +1,11 @@
 module Main where
 
+import Prelude hiding (readFile)
+import System.IO (openFile, hClose, stdout, IOMode(..), Handle)
 import Data.Text (Text)
-import qualified Data.Text.IO as T
+import Data.Text.Encoding (decodeUtf8)
+import qualified Data.ByteString as BS (ByteString, readFile)
+import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
 import Cheapskate
 
@@ -16,28 +20,72 @@ import Cheapskate.Types
 import Book.TexRender
 
 main :: IO ()
-main = T.getContents >>= (print . markdown def)
+main = -- generate lhs
+    mapM_ genLHs chapters
 
-handle :: Text -> IO ()
-handle = texRender . markdown def
+genLHs :: String -> IO ()
+genLHs chname = do
+    hdl <- openFile lhsname WriteMode
+    readFile lhsHeader >>= TIO.hPutStr hdl
+    readFile mdname >>= handle hdl
+    hClose hdl
+  where mdname  = contents ++ chname ++ ".md"
+        lhsname = lhsChs ++ chname ++ ".lhs"
+        lhsHeader = tmpls ++ "lhsheader.lhs"
 
-textst :: String -> IO ()
-textst file = T.readFile file >>= handle
+handle :: Handle -> Text -> IO ()
+handle h = texRender h . markdown def
 
-mdtst :: String -> IO ()
-mdtst file =
-  do contents <- T.readFile file
+chapters :: [String]
+chapters = [ -- "Introduction"
+           --,
+             "Basics"
+           -- , "Induction"
+           -- , "Semantics"
+           -- , "Derivation"
+           -- , "Folds"
+           ]
+-- paths
+
+projBase = "/Users/scm/Documents/Repositories/bookdownlight/"
+contents = projBase ++ "contents/"
+texBase  = projBase ++ "tex/"
+lhsBase  = projBase ++ "lhs/"
+lhsChs   = lhsBase ++ "Chapters/"
+texChs   = texBase ++ "Chapters/"
+tmpls    = projBase ++ "templates/"
+
+
+-- tests
+
+readFile :: String -> IO Text
+readFile path = decodeUtf8 <$> BS.readFile path
+
+textstF :: String -> IO ()
+textstF file = readFile file >>= handle stdout
+            -- T.getContents >>= handle
+            -- T.getContents >>= (print . markdown def)
+
+mdtstF :: String -> IO ()
+mdtstF file =
+  do contents <- readFile file
      print . markdown def $ contents
 
-pltst :: String -> IO ()
-pltst file =
-  do contents <- T.readFile file
+pltstF :: String -> IO ()
+pltstF file =
+  do contents <- readFile file
      print . processLines' $ contents
 
-pldtst :: String -> IO ()
-pldtst file =
-  do contents <- T.readFile file
+pltst :: String -> IO ()
+pltst = print . processLines . T.pack
+
+pldtstF :: String -> IO ()
+pldtstF file =
+  do contents <- readFile file
      print . processDocument . processLines $ contents
+
+pldtst :: String -> IO ()
+pldtst = print . processDocument . processLines . T.pack
 
 -- processLines' :: Text -> (Container, ReferenceMap)
 processLines' :: Text -> ContainerStack
