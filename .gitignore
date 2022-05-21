@@ -8,3 +8,17 @@
 stack.yaml.lock
 
 *.inp
+
+*.log
+
+*.idx
+
+*.aux
+
+tex/fpbook.pdf
+
+*.blg
+
+*.ptb
+
+*.toc
