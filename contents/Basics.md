@@ -1229,3 +1229,275 @@ fst = \(x,y) -> x {-"~~."-}
 ```
 
 Haskell 另有提供更多個元素形成的有序組，例如 |(True, 3, 'c')| 是一個型別為 |(Bool :* Int :* Char)| 的值。但本書暫時不使用他們。
+
+{title="分裂與積" #par:split-product}
+在我們將介紹的程式設計風格中，以下兩個產生序對的運算子相當好用。
+第一個運算子利用兩個函數產生一個序對：
+```haskell
+fork :: (a -> b) -> (a -> c) -> a -> (b :* c)
+(fork f g) x = (f x, g x) {-"~~."-}
+```
+{.nobreak}給定兩個函數 |f :: a -> b| 和 |g :: a -> c|,
+|fork f g :: a -> (b :* c)| 是一個新函數，將 |f| 和 |g| 的結果
+收集在一個序對中。
+我們借用範疇論的詞彙，將此稱作*分裂*(*split*) ---
+|fork f g| 可讀成「|f| 與 |g| 的分裂」。
+\index{pair 序對!split 分裂}
+
+如果我們已經有了一個序對，我們可用 |(f *** g)| 算出一個新序對：
+```spec
+(***) :: (a -> b) -> (c -> d) -> (a :* c) -> (b :* d)
+(f *** g) (x,y) = (f x, g x) {-"~~."-}
+```
+{.nobreak}函數|(f *** g)| 將 |f| 和 |g| 分別作用在序對 |(x,y)| 的兩個元素上。
+這個操作稱作「|f| 和 |g| 的乘績(product)」，同樣是借用範疇論的詞彙。
+\index{pair 序對!product 乘績}
+
+目前 Haskell 的標準階層函式庫將分裂與乘積收錄在 \texttt{Control.Arrow} 中，
+|fork f g| 寫作：\texttt{f \&\&\& g}, |(f *** g)| 則寫作 \texttt{f *** g}.
+
+{title="Currying 與 Uncurrying" #par:currying-uncurrying}
+如前所述，Haskell 的每個函數都只拿一個參數。拿多個參數的函數可以
+傳回函數的函數來模擬，稱作 currying.
+有了序對之後，另一種模擬多參數的方式是把參數都包到一個序對中。
+例如，型別為 |(a :* b) -> c)| 的函數可視為拿了兩個型別為 |a| 與 |b| 的參數。
+
+函數 |curry| 與 |uncurry| 幫助我們在這兩種表示法之間轉換 ---
+|curry| 將拿序對的函數轉換成 curried 函數，\index{currying}
+|uncurry| 則讓 curried 函數改拿序對當作參數：\index{currying!uncurrying}
+```spec
+curry :: ((a :* b) -> c) -> (a -> b -> c)
+curry f x y = f (x,y) {-"~~,"-}
+
+uncurry :: (a -> b -> c) -> ((a :* b) -> c)
+uncurry f (x,y) = f x y {-"~~."-}
+```
+{.nobreak}例：如果|(==)| 的型別為 |Int -> Int -> Bool|,
+|uncurry (==)| 的型別為 |(Int :* Int) -> Bool|。
+後者檢查一個序對中的兩個值是否相等（例：|uncurry (==) (3,3) = True|）。
+
+:::{.exlist}
+:::{.exer}
+事實上，|curry| 與 |uncurry| 的存在證明了 |(a :* b) -> c|
+與 |a -> b -> c| 是同構的。試證明
+|curry . uncurry = id|, 以及 |uncurry . curry = id|.
+:::
+:::{.exans}
+欲證明 |curry . uncurry = id|：
+```spec
+     curry . uncurry = id
+<=>    {- 外延相等及 |id| 之定義 -}
+     (forall f : curry (uncurry f) = f)
+<=>    {- 外延相等 -}
+     (forall f x y : curry (uncurry f) x y = f x y) {-"~~."-}
+```
+{.nobreak}因此我們證明 |curry (uncurry f) x y = f x y| 如下：
+```spec
+   curry (uncurry f) x y
+=   {- |curry| 之定義 -}
+   uncurry f (x,y)
+=   {- |uncurry| 之定義 -}
+   f x y  {-"~~."-}
+```
+
+與此相似，欲證明 |uncurry . curry = id| 我們須證明
+|uncurry (curry f) (x,y) = f (x,y)|，其證明也與上面的證明類似。
+:::
+:::{.exer #ex:uncurry-apply}
+請說明 |map (uncurry ($))| 的型別與功能。
+關於 |($)| 請參考第\pageref{para:fun-apply}頁。
+:::
+:::{.exans}
+|map (uncurry ($)) :: List ((a -> b) :* a) -> List b|.
+它拿一個內容均為「(函數 $\times$ 參數)」序對的串列，將每個函數作用在其參數上。
+例如：
+```spec
+map (uncurry ($)) [((1+), 3), (square, 4), (smaller 5, 3)]
+```
+{.nobreak}會得到 |[1+3,4*4,3]|.
+:::
+:::
+
+
+## 弱首範式 {#sec:weak-head-normal-form}
+
+我們現在可把第\@ref{sec:evaluation}節中提及的求值與範式談得更仔細些。
+第一次閱讀的讀者可把本節跳過。
+回顧 |fst| 使用樣式配對的定義 |fst (x,y) = x|.
+假設我們把 |swap| 定義如下：
+```spec
+swap p = (snd p, fst p) {-"~~."-}
+```
+{.nobreak}考慮 |fst (swap (3,'a'))| 該怎麼求值：
+```spec
+   fst (swap (3,'a'))
+=   {- |swap| 的定義 -}
+   fst (snd (3,'a'), fst (3,'a'))
+=   {- |fst| 的定義 -}
+   snd (3,'a')
+=   {- |snd| 的定義 -}
+   'a' {-"~~."-}
+```
+{.nobreak}在第一步中，由於 |fst| 使用樣式配對，我們得先把 |swap (3,'a')| 算出來。
+若把 |swap (3,'a')| 算到底，得到的範式是 |('a',3)|.
+但如第一步中所顯示，如果目的只是為了配對 |(x,y)| 這個樣式，
+我們並不需要把 |swap (3,'a')| 算完，只需算到 |(snd (3,'a'), fst (3,'a'))|
+即可 --- |x| 可對應到 |snd (3,'a')|, |y| 可對應到 |fst (3,'a')|,
+|fst| 的計算便可以進行。在下一步中，子算式 |fst (3,'a')| 便被丟棄了，
+並沒有必要算出來。
+
+做樣式配對時，Haskell 只會把算式歸約到剛好足以與樣式配對上的程度。
+當樣式的深度只有一層（如|(x,y)|）時，與之配對的式子會被歸約成一種
+稱作*弱首範式*(*weak head normal form*)%
+\index{normal form 範式!weak head 弱首範式}的形式。
+弱首範式有其嚴格定義，但本書讀者只需知道：算式會被歸約到*露出最外面的建構元*，（在此例中是被歸約成 |(_,_)| 的形式），然後便停下來。
+
+::: {.example}
+回顧 |swap| 的兩種定義方式，分別命名為
+```texonly
+%format swap1
+%format swap2
+```
+```spec
+swap1 (x,y)  = (y,x)  {-"~~,"-}
+swap2 p      = (snd p, fst p) {-"~~,"-}
+```
+若考慮不終止的參數，兩者的行為並不盡然相同。
+定義 |three (x,y) = 3|, 並
+假設 |undefined| 是一個沒有範式的式子 --- 一旦開始對 |undefined| 求值，便停不下來。
+試計算 |three (swap1 undefined)| 和 |three (swap2 undefined)|.
+:::
+:::{.answer}
+由於 |three| 使用樣式配對，計算 |three (swap1 undefined)| 時得把 |swap1 undefined| 歸約成弱首範式。
+同理，計算 |swap1 undefined| 時，第一步便是先試圖把 |undefined| 歸約成弱首範式，然後便停不下來了。
+
+至於 |three (swap2 undefined)| 則可如下地求值：
+```spec
+   three (swap2 undefined)
+=   {- |swap2| 之定義 -}
+   three (snd undefined, fst  undefined)
+=   {- |three| 之定義 -}
+   3 {-"~~."-}
+```
+{.nobreak}第一步中，|swap2 undefined| 則依照範式順序求值的原則展開為 |(snd undefined, fst  undefined)| --- 這是一個序對，只是該序對含有兩個沒有範式的元素。
+該序對可對應到樣式 |(x,y)|, 因此整個式子歸約為 |3|.
+
+附帶一提，|three undefined| 是一個不停止的計算。
+:::
+
+## 串列 {#sec:lists}
+
+一個\emph{串列}(list)\index{list 串列}
+抽象說來便是*將零個或多個值放在一起變成一串*。
+串列是函數語言傳統上的重要資料結構：
+早期的函數語言 LISP 便是 LISt Processing 的縮寫。
+Haskell 中的串列多了一個限制：串列中的每個元素必須有同樣的型別。
+本書中將「元素型別均為 |a| 的串列」的型別寫成 |List a|.
+^[Haskell 中的寫法是 |[a]|. 同樣地，在我的教學經驗中，將中括號同時使用在值與型別上造成不少誤解。例如學生可能認為 |[1,2]| 的型別是 |[Int,Int]| --- 其實應該是 |[Int]|.]
+Hasekell 以中括號表示串列，其中的元素以逗號分隔。
+例如，|[1,2,3,4]| 是一個型別為 |List Int| 的串列，其中有四個元素；
+|[True, False, True]| 是一個型別為 |List Bool| 的串列，有三個元素。
+至於 |[]| 則是沒有元素的*空串列*（通常唸做 ``nil''），其最通用的型別為 |List a|，
+其中 |a| 可以是任何型別。
+
+串列的元素也可以是串列。例如 |[[1,2,3],[],[4,5]]| 的型別是 |List (List Int)|,
+含有三個元素，分別為 |[1,2,3]|, |[]|, 和 |[4,5]|.
+
+事實上，上述的寫法只是語法糖。我們可想像 Haskell 有這樣的型別定義：
+```spec
+data List a {-"\,"-}={-"\,"-} [] {-"\,"-}|{-"\,"-} a : List a {-"~~."-}
+```
+{.nobreak}意謂一個元素型別為 |a| 的串列只有兩種可能構成方式：
+可能是空串列 |[]|，也可能是一個元素 (|a|) 接上另一個串列 (|List a|)。
+後者的情況中，元素和串列之間用符號 |(:)| 銜接。
+\index{[]@@{|[]|}}
+\index{:@@{|(:)|}}
+
+符號 |(:)| 唸作 ``cons'', 為「建構(construct)」的字首。
+其型別為 |a -> List a -> List a| ---
+它總是將一個型別為 |a| 的元素接到一個 |List a| 之上，造出另一個 |List a|.
+上述的 |[1,2,3,4]| 其實是 |1 : (2 : (3 : (4 : [])))|
+的簡寫：由空串列 |[]| 開始，將元素一個個接上去。
+為了方便，Haskell 將 |(:)| 運算元視做右相依的，
+因此我們可將括號省去，寫成
+|1 : 2 : 3 : 4 : []|。
+
+:::{.infobox title="|(:)| 與 |(::)|"}
+\index{:@@{|(:)|}}\index{::@@{|(::)|}}
+大部分有型別的函數語言（如 ML, Agda 等）之中，
+|(:)| 表示型別關係，|(::)| 則是串列的建構元。
+Haskell 的前身之一是 David A. Turner 的語言 Miranda.
+在其 Hindley-Milner 型別系統中，Miranda 使用者幾乎不需寫出程式的型別 ---
+型別可由電腦自動推導。而串列是重要資料結構。
+把兩個符號調換過來，使常用的符號較短一些，似乎是合理的設計。
+
+Haskell 繼承了 Miranda 的語法。
+然而，後來 Haskell 的型別發展得越來越複雜，
+使用者偶爾需要寫出型別來幫助編譯器。
+即使型別簡單，程式語言界也漸漸覺得將函數的型別寫出是好習慣。
+而串列建構元的使用量並不見得比型別關係多。
+但此時想改符號也為時已晚了。
+:::
+
+無論如何，這樣的串列表示法是偏一邊的 ---
+元素總是從左邊放入，最左邊的元素也最容易取出。
+如果一個串列不是空的，其最左邊的元素稱作該串列的*頭*(*head*)，
+剩下的元素稱作其*尾*(*tail*)。
+例如，|[1,2,3,4]| 的頭是 |1|, 尾是 |[2,3,4]|.
+
+Haskell 中將字串當作字元形成的串列。標準函式庫中這麼定義著：
+```spec
+type String = List Char {-"~~."-}
+```
+{.nobreak}意謂 |String| 就是 |List Char|。
+在 Haskell 中，|data| 用於定義新型別，而 |type| 並不產生一個新的型別，
+只是給現有的型別一個較方便或更顯出當下意圖的名字。
+此外，Haskell 另提供一個語法糖，用雙引號表達字串。
+因此，|"fun"| 是 |['f','u','n']| 的簡寫，
+後者又是 |'f':'u':'n':[]| 的簡寫。
+
+本節接下來將介紹許多與串列相關的內建函數。
+
+### 串列解構 {#sec:list-deconstruct}
+
+我們先從拆解串列的函數開始。函數 |head| 和 |tail| 分別取出一個串列的頭和尾：
+:::{.multicols}
+:::{.mcol width="0.4\\textwidth"}
+```spec
+head :: List a -> a
+head (x:xs) = x {-"~~,"-}
+```
+:::
+:::{.mcol width="0.4\\textwidth"}
+```spec
+tail :: List a -> List a
+tail (x:xs) = xs {-"~~."-}
+```
+:::
+:::
+{.nobreak}注意其型別：|head| 傳回一個元素，|tail| 則傳回一個串列。
+例：|head "fun"| 和 |tail "fun"| 分別是字元 |'f'| 和字串 |"un"|.
+函數 |head| 和 |tail| 都可用樣式配對定義，但此處的樣式並不完整，尚缺 |[]| 的情況。
+如果將空串列送給 |head| 或 |tail|，則會出現執行時錯誤。
+因此，|head| 和 |tail| 都是*部分函數*(*partial functions*) --- 它們只將某些值（非空的串列）對應到輸出，某些值（空串列）則沒有。\index{function 函數!partial 部分函數}
+
+函數 |null| 判斷一個串列是否為空串列。它也可用樣式配對定義如下：
+```spec
+null :: List a -> Bool
+null []      = True
+null (x:xs)  = False {-"~~."-}
+```
+{.nobreak}本書依循 @Bird:98:Introduction 中的變數命名習慣，
+將型別為串列的變數以 |s| 做結尾，例如 |xs|, |ys| 等等。
+至於「元素為串列的串列」則命名為 |xss|, |yss| 等等。
+但這只是為方便理解而設計的習慣。Haskell 本身並無此規定。
+
+除了 |head| 與 |tail|，也有另一組函數 |last| 與 |init| 分別取出一個串列*最右邊*的元素，以及剩下的串列：
+```spec
+last  :: List a -> a {-"~~,"-}
+init  :: List a -> List a {-"~~."-}
+```
+{.nobreak}例：|last "fun"| 與 |init "fun"| 分別為字元 |'n'| 與字串 |"fu"|.
+但 |last| 與 |init| 的定義比起 |head| 與 |tail| 來得複雜：
+記得我們的串列表示法是偏向一邊的，從左邊存取元素容易，從右邊存取元素則較麻煩。
+我們會在 \todo{where} 之中談到 |last| 與 |init| 的定義。

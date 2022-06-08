@@ -226,7 +226,7 @@ pSym = do
      else return (ch c)
  where isEscapable' :: Char -> Bool
        isEscapable' c = isAscii c &&
-                        not (c `elem` ['"','\'','`']) &&
+                        not (c `elem` ['"','\'','`','&']) &&
                         (isSymbol c || isPunctuation c)
        -- we need to rule out " ` '
        -- to allow latex commands \" \' and \`
