@@ -1,0 +1,72 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bookdownlight
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/bookdownlight#readme>
+homepage:       https://github.com/scmu/bookdownlight#readme
+bug-reports:    https://github.com/scmu/bookdownlight/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2022 Author name here
+license:        BSD3
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/scmu/bookdownlight
+
+library
+  exposed-modules:
+      Book.TexRender
+      Cheapskate
+      Cheapskate.Html
+      Cheapskate.Inlines
+      Cheapskate.Parse
+      Cheapskate.ParserCombinators
+      Cheapskate.Types
+      Cheapskate.Util
+  other-modules:
+      Paths_bookdownlight
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.9 && <5
+    , blaze-html >=0.6 && <0.10
+    , bytestring
+    , containers >=0.4 && <0.7
+    , data-default
+    , deepseq
+    , mtl >=2.1 && <2.3
+    , syb
+    , text >=0.9 && <1.3
+    , uniplate ==1.6.*
+    , xss-sanitize ==0.3.*
+  default-language: Haskell2010
+
+executable bookdownlight-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_bookdownlight
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.9 && <5
+    , blaze-html >=0.6 && <0.10
+    , bookdownlight
+    , bytestring
+    , containers >=0.4 && <0.7
+    , data-default
+    , deepseq
+    , mtl >=2.1 && <2.3
+    , syb
+    , text >=0.9 && <1.3
+    , uniplate ==1.6.*
+    , xss-sanitize ==0.3.*
+  default-language: Haskell2010
