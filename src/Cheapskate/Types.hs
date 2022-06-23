@@ -63,6 +63,7 @@ data Inline = Str Text
             | Index Text
             | Ref Text
             | EqRef Text
+            | PageRef Text
             | CiteP [(Text, Maybe Text)]  -- (citation, options)
             | CiteT Text (Maybe Text)     -- Name (year, options)
             deriving (Show, Data, Typeable)

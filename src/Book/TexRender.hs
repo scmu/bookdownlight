@@ -249,6 +249,7 @@ renderInline h (Footnote is) =
      hPutChar h '}'
 renderInline h (Ref txt)   = latexCmd h "ref" txt
 renderInline h (EqRef txt) = latexCmd h "eqref" txt
+renderInline h (PageRef txt) = latexCmd h "pageref" txt
 renderInline h (Index idx) = latexCmd h "index" idx
 renderInline h (CiteT ref Nothing) = latexCmd h "citet" ref
 renderInline h (CiteT ref (Just opt)) = latexCmdOpt h "citet" opt ref

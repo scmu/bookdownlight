@@ -166,6 +166,7 @@ pInline refmap =
        <|> pFootnote refmap
        <|> pRef
        <|> pEqRef
+       <|> pPageRef
        <|> pIndex
        <|> pEntity
        <|> pSym
@@ -453,6 +454,13 @@ pEqRef = do string "\\@eqref{"
             t <- takeWhile1 isLabelAlpha
             char '}'
             return $ singleton $ EqRef t
+
+
+pPageRef :: Parser Inlines
+pPageRef = do string "\\@pageref{"
+              t <- takeWhile1 isLabelAlpha
+              char '}'
+              return $ singleton $ PageRef t
 
 -- pIndex :: Parser Inlines
 -- pIndex = do string "\\index{"
