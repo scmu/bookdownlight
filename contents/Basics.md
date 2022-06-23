@@ -1501,3 +1501,674 @@ init  :: List a -> List a {-"~~."-}
 但 |last| 與 |init| 的定義比起 |head| 與 |tail| 來得複雜：
 記得我們的串列表示法是偏向一邊的，從左邊存取元素容易，從右邊存取元素則較麻煩。
 我們會在 \todo{where} 之中談到 |last| 與 |init| 的定義。
+
+
+### 串列生成 {#sec:list-generation}
+
+第\@ref{sec:list-deconstruct}節中的函數均將串列拆開。
+本節之中我們來看一些生成串列的方法。
+如果元素的型別是有順序的（例如|Int|, |Char|等型別），Haskell 提供了一個
+方便我們依序生成串列的語法。以例子說明：
+::: {.example}
+以下為 Haskell 的列舉語法的一些例子：
+
+  * |[0..10]| 可展開為 |[0,1,2,3,4,5,6,7,8,9,10]|.
+  * 可用頭兩個元素來指定間隔量。例如 |[0,3..10] = [0,3,6,9]|. 注意該串列的元素不超過右界 |10|.
+  * 在 |[10..0]| 之中，|10| 一開始就超過了右界 |0|, 因此得到 |[]|. 如果想要產生由 |10| 倒數到 |0| 的串列，可這樣指定間隔：|[10,9..0]|.
+  * 字元也是有順序的，因此 |['a'..'z']| 可展開為含所有英文小寫字母的串列。
+  * 至於沒有右界的 |[0..]| 則會展開為含 |[0,1,2,3...]| 的無限長串列。
+
+
+:::
+
+
+函數 |iterate :: (a -> a) -> a -> List a| 用於產生無限長的串列：
+|iterate f x| 可展開為 |[x, f x, f (f x), f (f (f x))... ]|.
+::: {.example}
+一些 |iterate| 的例子：
+
+  * |iterate (1+) 0| 展開為 |[0,1,2,3...]|. 其實 |[n..]| 可視為 |iterate (1+) n| 的簡寫。
+  * 在例\@ref{ex:fromto-takeWhile-iterate}中我們會看到 |[m..n]| 也可用 |iterate| 與其他函數做出。
+  * |iterate not False| 可得到無窮串列 |[False, True, False...]|.
+
+
+:::
+
+數學中描述集合時常使用一種稱作集合建構式(set comprehension)的語法。例如，
+|{x * x || x `mem` S, odd x}| 表示收集所有 |x*x| 形成的集合，其中
+|x| 由集合 S 中取出，並且必須為奇數。Haskell 將類似的語法用在串列上。
+同樣以例子說明：
+::: {.example}
+串列建構式(list comprehension)的例子：\index{list 串列!comprehension 串列建構式}
+
+  * |[x || x <- [0..9]]| 表示「從|[0..9]|之中取出 |x|, 並收集 |x|」，可展開為 |[0,1,2,3,4,5,6,7,8,9]|.
+  * |[x*x || x <- [0..10]]| 的 |x| 來源和之前相同，但收集的是 |x*x|，得到 |[0,1,4,9,25,36,49,64,81]|.
+  * |[(x,y) || x <- [0..2], y <- "abc"]| 展開得到
+    |[(0,'a'),| |(0,'b'),| |(0,'c'),| |(1,'a'),| |(1,'b'),| |(1,'c'),| |(2,'a'),| |(2,'b'),| |(2,'c')]|.
+    注意序對出現的順序：先固定 |x|，將 |y| 跑過一遍，再換成下一個 |x|.
+  * |[x*x || x <- [0..10], odd x]| 從|[0..10]|之中取出 |x|，但只挑出滿足 |odd x| 的那些，得到 |[1,9,25,49,81]|.
+
+
+:::
+
+::: {.example}
+以下算式的值分別為何？
+
+  1. |[(a,b) || a <- [1..3], b <- [1..2]]|.
+  2. |[(a,b) || b <- [1..2], a <- [1..3]]|.
+  3. |[(i, j) || i <- [1..4], j <- [(i + 1)..4]]|. 這是一個有了 |i <- ..| 之後，|i| 即可在右方被使用的例子。
+  4. |[(i, j) || i <- [1..4], even i, j <- [(i + 1)..4], odd j]|.
+  5. |['a' ||i <- [0..10]]|. 這個例子顯示 |i| 並不一定非得出現在被收集項目中。
+
+
+:::
+
+::: {.answer}
+分別展開如下：
+
+  1. |[(1,1),(1,2),(2,1),(2,2),(3,1),(3,2)]|.
+  2. |[(1,1),(2,1),(3,1),(1,2),(2,2),(3,2)]|.
+  3. |[(1,2),(1,3),(1,4),(2,3),(2,4),(3,4)]|.
+  4. |[(2,3)]|.
+  5. |"aaaaaaaaaaa"|.
+
+
+:::
+
+串列建構式在寫程式時相當好用，但它也僅是個語法糖 ---
+所有的串列建構式都可轉換為後面的章節將介紹的 |map|, |concat|, |filter| 等函數的組合。
+
+### 串列上的種種組件函數 {#sec:list-combinators}
+
+我們將在本節介紹大量與串列有關的函數。
+它們常被稱做*組件*(*combinators*)\index{combinator 組件}函數。
+每一個組件都負責一項單一、但具通用性而容易重用的功能。
+它們常用來彼此結合以組出更大的程式。
+
+介紹這些函數有兩個原因。首先，它們可用來組出許多有趣的程式。
+我們將一邊逐一介紹這些函數，一邊以例子示範，
+同時也逐漸帶出本章鼓勵的一種特殊編程風格。
+另一個原因是在日後的章節中我們也都將以這些函數作為例子，
+討論並證明關於它們的性質。
+
+第一次閱讀的讀者可能訝異：這麼多函數，怎麼記得住？
+事實上，這些組件大都僅是把常見的編程模式具體地以形式方式表達出來。
+辨識出這些模式後，不僅會發現它們其實很熟悉，對於我們日後了解其他程式也有助益。
+
+{title="長度"} 函數 |length :: List a -> Int| 計算串列的長度。
+空串列 |[]| 的長度為 |0|. 例：|length "function" = 8|.
+
+{title="索引"} 函數 |(!!)| 的型別為 |List a -> Int -> a|.
+給定串列 |xs| 和整數 |i|, 如果 |0 <= i < length xs|,
+|xs !! i| 為 |xs| 中的第 |i| 個元素，但由 |0| 起算。
+例 |"function" !! 0 = 'f'|, |"function" !! 3 = 'c'|.
+如果 |i > length xs|, 則會成為執行期錯誤。
+注意：如果 |length xs = n|，其中的元素編號分別為 |0|, |1| .. |n-1|.
+
+在指令式語言中，索引是處理陣列常用的基本操作。
+處理陣列的常見模式是用一個變數|i|指向目前正被處理的元素，將|a[i]|的值讀出或覆寫，
+然後更新|i|的值。
+但由接下來的許多範例中，讀者會發現本章盡量避免這種做法。
+也因此 |(!!)| 在本章中使用的機會不多。
+
+
+{title="連接"} 函數 |(++) :: List a -> List a -> List a| 將兩個串列相接。
+例：|[1,2,3] ++ [4,5] = [1,2,3,4,5]|.
+
+函數 |(++)| 和 |(:)| 似乎都是把串列接上東西。兩者有什麼不同呢？
+答案是：|(:) :: a -> List a -> List a| 永遠把*一個*元素接到串列的左邊，
+而 |(++)| 把兩個串列接在一起，兩個串列都有可能含有零個或多個元素。
+例：|[] ++ [4,5] = [4,5]|. 事實上，|(:)| 是比 |(++)| 更基礎的操作。
+在第\@ref{sec:induction-lists-defn}節中，我們會看到 |(++)| 是用 |(:)| 定義而成的。
+
+另一個關於連接的函數是 |concat :: List (List a) -> List a|：它以一個元素都是串列的串列作為輸入，將其中的串列接在一起。例：|concat [[1,2,3],[],[4],[5,6]]| |=| |[1,2,3,4,5,6]|. 它和 |(++)| 的不同之處在哪呢？顯然，|(++)| 總把兩個串列接在一起，
+而 |concat| 的參數中可含有零個或多個串列。
+在第\@ref{sec:induction-lists-defn}節中，我們會看到 |concat| 是用 |(++)| 定義而成的。
+
+{title="取與丟"} |take| 的型別為 |Int -> List a -> List a|.
+|take n xs| 取 |xs| 的前 |n| 個元素。若 |xs| 的長度不到 |n|,
+|take n xs| 能拿幾個就拿幾個. 例：|take 3 "function" = "fun"|,
+|take 5 "ox" = "ox"|.
+
+
+相對地，|drop n xs| 丟掉 |xs| 的前 |n| 個元素。若 |xs| 的長度不到 |n|,
+|drop n xs| 能丟幾個就拿幾個. 例：|drop 3 "function" = "ction"|,
+|take 5 "ox" = ""|. 函數 |drop| 的型別也是 |Int -> List a -> List a|.
+
+函數 |take| 和 |drop| 顯然有些關聯，但它們的關聯該怎麼具體地寫下來呢？
+一個可能是：對所有的 |n| 和 |xs|,
+```texonly
+\begin{equation*}
+   |take n xs ++ drop n xs = xs| \mbox{~~.}
+   \label{eq:taken-dropn}
+\end{equation*}
+```
+{.nobreak}乍看之下似乎言之成理。但這個性質真的成立嗎？
+我們將在第\@ref{ch:induction}章中討論到。
+
+
+{title="映射"} |map :: (a -> b) -> List a -> List b| 是串列上
+一個很重要的高階函數：|map f xs| 將 |f| 作用在 |xs| 的每一個元素上。
+例：
+```texonly
+\begin{align*}
+|map square [1,2,3,4]| &= |[1,4,9,16]| \mbox{~~,}\\
+|map (1+) [2,3,4]| &= |[3,4,5]| \mbox{~~.}
+\end{align*}
+```
+{.nobreak}回憶我們之前關於高階函數的討論，另一個理解方式是：
+|map| 是一個處理函數的操作。給一個「將 |a| 變成 |b|」的函數 |f :: a -> b|，
+|map| 將這個函數*提升*到串列的層次，
+得到一個「將 |List a| 變成 |List b|」的函數 |map f :: List a -> List b|.
+
+:::{.example #ex:inits}
+如果一個串列 |xs| 可分解為 |ys ++ zs|, 我們說 |ys| 是 |xs| 的一個*前段(prefix)*,\index{list 串列!prefix 前段}
+|zs| 則是 |xs| 的一個*後段*(*suffix*). \index{list 串列!suffix 後段}
+例如，串列 |[1,2,3]| 的前段包括 |[]|, |[1]|, |[1,2]|, 與|[1,2,3]| （注意：|[]|是一個前段，|[1,2,3]| 本身也是）, 後段則包括 |[1,2,3]|, |[2,3]|, |[3]|, 與 |[]|。
+
+試定義函數 |inits :: List a -> List (List a)|, 計算輸入串列的所有前段。
+^[請注意該函數的名字是 |inits|, 和之前介紹過的 |init| 不同。這是 Haskell 函式庫中使用的命名。]
+{\bf 提示}：目前我們可以用 |map|, |take| 和其他函數組出 |inits|.
+在第\@ref{sec:more-inductive-defns}節中將會介紹另一個做法。
+:::
+:::{.answer}
+一種使用 |map| 和 |take| 的可能作法如下：
+```spec
+inits :: List a -> List (List a)
+inits xs = map (\n -> take n xs) [0 .. length xs] {-"~~."-}
+```
+{.nobreak}或著也可用串列建構式寫成 |[take n xs || n <- [0.. length xs]]|.
+讀者可能已發現：|[f x || x <- xs]| 就是 |map f xs|.
+:::
+
+:::{.exlist}
+:::{.exer}
+定義函數 |tails :: List a -> List (List a)|,
+計算輸入串列的所有後段。
+:::
+::: {.exans .compact}
+```spec
+tails :: List a -> List (List a)
+tails xs = map (\n -> drop n xs) [0 .. length xs] {-"~~."-}
+```
+:::
+:::
+
+{title="過濾"}
+一個型別為 |a -> Bool| 的函數稱作一個「述語」(predicate).
+\index{predicate 述語}
+給定述語 |p|, |filter p xs| 將 |xs| 之中滿足 |p| 的元素挑出。
+函數 |filter| 的型別為 |(a -> Bool) -> List a -> List a|。
+例：|filter even [2,5,1,7,6] = [2,6]|.
+
+:::{.example}
+該怎麼得知一個字串中大寫字母的個數？
+將大寫字母過濾出來，計算所得串列的長度即可。如下所示：
+```spec
+numUpper :: String -> Int
+numUpper = length . filter isUpper {-"~~."-}
+```
+:::
+
+:::{.example}
+下列算式求出$0^2$ 到 $50^2$ 的平方數（能寫成 $n^2$ 的數字）中，
+結尾為 $25$ 的數字。
+```spec
+  filter ((==25) . (`mod` 100)) (map square [0..50]) {-"~~."-}
+```
+{.nobreak}歸約後得到 |[25,225,625,1225,2025]|.
+其中 |(==25) . (`mod` 100)| 部分使用了第\@pageref{par:binary-operator-sectioning}頁
+中提到的語法。如果覺得不習慣，也可用 $\lambda$ 算式寫成：
+```spec
+  filter (\ n -> n `mod` 100 == 25) (map square [0..50]) {-"~~."-}
+```
+:::
+
+:::{.example}
+接續上例。另一個可能寫法是先過濾出「平方之後結尾為 |25|」的數字，
+再算這些數字的平方：
+```spec
+  map square (filter ((==25) . (`mod` 100) . square) [0..50]) {-"~~."-}
+```
+{.nobreak}這個算式也歸約出一樣的結果：|[25,225,625,1225,2025]|。
+
+稍微推廣一些，這個例子暗示我們 |filter p . map f| 和 |map f . filter (p . f)| 似乎是等價的。
+但確實如此嗎？我們也將在第\@ref{ch:induction}章中討論。
+:::
+
+:::{.example}
+接續上例。如果我們不僅希望找到結尾為 $25$ 的平方數，也希望知道它們是什麼數字的平方，
+一種寫法如下：
+```spec
+  filter ((==25) . (`mod` 100) . snd) (map (fork id square) [0..50]) {-"~~."-}
+```
+{.nobreak}我們用 |map (fork id square)| 將每個數字與他們的平方放在一個序對中，
+得到|[(0,0), (1,1), (2,4), (3,9)...]|.
+而 |filter| 的述語多了一個 |snd|, 表示我們只要那些「第二個元素符合條件」的序對。
+上式化簡後可得到 |[(5,25),| |(15,225),| |(25,625),| |(35,1225),| |(45,2025)]|.
+運算元 |fork| 的定義詳見第\@pageref{par:split-product}頁。
+
+述語 |(==25) . (`mod` 100) . snd| 可以展開為 |(\(i,n) -> n `mod` 100 == 25)|.
+:::
+
+{title="取、丟、與過濾"} 函數 |takeWhile|, |dropWhile| 和 |filter| 有一樣的型別。
+```spec
+takeWhile  :: (a -> Bool) -> List a -> List a {-"~~,"-}
+dropWhile  :: (a -> Bool) -> List a -> List a {-"~~."-}
+```
+它們之間的差異也許用例子解釋得最清楚：
+```spec
+filter     even [6,2,4,1,7,8,2] = [6,2,4,8,2] {-"~~,"-}
+takeWhile  even [6,2,4,1,7,8,2] = [6,2,4] {-"~~,"-}
+dropWhile  even [6,2,4,1,7,8,2] = [1,7,8,2] {-"~~."-}
+```
+|filter p| 挑出所有滿足 |p| 的元素；
+|takeWhile p| 由左往右逐一取出元素，直到遇上第一個不滿足 |p| 的元素，並將剩下的串列丟棄；
+|dropWhile p| 則與 |takeWhile p| 相對，將元素丟棄，直到遇上第一個不滿足 |p| 的元素。
+直覺上，後兩者似乎也應該滿足 |takeWhile p xs ++ dropWhile p xs = xs|, 但這仍尚待驗證。
+
+:::{.example #ex:fromto-takeWhile-iterate}
+給定整數 |m| 與 |n|, |[m..n]| 可視為 |takeWhile (<= n) (iterate (1+) m)| 的簡寫。
+:::
+
+:::{.example}
+讀者也許覺得 |takeWhile| 或 |dropWhile| 似乎和迴圈有密切關係。
+確實，利用 |iterate| 與 |dropWhile|，我們可定義出類似 |while| 迴圈的操作：
+```haskell
+until :: (a -> Bool) -> (a -> a) -> a -> a
+until p f = head . dropWhile (not . p) . iterate f
+```
+{.nobreak}|until p f x| 由 |x| 算出 |f x|, 由 |f x| 算出 |f (f x)| ...
+直到 |p (f (f .. x))| 成立為止。例：
+|until ((> 50) . square) (1+) 0| 得到 |8|, 因為 $8^2 = 64$,
+是第一個平方大於 $50$ 的非負整數。
+由於惰性求值，|iterate f| 在意義上雖然是個無窮串列，
+但只會被執行到 |dropWhile (not . p)| 擷取的長度為止。
+
+下述函數則實作了用輾轉相減法求最大公因數的古典演算法。函數 |minus| 不斷
+將大數減去小數，直到兩數相等為止：
+```haskell
+gcd :: (Int :* Int) -> Int
+gcd = fst . until (uncurry (==)) minus {-"~~,"-}
+  where minus (x,y)  | x > y = (y, x-y)
+                     | x < y = (y-x, x) {-"~~."-}
+```
+{.nobreak}關於 |uncurry| 詳見第\@pageref{par:currying-uncurrying}頁。
+:::
+
+:::{.exlist}
+:::{.exer}
+試定義一個函數
+|squaresUpTo :: Int -> List Int|, 使得 |squaresUpTo n| 傳回
+所有不大於 |n| 的平方數。例：|squaresUpTo 10 = [1,4,9]|,
+|squaresUpTo (-1) = []|.
+:::
+::: {.exans .compact}
+```haskell
+squaresUpTo :: Int -> List Int
+squaresUpTo n = takeWhile (<= n) (map square [0..]) {-"~~."-}
+```
+:::
+:::
+
+
+{title="拉鍊"}
+函數 |zip :: List a -> List b -> List (a :* b)| 的作用可由下述例子示範：
+```spec
+zip [1,2,3]  "abc"  = [(1,'a'), (2,'b'), (3,'c')] {-"~~,"-}
+zip [1,2]    "abc"  = [(1,'a'), (2,'b')] {-"~~,"-}
+zip [1,2,3]  "ab"   = [(1,'a'), (2,'b')] {-"~~,"-}
+zip [1..]    "abc"  = [(1,'a'), (2,'b'), (3,'c')] {-"~~,"-}
+zip [1..]    [2..]  = [(1,2), (2,3), (3,4) ..] {-"~~,"-}
+```
+{.nobreak}|zip xs ys| 將串列 |xs| 與 |ys| 相對應的元素放在序對中。
+如果兩個串列長度不同，|zip| 將其中一個用完後即停止。
+|zip| 也能處理無限長的串列。
+由於這個動作看來像是把|xs|與|ys|當作拉鍊的兩側「拉起來」，因此用拉拉鍊的狀聲詞 ``zip'' 命名。
+
+相對地，也有一個函數 |unzip :: List (a :* b) -> (List a :* List b)|，
+將「拉鍊」拉開。例：|unzip [(1,'a'), (2,'b'), (3,'c')]| 可得到
+|([1,2,3],"abc")|.
+
+許多情況下，我們不想要把兩兩對應的元素放到序對中，而是分別餵給一個二元運算子。
+這時可用另一個相關函數 |zipWith|, 例：
+|zipWith (+) [1,2,3] [4,5,6] = [5,7,9]|
+函數 |zipWith| 可以這樣定義：
+```spec
+zipWith :: (a -> b -> c) -> List a -> List b -> List c
+zipWith f = map (uncurry f) . zip {-"~~."-}
+```
+
+:::{.exlist}
+:::{.exer}
+用 |zipWith| 定義 |zip|.
+:::
+:::{.exans}
+\Answer |zip = zipWith (,)|, 或 |zip = zipWith (\x y -> (x,y))|.
+:::
+:::
+
+:::{.example #ex:positions}
+試定義函數 |positions :: Char -> String -> List Int|, 使得
+|positions z xs| 傳回 |z| 在 |xs| 中出現的所有位置。
+例：|positions 'o' "hoola hooligans" = [1,2,7,8]|.
+:::
+:::{.answer}
+一種可能寫法如下：
+```haskell
+positions z = map fst . filter ((==z) . snd) . zip [0..] {-"~~."-}
+```
+{.nobreak}我們用 |zip [0..]| 為輸入串列標上位置，用 |filter ((==z) . snd)|
+取出第二個元素等於 |z| 的序對，最後用 |map fst| 取出所有位置。
+注意函數合成與 currying 的使用。
+:::
+
+:::{.example}
+接續上例。如果我們僅想要 |z| 出現的第一個位置呢？我們可以定義：
+```spec
+pos :: Char -> String -> Int
+pos z = head . positions z {-"~~."-}
+```
+{.nobreak}這是一個部分函數，|pos z xs| 傳回 |positions z xs| 的第一個結果。
+如果 |z| 沒有出現，|positions z xs| 傳回 |[]|, |pos z xs|
+會得到執行期錯誤。如果 |z| 出現在 |xs| 中，由於惰性求值，|pos|
+得到第一個位置後 |positions| 便會停下，不會把串列整個產生。
+
+如果我們希望 |pos| 在 |z| 沒有出現時傳回 |-1|, 可以這麼做：
+```spec
+pos :: Char -> String -> Int
+pos z xs = case positions z xs of
+            []      -> -1
+            (i:is)  -> i {-"~~."-}
+```
+:::
+
+
+## 全麥編程 {#sec:wholemeal}
+
+讀者至此應已注意到本章採用的特殊編程風格。
+一般說到串列，大家會先想到資料結構課程中常提到的連結串列(linked list)。
+介紹連結串列的範例程式大多用迴圈或遞迴追蹤著指標，一個一個地處理串列中的元素。
+在指令式語言中做關於陣列的操作時，也常用變數或指標指著「目前的」元素，
+並在一個迴圈中將該變數逐次遞增或減。
+總之，我們處理聚合型資料結構時，總是將其中元素一個個取出來處理。
+但本章的做法不同：我們將整個串列視為一個整體，對整個串列做 |map|, |filter|, |dropWhile| 等動作，或將它和另一個串列整個 |zip| 起來...。
+
+這種編程方式被稱作*全麥編程*(*wholemeal programming*)，\index{wholemeal programming 全麥編程}
+第\@ref{sec:refs-basics}節中將解釋此詞的由來。
+全麥編程的提倡者們認為：一個個地處理元素太瑣碎，而鼓勵我們拉遠些，
+使用組件，以更抽象的方式組織程式的結構。
+
+諸如 |map|, |filter|, |iterate|, |zipWith| 等等組件其實都是常見的編程模式。
+它們可被視為*為了特定目的已先寫好的迴圈*。
+拜高階函數與惰性求值之賜，這些組件能容易地被重用在許多不同脈絡中。
+這麼做的好處之一是：諸如 |map|, |filter|, |zip| 等組件的意義清楚，
+整個程式的意義也因此會比起自行在迴圈中一個個處理元素來得容易理解。
+事實上，這麼做可以養成我們思考演算法的新習慣。
+一些常見的編程模式現在是有名字的，我們*把編程模式抽象出來*了。
+而如同第\@ref{ch:intro}章所述，抽象化是我們理解、掌握、操作事物的重要方法。
+我們現在有了更多詞彙去理解、討論程式與演算法：
+「這個演算法其實就是先做個 |map|，把結果 |concat| 起來，然後做 |filter|...」
+
+在本書其他章節中我們也將看到：這些抽象化方便我們去操作、轉換程式。
+具體說來，如果程式用這些組件拼湊成，我們對這些組件知道的性質都可用在我們的程式上。
+例如，如果我們知道 |map f . map g = map (f . g)|，
+當我們看到程式中有兩個相鄰的 |map|, 我們可用已知的性質把他們合併成一個 ---
+這相當於合併兩個迴圈。或著我們可以把一個 |map| 拆成兩個，以方便後續的其他處理。
+程式的建構方法使得程式含有更多資訊，使我們有更多可操作的空間。
+
+全麥編程之所以成為可能，有賴程式語言的支援。
+例如，高階函數使得我們能將與特定問題相關的部分
+（如 |map f| 與 |filter p| 中的 |f| 與 |p|）抽象出來；
+惰性求值使我們勇於使用大串列或無限串列作為中間值，不用擔心它們被不必要地真正算出。
+
+此外，全麥編程也需要豐富的組件函式庫。設計良好的組件捕捉了常見的編程模式，
+有了它們的幫忙，我們的程式可寫得簡潔明暸 ---
+本章之中大部分的程式都是都是一行搞定的 ``one-liner''.
+但，這些組件不可能窮舉所有的編程模式。我們仍會需要自行從頭寫些函數。
+受到全麥編程影響，在自行寫函數時，我們也常會希望將它們寫得更通用些，
+藉此發現常見的編程模式，設計出可重用的組件。
+
+全麥編程能寫出多實用的程式？
+第\@ref{sec:refs-basics}節中會提及其他學者嘗試過的，包含解密碼、解數獨在內的有趣例子。
+在本節，我們則想示範一個小練習：由下至上的合併排序(merge sort)。
+\index{merge sort 合併排序!bottom-up 由下至上}
+
+{title="合併排序"} 假設我們已有一個函數 |merge' :: (List Int :* List Int) -> List Int|,
+如果 |xs| 與 |ys| 已經排序好，|merge' (xs,ys)| 將它們合併為一個排序好的串列。%
+^[之所以取名為 |merge'|，因為在第\@ref{sec:well-founded-induction}節中我們將使用一個類似且相關的函數 |merge :: List Int -> List Int -> List Int|.]
+函數 |merge'| 可用第\@ref{sec:lexicographic-induction}節的方式歸納寫成，
+也可使用將在第\todo{where}章提及的組件 |unfoldr| 做出。
+我們如何用 |merge'| 將整個串列排序好呢？
+
+一般書中較常提及由上至下的合併排序：
+將輸入串列（或陣列）切成長度大致相等的兩半，分別排序，然後合併。
+本節則以由下至上的方式試試看。
+如果輸入串列為|[4,2,3,5,8,0,1,7]|，我們先把
+每個元素都單獨變成串列，也就是變成|[[4],[2],[3],[5],[8],[0],[1],[7]]|。
+然後把相鄰的串列兩兩合併：|[[2,4],[3,5],[8,0],[1,7]]|，
+再兩兩合併成為 |[[2,3,4,5],[0,1,8,7]]|，
+直到只剩下一個大串列為止。
+
+如果我們定義兩個輔助函數：|wrap| 將一個元素包成一個串列，
+|isSingle| 判斷一個串列是否只剩下一個元素，
+::: {.multicols}
+::: {.mcol width="0.4\\textwidth"}
+```haskell
+wrap :: a -> List a
+wrap x = [x] {-"~~,"-}
+```
+:::
+::: {.mcol width="0.4\\textwidth"}
+```haskell
+isSingle :: List a -> Bool
+isSingle [x]  = True
+isSingle xs   = False {-"~~."-}
+```
+:::
+:::
+{.nobreak}那麼上述的合併排序可以寫成：
+```spec
+msort = head . until isSingle mergeAdj . map wrap {-"~~."-}
+```
+{.nobreak}這幾乎只是把口語描述逐句翻譯：先把每個元素都包成串列，
+反覆做 |mergeAdj| 直到只剩下一個大串列，然後將那個大串列取出來。
+
+下一項工作是定義 |mergeAdj :: List (List Int) -> List (List Int)|,
+其功能是將相鄰的串列兩兩合併。
+如果我們能訂出一個函數 |adjs :: List a -> List (a :* a)|,
+將相鄰的元素放在序對中，|mergeAdj| 就可以寫成：
+```spec
+mergeAdj = map merge' . adjs {-"~~."-}
+```
+
+但 |adjs| 該怎麼定義呢？
+對大部分讀者來說，最自然的方式也許是用第\@ref{ch:induction}章將討論的歸納法。
+但作為練習，我們姑且用現有的組件試試看。
+先弄清楚我們對 |adjs| 的期待。
+當 |xs = [x0,x1,x2,x3]|, 我們希望
+|adjs xs = [(x0,x1),(x2,x3)]|.
+但當 |xs| 有奇數個元素時，例如 |xs = [x0,x1,x2,x3,x4]|,
+最後一個元素 |x4| 便落單了。
+如果是為了合併排序，我們也許可以把 |x4| 和 |[]| 放在一起，
+|adjs xs = [(x0,x1),(x2,x3),(x4,[])]|.
+但為使 |adjs| 適用於更多的情況，也許我們應該讓它多拿一個參數，
+當作落單的元素的配對。
+因此我們把 |adjs| 的型別改為 |a -> List a -> List (a :* a)|,
+希望 |adjs z xs = [(x0,x1),(x2,x3),(x4,z)]|.
+
+我們試著看看這可如何辦到。
+
+  * 首先，|zip xs (tail xs)| 可把 |xs| 的每個元素和其下一個放在序對中。
+    例：當 |xs = [x0,x1,x2,x3,x4]| 時，
+    |zip xs (tail xs)| 的值是 |[(x0,x1),| |(x1,x2),| |(x2,x3),| |(x3,x4)]|.
+  * 如果我們為 |zip| 的第二個參數補上一個 |z|,
+    成為 |zip xs (tail (xs ++ [z]))|，
+    這可歸約為 |[(x0,x1),(x1,x2),(x2,x3),(x3,x4),(x4,z)]|。
+  * 再將位置（由 |0| 算起）為奇數的元素丟棄，我們便得到原先希望的
+    |[(x0,x1),(x2,x3),(x4,z)]| 了！
+
+讀者可試試看當 |xs| 有偶數個元素時的情況。
+總之，|adjs| 可定義成：
+```haskell
+adjs ::  a -> List a -> List (a :* a)
+adjs z xs = everyother (zip xs (tail xs ++ [z])) {-"~~,"-}
+```
+{.nobreak}其中 |everyother ys| 把 |ys| 中位置為奇數的元素丟棄。
+
+最後，考慮如何把串列中位置為奇數的元素丟棄。
+一種做法是：一直從串列中丟掉頭兩個元素，直到串列用完：
+```haskell
+everyother :: List a -> List a
+everyother = map head . takeWhile (not . null) . iterate (drop 2) {-"~~."-}
+```
+
+總而言之，由下至上的合併排序可寫成：
+```haskell
+msort :: List Int -> List Int
+msort = head . until isSingle mergeAdj . map wrap {-"~~,"-}
+```
+{.nobreak}其中 |mergeAdj| 的定義是：
+```haskell
+mergeAdj :: List (List Int) -> List (List Int)
+mergeAdj = map merge' . adjs [] {-"~~."-}
+```
+
+
+``` {.haskell .invisible}
+merge' :: Ord a => (List a :* List a) -> List a
+merge' ([],    ys)    = ys
+merge' (x:xs,  [])    = x:xs
+merge' (x:xs,  y:ys)  | x <= y     = x : merge' (xs, y:ys)
+                      | otherwise  = y : merge' (x:xs, ys) {-"~~."-}
+```
+
+如果我們想看到合併排序完成前的每一步驟，可將 |msort| 中
+（以 |iterate| 與 |dropWhile| 定義出）的 |until|
+改為 |iterate| 與 |takeWhile|:
+```haskell
+msortSteps :: List Int -> List (List (List Int))
+msortSteps = takeWhile (not . isSingle) . iterate mergeAdj . map wrap {-"~~."-}
+```
+{.nobreak}例如，|msortSteps [9,2,5,3,6,4,7,0,5,1,8,2,3,1]| 可得到
+```spec
+[  [[9],[2],[5],[3],[6],[4],[7],[0],[5],[1],[8],[2],[3],[1]],
+   [[2,9],[3,5],[4,6],[0,7],[1,5],[2,8],[1,3]],
+   [[2,3,5,9],[0,4,6,7],[1,2,5,8],[1,3]],
+   [[0,2,3,4,5,6,7,9],[1,1,2,3,5,8]]] {-"~~."-}
+```
+{.nobreak}最後兩個串列合併為 |[0,1,1,2,2,3,3,4,5,5,6,7,8,9]|，即為 |msort| 的結果。
+
+
+## 自訂資料型別 {#sec:user-defined-data}
+
+本章目前為止給讀者看到的 |data| 定義其實都是 Haskell 已內建的型別。
+使用者也可自己定義新資料型別。
+例如，我們可能定義一個新型別表達四個方向：
+```spec
+data Direction = North | East | South | West {-"~~,"-}
+```
+或著定義一個表示顏色的型別，用三個浮點數表達紅、綠、藍的比例：
+```haskell
+data RGBColor = RGB Float Float Float {-"~~,"-}
+```
+例：土耳其藍(turquoise)可寫成 |RGB 0.25 0.875 0.8125|.
+下列函數則降低一個顏色的彩度：
+^[這是一個簡便的做法：算出該顏色的灰度 |gr|,
+然後計算每個原色與該灰度的線性內插。
+更準確的作法應將 RGB 轉成 HSV，以後者調整飽和度。]
+```haskell
+desaturate :: Float -> RGBColor -> RGBColor
+desaturate p (RGB r g b) =
+    RGB  (r +. p *. (gr -. r)) (g +. p *. (gr -. g)) (b +. p *. (gr -. b)) {-"~~,"-}
+  where gr = r *. 0.299 +. g *. 0.587 +. b *. 0.144 {-"~~."-}
+```
+
+我們也可定義如 |List| 一樣的遞迴資料型別。
+例如，資料結構中可能談到兩種二元樹狀結構，一種僅在內部節點有標示（稱作 internally labelled），另一種僅在葉節點有表示（稱作 externally labelled）。
+這兩種二元樹可分別表示如下：
+```haskell
+data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
+data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
+```
+``` {.haskell .invisible}
+deriving instance Eq a => Eq (ITree a)
+deriving instance Eq a => Eq (ETree a)
+deriving instance Show a => Show (ITree a)
+deriving instance Show a => Show (ETree a)
+```
+
+怎麼編寫這種資料結構上的程式呢？我們將在下一章中說到。
+
+## 參考資料 {#sec:refs-basics}
+
+本章中的許多想法取自 @Bird:98:Introduction ，該書是我相當推薦的 Haskell 教材。
+
+::: {.infobox title="Haskell 為何叫 Haskell?"}
+1980 年代中期，程式語言學者們已各自開發出了許多個語法、語意類似但卻稍有不同、大都只在出生機構被使用的惰性純函數語言。沒有一個語言取得壓倒性的優勢。
+為溝通方便、以及為了讓整個領域能走向下一步，大家有了該設計個統合、共通的惰性純函數語言的共識。
+1988年一月，新語言設計小組在耶魯大學開會，眾多討論項目中包括幫語言取個名字。
+以下軼事節錄自 @Hudak:07:Being .
+
+當天被提出的選項包括 Haskell, Vivaldi, Mozart, CFL (Common Functional Language), Curry, Frege, Peano, Nice, Fun, Light...等等。最後經程序選出的名字是 ``Curry'', 紀念邏輯學家 Haskell B. Curry --- 他在組件邏輯(combinatorial logic)、Curry-Howard 同構等領域的研究一直深遠影響函數語言學界。
+
+但當天晚上就有人覺得這名字會招惹太多雙關語笑話。除了咖哩之外，小組成員覺得實在不行的是：TIM (three instruction machine) 是函數語言用的一種抽象機器，但 Tim Curry 則成了電影洛基恐怖秀（Rocky Horror Picture Show, 1975）的男主角。
+
+於是新語言的名字就改成 Haskell 了。
+
+小組成員 Paul Hudak 和 David Wise 寫信給 Curry 的遺孀 Virginia Curry，徵求她的同意。Hudak 後來親自登門拜訪，Virginia Curry 和他聊了之前的訪客（包含 Church 與 Kleene）的故事；後來她也去聽了 Hudak 關於 Haskell （語言）的演講，表現得十分友善。臨別前，她說：「其實呀，Haskell 一直都不喜歡他的名字。」
+:::
+
+{title="Currying"}
+Moses [@Schonfinkel:24:Uber] 提出多參數函數可用單參數函數表達。
+Haskell Curry 在許多著作中（例：@Curry:80:Some ）使用 currying，
+但當時並沒有 currying 一詞。
+為何此概念最後會以 Curry 命名呢？
+David A. Turner （Haskell 語言的前身之一 Miranda 的設計人）
+在一次網路討論 [@Sankar:97:Currying] 中表示 currying 一詞由
+Christopher Strachey 取名，於 1967 年前後使用在其上課資料中。
+這種說法目前廣被大家接受，但我目前尚未找可佐證的上課資料。
+相反地，@Strachey:67:Fundamental 之中明確表示他認為 currying
+的概念是由 Sch\"{o}nfinkel 發明的，並稱之為「Sch\"{o}nfinkel 的裝置」。
+^[原文：``There is a device originated by Sch\"{o}nfinkel,
+for reducing operators with several operands to the successive application of single operand operators.'']
+但 currying 的想法可追溯得比 Sch\"{o}nfinkel 或 Curry 都早。
+F. L. Gottlob Frege 1891 年的
+\"{U}ber Funktion und Begriff (英譯 Function and Concept)
+[@Frege:60:Function] 結尾幾頁的概念即是 currying.
+
+{title="全麥編程"}
+「全麥編程」一詞由牛津大學 Geraint Jones 取名，由來可能是模仿健康食物的說詞。
+如 @Bird:10:Pearls[第19章] 便寫道，「全麥編程好處多多，可預防『索引症』(indexitis)，鼓勵合法的程式建構。」
+在該章之中，Richard Bird 以大量使用串列組件函數的全麥編程為起點，
+推導出能相當迅速地解數獨的程式。
+@Hinze:09:La 以全麥編程為工具，示範了河內塔問題(Tower of Hanoi)
+的許多性質，以及其與謝爾賓斯基(Sierpi\'{n}ski)三角形的關係。
+其中寫道「函數語言擅長全麥編程。這個詞彙由 Geraint Jones 命名。
+全麥編程意謂由大處去想：處理整個串列，而不是一連串的元素；發展出整個解答的空間，而不是個別的解答；想像整個圖，而不是單一的路徑。對於已知的問題，全麥編程常給我們新洞察與新觀點。」
+@Hutton:16:Programming[第五章] 則以編、解密碼為例。
+*凱撒加密*(*Caesar cipher*)為一種簡單的加密方式：
+將明文中的每個字母都往前或後偏移固定的量，例如當偏移量為 |2| 時， |'a'| 變成 |'c'|，
+|'b'| 變成 |'d'| ... 一種解凱撒密碼的有效方式是計算密文中每個字母的分佈，和一般英文文章中的平均字母分佈做比較，藉以猜出偏移量。Graham Hutton 在書中示範如何用組件函數、完全不用遞迴地寫出編碼與解碼程式。以上都是相當值得一看的例子。
+
+{title="LISP 的串列"}
+誕生於 1958 年的 LISP \index{LISP} 是目前仍被使用的高階程式語言中歷史第二悠久的 --- 最早的是 FORTRAN.
+但 LISP 與 FORTRAN 是風格截然不同的語言。
+雖然具有含副作用的指令，LISP 仍被認為是函數語言的先驅。
+
+LISP 為「串列處理(list processing)」的縮寫。
+但事實上，LISP 中的聚合資料結構「|S| 算式 (S-expression)」不只可用來表達串列。
+|CONS| 函數做出的是一個序對，
+其中第一個元素被稱作 |CAR| (contents of the address part of register),
+第二個稱作 |CDR| (contents of the decrement part of register).
+如果 |CDR| 的部分仍是一個 |CONS| 做出的序對，或是特殊值 |NIL|,
+整個結構表達的就是一個串列。
+|S| 算式也可用來做出二元樹、語法樹... 等等。
+Haskell 串列的建構元 |[]| 可唸成 ``nil'', |(:)| 唸成 ``cons'', 這兩個詞彙都從 LISP 而來。
+
+在前幾波人工智慧熱潮時，大家認為符號與邏輯的處理是人工智慧的基礎。
+但早期的程式語言大多針對數值運算而設計，會處理串列的 LISP 便被視為最適合做符號處理的語言 ---「人工智慧用的語言」。
+另一個被視為「人工智慧專用語言」的是奠基於述語邏輯與歸結(resolution)
+\index{logic programming 邏輯編程!resolution 歸結}
+的 PROLOG.
+今日的人工智慧技術以神經網路為基礎，「人工智慧專用語言」的頭銜則給了 Python。
