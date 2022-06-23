@@ -30,6 +30,7 @@ dependencies:
 - uniplate >= 1.6 && < 1.7
 - deepseq
 - bytestring
+- directory
 
 library:
   source-dirs: src
@@ -44,4 +45,3 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - bookdownlight
-
