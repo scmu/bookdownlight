@@ -25,11 +25,9 @@ renderBlock h (Para is) = do
   hPutStr h "\n"
 renderBlock h (Header hd attrs is) = renderHeader h hd attrs is
 renderBlock h (Blockquote bs) =
-  do envBegin h "quote"
-     hPutStr h "\\emph{"
+  do hPutStr h "\\blockquote{\n"
      renderBlocks h bs
-     hPutStr h "}%\\emph\n"
-     envEnd h "quote"
+     hPutStr h "}\n"
 renderBlock h (List _ lt items) =
   do hPutStr h ("\\begin{" ++ ltype  ++ "}\n")
      mapM_ renderLItem items
@@ -67,8 +65,7 @@ renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
    renderBlocks h bs
    envEnd h c
  where thmEnvs :: [Text]
-       thmEnvs = ["theorem", "lemma", "definition", "example",
-                  "proof"]
+       thmEnvs = ["theorem", "lemma", "definition", "example"]
 
 renderDIV h "figure" cs ids avs bs = do
    T.hPutStr h "\\begin{figure}"
@@ -178,7 +175,7 @@ renderCode h ("haskell" : cs) ids _ txt  =
      T.hPutStr h txt
      hPutChar h '\n'
      envEnd h "code"
-     when invisible (T.hPutStr h "%endif\n")
+     when invisible (T.hPutStr h "%endif")
  where invisible = "invisible" `elem` cs
 renderCode h ("texonly" : _) _ _ txt =
   T.hPutStr h txt >> hPutChar h '\n'
