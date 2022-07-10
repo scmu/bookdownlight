@@ -26,9 +26,9 @@ renderBlock h (Para is) = do
 renderBlock h (Header hd attrs is) = renderHeader h hd attrs is
 renderBlock h (Blockquote bs) =
   do envBegin h "quote"
-     hPutStr h "\\emph{"
+     hPutStr h "{\\em"
      renderBlocks h bs
-     hPutStr h "}%\\emph\n"
+     hPutStr h "}%\\em\n"
      envEnd h "quote"
 renderBlock h (List _ lt items) =
   do hPutStr h ("\\begin{" ++ ltype  ++ "}\n")
@@ -170,7 +170,7 @@ renderCode h cls ids _ txt | "spec" `elem` cls =
      T.hPutStr h txt
      hPutChar h '\n'
      envEnd h "spec"
-renderCode h ("haskell" : cs) ids _ txt  =
+renderCode h cls ids _ txt | "haskell" `elem` cls =
   do when invisible (T.hPutStr h "%if False\n")
      envBegin h "code"
      mapM_ (renderLabel h) ids
@@ -179,8 +179,17 @@ renderCode h ("haskell" : cs) ids _ txt  =
      hPutChar h '\n'
      envEnd h "code"
      when invisible (T.hPutStr h "%endif\n")
- where invisible = "invisible" `elem` cs
-renderCode h ("texonly" : _) _ _ txt =
+ where invisible = "invisible" `elem` cls
+renderCode h cls ids _ txt | "equation" `elem` cls =
+  do envBegin h alignEnv
+     hPutChar h '\n'
+     T.hPutStr h txt
+     mapM_ (renderLabel h) ids
+     hPutChar h '\n'
+     envEnd h alignEnv
+ where alignEnv | null ids = "align*"
+                | otherwise = "align"
+renderCode h cls _ _ txt | "texonly" `elem` cls =
   T.hPutStr h txt >> hPutChar h '\n'
 renderCode h ("verbatim" : cs) ids _ txt  =
   do envBegin h "verbatim"
