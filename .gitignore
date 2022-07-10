@@ -22,3 +22,9 @@ tex/fpbook.pdf
 *.ptb
 
 *.toc
+
+lhs/Chapters/
+
+tex/Chapters/
+
+tex/fpbook.bbl
