@@ -31,6 +31,7 @@ library
       Cheapskate.ParserCombinators
       Cheapskate.Types
       Cheapskate.Util
+      Testing
   other-modules:
       Paths_bookdownlight
   hs-source-dirs:
@@ -44,6 +45,7 @@ library
     , deepseq
     , directory
     , mtl >=2.1 && <2.3
+    , shake
     , syb
     , text >=0.9 && <1.3
     , uniplate ==1.6.*
@@ -67,6 +69,7 @@ executable bookdownlight-exe
     , deepseq
     , directory
     , mtl >=2.1 && <2.3
+    , shake
     , syb
     , text >=0.9 && <1.3
     , uniplate ==1.6.*
