@@ -20,24 +20,26 @@ import Development.Shake.Util
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
 
-        want ["tex/fpbook.tex"]
+        want [texBase </> "fpbook.pdf"]
 
         forM_ chapters (\ch ->
-          ("lhs/Chapters/" </> ch <.> "lhs") %> \lhsName -> do
-            let mdName = "contents" </> ch <.> "md"
+          (lhsChs </> ch <.> "lhs") %> \lhsName -> do
+            let mdName = contents </> ch <.> "md"
             need [mdName]
+            putInfo ("# md->lhs (for " ++ lhsName ++ ")")
             liftIO (genLHs mdName lhsName))
 
         forM_ chapters (\ch ->
-          ("tex/Chapters/" </> ch <.> "tex") %> \texName -> do
-            let lhsName = "lhs/Chapters/" </> ch <.> "lhs"
+          (texChs </> ch <.> "tex") %> \texName -> do
+            let lhsName = lhsChs </> ch <.> "lhs"
             need [lhsName]
-            command_ [Cwd "tex", FileStdout texName]
+            command_ [Cwd texBase, FileStdout texName]
                "lhs2TeX" [".." </> lhsName])
 
-        "tex/fpbook.tex" %> \out -> do
-           need (map (\ch -> "tex/Chapters/" </> ch <.> "tex") chapters)
-           command_ [Cwd "tex"]
+        (texBase </> "fpbook.pdf") %> \out -> do
+           need (map (\ch -> texChs </> ch <.> "tex") chapters)
+           need [texBase </> "fpbook.tex"]
+           command_ [Cwd texBase]
                "xelatex" ["fpbook"]
 
 genLHs :: String -> String -> IO ()
@@ -46,7 +48,7 @@ genLHs mdname lhsname = do
     readFile lhsHeader >>= TIO.hPutStr hdl
     readFile mdname >>= handle hdl
     hClose hdl
-  where lhsHeader = "templates/lhsheader.lhs"
+  where lhsHeader = tmpls </> "lhsheader.lhs"
 
 handle :: Handle -> Text -> IO ()
 handle h = texRender h . markdown def
@@ -64,9 +66,9 @@ chapters = [ "Introduction"
            ]
 -- paths
 
-contents projBase = projBase ++ "contents/"
-texBase  projBase = projBase ++ "tex/"
-lhsBase  projBase = projBase ++ "lhs/"
-lhsChs   projBase = lhsBase projBase ++ "Chapters/"
-texChs   projBase = texBase projBase ++ "Chapters/"
-tmpls    projBase = projBase ++ "templates/"
+contents = "contents"
+texBase  = "tex"
+lhsBase  = "lhs"
+lhsChs   = lhsBase </> "Chapters"
+texChs   = texBase </> "Chapters"
+tmpls    = "templates"
