@@ -28,3 +28,5 @@ lhs/Chapters/
 tex/Chapters/
 
 tex/fpbook.bbl
+
+_build/
