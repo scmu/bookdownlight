@@ -7,6 +7,9 @@
 {\\em (.*?)}
 *$1*
 
+{\\bf (.*?)}
+**$1**
+
 \\ref{
 \\@ref{
 
@@ -49,6 +52,24 @@
 \\end{code}
 ```
 
+\\begin{example}\n\\label{(.*?)}
+:::{.example #$1}
+
+\\begin{example}
+:::{.example}
+
+\\end{example}
+:::
+
+\\begin{theorem}\[(.*?)\]\n\\label{(.*?)}
+:::{.theorem title="$1" #$2}
+
+\\begin{theorem}\[(.*?)\]
+:::{.theorem title="$1"}
+
+\\end{theorem}
+:::
+
 \\citep{(.*?)}
 [@$1]
 
@@ -57,6 +78,9 @@
 
 %if False\n```haskell
 ```{.haskell .invisible}
+
+```\n%endif\n([^%\\\n{`])
+```\n{.noindent}$1
 
 ```\n%endif
 ```
