@@ -164,16 +164,18 @@ renderLabel h xs = T.hPutStr h "\\label{" >> T.hPutStr h xs >> hPutChar h '}'
 
 renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
-  do envBegin h "spec"
-     mapM_ (renderLabel h) ids
+  do when (not (null ids))
+        (mapM_ (renderLabel h) ids >> hPutChar h '\n')
+     envBegin h "spec"
      hPutChar h '\n'
      T.hPutStr h txt
      hPutChar h '\n'
      envEnd h "spec"
 renderCode h cls ids _ txt | "haskell" `elem` cls =
   do when invisible (T.hPutStr h "%if False\n")
+     when (not (null ids))
+      (mapM_ (renderLabel h) ids >> hPutChar h '\n')
      envBegin h "code"
-     mapM_ (renderLabel h) ids
      hPutChar h '\n'
      T.hPutStr h txt
      hPutChar h '\n'
@@ -198,8 +200,9 @@ renderCode h ("verbatim" : cs) ids _ txt  =
      hPutChar h '\n'
      envEnd h "verbatim"
 renderCode h _ ids _ txt = do
-  do envBegin h "code"
-     mapM_ (renderLabel h) ids
+  do when (not (null ids))
+       (mapM_ (renderLabel h) ids >> hPutChar h '\n')
+     envBegin h "code"
      hPutChar h '\n'
      T.hPutStr h txt
      hPutChar h '\n'
