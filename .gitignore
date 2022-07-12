@@ -30,3 +30,7 @@ tex/Chapters/
 tex/fpbook.bbl
 
 _build/
+
+tex/fpbook.ind
+
+*.ilg

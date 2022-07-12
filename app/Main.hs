@@ -61,8 +61,8 @@ chapters = [ "Introduction"
            , "Basics"
            , "Induction"
            , "Semantics"
-           -- , "Derivation"
-           -- , "Folds"
+           , "Derivation"
+           , "Folds"
            ]
 -- paths
 
