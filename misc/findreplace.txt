@@ -1,0 +1,80 @@
+\\paragraph{(.*?)}
+{title="$1"}
+
+\\emph{(.*?)}
+*$1*
+
+{\\em (.*?)}
+*$1*
+
+\\ref{
+\\@ref{
+
+\\eqref{
+\\@eqref{
+
+\\pageref{
+\\@pageref{
+
+\\section{(.*?)}\n\\label{(.*?)}
+## $1 {#$2}
+
+\\section{(.*?)}
+## $1
+
+\\subsection{(.*?)}\n\\label{(.*?)}
+### $1 {#$2}
+
+\\subsection{(.*?)}
+### $1
+
+\\footnote{(.*)}
+^[$1]
+
+\\end{spec}\n([^%\\\n{])
+\\end{spec}\n{.noindent}$1
+
+\\end{code}\n([^%\\\n{])
+\\end{code}\n{.noindent}$1
+
+\\begin{spec}
+```spec
+
+\\end{spec}
+```
+
+\\begin{code}
+```haskell
+
+\\end{code}
+```
+
+\\citep{(.*?)}
+[@$1]
+
+\\cite{(.*?)}
+@$1
+
+%if False\n```haskell
+```{.haskell .invisible}
+
+```\n%endif
+```
+
+\\Exercise \\label{(.*?)}
+:::{.exer #$1}
+
+\\Exercise\n\\label{(.*?)}
+:::{.exer #$1}
+
+\\Exercise ([^%\\\n{])
+:::{.exer}\n$1
+
+\\Answer ([^%\\\n{])
+:::{.exans}\n$1
+
+\\Answer~
+:::{.exans .compact}
+
+\\Answer
+:::{.exans}
