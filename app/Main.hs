@@ -19,6 +19,7 @@ import Cheapskate.Inlines
 import Cheapskate.Types
 
 import Book.TexRender
+import Html.HtmlRender
 
 main :: IO ()
 main = -- generate lhs
@@ -26,21 +27,35 @@ main = -- generate lhs
        putStr "base dir: "
        putStr projBase
        putStr "\n"
-       mapM_ (genLHs (projBase ++ "/")) chapters
+       -- mapM_ (genLHs (projBase ++ "/")) chapters
+       mapM_ (genHtmls (projBase ++ "/")) chapters
 
-genLHs :: String -> String -> IO ()
-genLHs base chname = do
-    hdl <- openFile lhsname WriteMode
-    readFile lhsHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= handle hdl
+-- genLHs :: String -> String -> IO ()
+-- genLHs base chname = do
+--     hdl <- openFile lhsname WriteMode
+--     readFile lhsHeader >>= TIO.hPutStr hdl
+--     readFile mdname >>= handle hdl
+--     hClose hdl
+--   where mdname  = contents base ++ chname ++ ".md"
+--         lhsname = lhsChs base ++ chname ++ ".lhs"
+--         lhsHeader = tmpls base ++ "lhsheader.lhs"
+--
+-- handle :: Handle -> Text -> IO ()
+-- handle h = texRender h . markdown def
+
+--- Update
+genHtmls :: String -> String -> IO ()
+genHtmls base chname = do
+    hdl <- openFile htmlname WriteMode
+    readFile mdname >>= handleHtml hdl
     hClose hdl
   where mdname  = contents base ++ chname ++ ".md"
-        lhsname = lhsChs base ++ chname ++ ".lhs"
-        lhsHeader = tmpls base ++ "lhsheader.lhs"
+        htmlname = htmlChs base ++ chname ++ ".html"
 
-handle :: Handle -> Text -> IO ()
-handle h = texRender h . markdown def
 
+handleHtml :: Handle -> Text -> IO ()
+handleHtml h = htmlRender h . markdown def
+--- Update
 chapters :: [String]
 chapters = [ -- "Introduction"
            --,
@@ -59,8 +74,8 @@ lhsBase  projBase = projBase ++ "lhs/"
 lhsChs   projBase = lhsBase projBase ++ "Chapters/"
 texChs   projBase = texBase projBase ++ "Chapters/"
 tmpls    projBase = projBase ++ "templates/"
-
-
+htmlBase  projBase = projBase ++ "html/"
+htmlChs   projBase = htmlBase projBase ++ "Chapters/"
 -- tests
 
 readFile :: String -> IO Text
