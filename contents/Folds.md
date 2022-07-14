@@ -28,7 +28,7 @@ map :: (a -> b) -> List a -> List b
 map f []      = {-"{\color{burntorange}"-}[]{-"}"-}
 map f (x:xs)  = {-"{\color{burntorange}"-}f x{-"\,"-} :{-"\,}"-} map f xs {-"~~."-}
 ```
-{.noindent}它們都在輸入為 |[]| 時傳回某個基底值，在輸入為 |x:xs| 時在 |xs| 上遞迴呼叫，
+{.nobreak}它們都在輸入為 |[]| 時傳回某個基底值，在輸入為 |x:xs| 時在 |xs| 上遞迴呼叫，
 並將呼叫結果稍作加工。
 三者的不同之處只在橘色的部分，即基底值以及用於加工的函數：|sum| 使用 |0| 與 |(+)|, |length| 使用 |Zero| 與 |Suc|, |map f| 則使用 |[]| 與 |(f x :)|.
 如果說「抽象化」是一個高階程式語言給我們的最重要能力，我們能否將這個模式抽象出來呢？
@@ -39,13 +39,13 @@ foldr :: (a -> b -> b) -> b -> List a -> b
 foldr f e []      = e
 foldr f e (x:xs)  = f x (foldr f e xs) {-"~~."-}
 ```
-{.noindent}如此一來，|sum|, |length|, 與 |map f| 都是 |foldr| 的特例：
+{.nobreak}如此一來，|sum|, |length|, 與 |map f| 都是 |foldr| 的特例：
 ```spec
 sum     = foldr (+) 0 {-"~~,"-}
 length  = foldr (\x n -> Suc n) Zero {-"~~,"-}
 map f   = foldr (\x ys -> f x : ys) [] {-"~~."-}
 ```
-{.noindent}函數 |foldr| 是串列上的「摺(fold)」 --- |foldr| 一詞是 fold 與「右邊(right)」的縮寫，意謂該函數是一個往右結合的摺。我們將在下一節解釋。
+{.nobreak}函數 |foldr| 是串列上的「摺(fold)」 --- |foldr| 一詞是 fold 與「右邊(right)」的縮寫，意謂該函數是一個往右結合的摺。我們將在下一節解釋。
 
 ## 串列的摺
 
@@ -57,7 +57,7 @@ h :: List a -> b
 h []      = e
 h (x:xs)  = ... x ... h xs ...
 ```
-{.noindent}在 |h []| 的情況傳回某個基底值；在 |h (x:xs)| 的情況中可使用 |x| 與 |h xs| 的值。
+{.nobreak}在 |h []| 的情況傳回某個基底值；在 |h (x:xs)| 的情況中可使用 |x| 與 |h xs| 的值。
 如果上述定義中 |...| 之處*沒有出現 |xs|*, 則 |h| 的定義就能寫成一個 |foldr|.
 
 我們也可將 |foldr| 視為組件(combinator)函數之一。\index{combinator 組件}
@@ -77,7 +77,7 @@ h (x:xs)  = ... x ... h xs ...
 ===  x0 `oplus` (x1 `oplus` (x2 `oplus` foldr oplus e []))
 ===  x0 `oplus` (x1 `oplus` (x2 `oplus` e)) {-"~~."-}
 ```
-{.noindent}我們可看到 |foldr| 將串列走訪一次，將每個 |(:)| 替換成 |oplus|, 將 |[]| 替換成 |e|.
+{.nobreak}我們可看到 |foldr| 將串列走訪一次，將每個 |(:)| 替換成 |oplus|, 將 |[]| 替換成 |e|.
 式子中的括號往右邊結合，這是 |foldr| 的名字中字母 |r| 的由來。
 這種理解也便於解釋 |foldr| 的型別。
 回想串列的兩個建構元，
@@ -85,7 +85,7 @@ h (x:xs)  = ... x ... h xs ...
   * |[]| 的型別是 |List a|,
   * |(:)| 的型別是 |a -> List a -> List a|.
 
-{.noindent}函數 |foldr oplus e| 接收一個 |List a|，把其中的建構元分別替換為 |e| 與 |oplus|，藉此算出一個型別為 |b| 的值。因此，
+{.nobreak}函數 |foldr oplus e| 接收一個 |List a|，把其中的建構元分別替換為 |e| 與 |oplus|，藉此算出一個型別為 |b| 的值。因此，
 
   * |e| 是輸入為 |[]| 時立刻傳回的值，其型別必須是 |b|.
   * 至於 |oplus| 的型別，考慮 |x0 `oplus` (x1 `oplus` (x2 `oplus` e))| 這個式子。
@@ -93,7 +93,7 @@ h (x:xs)  = ... x ... h xs ...
     而 |oplus| 拿到這兩個輸入後，得算出一個型別為 |b| 的值.
     因此 |oplus| 的型別為 |a -> b -> b|.
 
-{.noindent}注意：|e| 與 |oplus| 的型別分別是將 |[]| 與 |(:)| 的型別中的 |List a| 代換成 |b| 而來。
+{.nobreak}注意：|e| 與 |oplus| 的型別分別是將 |[]| 與 |(:)| 的型別中的 |List a| 代換成 |b| 而來。
 綜合言之，
 |foldr| 的型別是 |(a -> b -> b) -> b -> List a -> b|.
 
@@ -126,12 +126,12 @@ h (x:xs)  = ... x ... h xs ...
 ```spec
  (++ ys) = foldr (:) ys {-"~~."-}
 ```
-{.noindent}一個重要的特例是當 |ys = []| 時。對任何 |xs|, |xs ++ [] = xs|. 因此 |(++[])| 是串列上的 |id|:
+{.nobreak}一個重要的特例是當 |ys = []| 時。對任何 |xs|, |xs ++ [] = xs|. 因此 |(++[])| 是串列上的 |id|:
 ```spec
 id :: List a -> List a
 id = foldr (:) [] {-"~~."-}
 ```
-{.noindent}確實，將一個串列中的 |(:)| 代換成 |(:)|, |[]| 代換成 |[]|, 我們還是得到原來的串列。
+{.nobreak}確實，將一個串列中的 |(:)| 代換成 |(:)|, |[]| 代換成 |[]|, 我們還是得到原來的串列。
 我們日後還會用到「串列上的 |id| 是一個 |foldr|」的性質。
 
 計算所有前段的函數 |inits :: List a -> List (List a)| 可寫成 |foldr|:
@@ -139,20 +139,20 @@ id = foldr (:) [] {-"~~."-}
 ```haskell
 inits = foldr (\x xss -> [] : map (x:) xss) [[]] {-"~~."-}
 ```
-{.noindent}計算所有後段的 |tails :: List a -> List (List a)| 也可以寫成 |foldr|，但需要用一個小性質。
+{.nobreak}計算所有後段的 |tails :: List a -> List (List a)| 也可以寫成 |foldr|，但需要用一個小性質。
 回顧其定義：
 \index{list 串列!suffix 後段}
 ```spec
 tails []      = [[]]
 tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
 ```
-{.noindent}乍看之下這不符合 |foldr| 的模式：參數 |xs| 出現在 |... : tails xs| 的左邊，但在 |foldr| 的模式中，|xs| 不能出現在遞迴呼叫之外。
+{.nobreak}乍看之下這不符合 |foldr| 的模式：參數 |xs| 出現在 |... : tails xs| 的左邊，但在 |foldr| 的模式中，|xs| 不能出現在遞迴呼叫之外。
 幸好 |tails| 有一個剛好在此有用的小特性：|tails xs| 傳回的所有後段中，第一個就是 |xs| 本身：|head (tails xs) = xs|.
 因此我們可將 |tails| 寫成：
 ```haskell
 tails = foldr (\x xss -> (x : head xss) : xss) [[]] {-"~~."-}
 ```
-{.noindent}由於 |tails| 永遠傳回非空串列，使用 |head xss| 是安全的。
+{.nobreak}由於 |tails| 永遠傳回非空串列，使用 |head xss| 是安全的。
 
 :::{.exlist}
 :::{.exer #ex:perms-sublists-splits-foldr}
@@ -191,7 +191,7 @@ splits = foldr spl [([],[])] {-"~~,"-}
 dropWhile p []      = []
 dropWhile p (x:xs)  = if p x then dropWhile p xs else x:xs {-"~~,"-}
 ```
-{.noindent}在歸納情況中，|else| 的分支需傳回 |x:xs| --- |xs| 出現在遞迴呼叫以外的地方。這樣的程式不是 |foldr|。
+{.nobreak}在歸納情況中，|else| 的分支需傳回 |x:xs| --- |xs| 出現在遞迴呼叫以外的地方。這樣的程式不是 |foldr|。
 當然，這只表示 |dropWhile p| 的*這個*定義不符合 |foldr| 的模式.
 是否有其他的方式能將 |dropWhile p| 寫成 |foldr| 呢？
 不論 |dropWhile p| 是怎麼定義的，考慮
@@ -207,7 +207,7 @@ fan :: a -> List a -> List (List a)
 fan y []      = [[y]]
 fan y (x:xs)  = (y:x:xs) : map (x:) (fan y xs) {-"~~."-}
 ```
-{.noindent}為何這個定義不是一個 |foldr|?
+{.nobreak}為何這個定義不是一個 |foldr|?
 有沒有可能將 |fan y| 寫成一個 |foldr| 呢？
 :::
 :::{.exans}
@@ -270,20 +270,20 @@ foldrFusionEx h f e g x0 x1 x2 =
  ===    {- |foldr| 之定義 -}
       foldr g ({-"{\color{burntorange}"-}h{-"}"-} e) [x0,x1,x2] {-"~~."-}
 ```
-{.noindent}由此例可看出融合條件 |h (f x y) = g x (h y)| 的作用 --- 將 |h| 往右推，並將途中經過的 |f| 都變成 |g|, 直到碰到 |e| 為止。
+{.nobreak}由此例可看出融合條件 |h (f x y) = g x (h y)| 的作用 --- 將 |h| 往右推，並將途中經過的 |f| 都變成 |g|, 直到碰到 |e| 為止。
 
 定理\@ref{thm:foldr-fusion}可用例行的歸納證明證成：
 :::{.proof}
 假設融合條件成立，我們需證明對所有 |xs|, |h (foldr f e xs) = foldr g (h e) xs|.
 
-{.noindent}**情況** |xs := []|:
+{.nobreak}**情況** |xs := []|:
 ```spec
       h (foldr f e [])
  ===  h e
  ===  foldr g (h e) [] {-"~~."-}
 ```
 
-{.noindent}**情況** |xs := x:xs|:
+{.nobreak}**情況** |xs := x:xs|:
 ```spec
       h (foldr f e (x:xs))
  ===    {- |foldr| 之定義 -}
@@ -328,7 +328,7 @@ mapFusionFuse0 f g =
  ===   {- |map| 的摺定義 -}
       map (f . g) {-"~~."-}
 ```
-{.noindent}第二步需要的融合條件只需簡單展開定義即可滿足：
+{.nobreak}第二步需要的融合條件只需簡單展開定義即可滿足：
 ```{.haskell .invisible}
 mapFusionFuse1 :: (a -> b) -> (c -> a) -> c -> List a -> List b
 mapFusionFuse1 f g x ys =
@@ -369,14 +369,14 @@ sumMapTwoTimesPf =
   ===    {- 定理\ref{thm:foldr-map-fusion}: |foldr|-|map| 融合 -}
        foldr ((+).(2*)) 0 {-"~~."-}
 ```
-{.noindent}另一方面，|(2*) . sum| 可以融合成同一個 |foldr|:
+{.nobreak}另一方面，|(2*) . sum| 可以融合成同一個 |foldr|:
 ```spec
        (2*) . sum
   ===  (2*) . foldr (+) 0
   ===    {- 摺融合 -}
        foldr ((+).(2*)) 0 {-"~~."-}
 ```
-{.noindent}其中的融合條件證明如下：
+{.nobreak}其中的融合條件證明如下：
 ```{.haskell .invisible}
 sumMapTwoTimesFusion :: Int -> Int -> Int
 sumMapTwoTimesFusion x y =
@@ -388,7 +388,7 @@ sumMapTwoTimesFusion x y =
  ===   {- |(.)| 之定義 -}
       ((+) . (2*)) x (2*y) {-"~~."-}
 ```
-{.noindent}由此我們證明了 |sum . map (2*) = (2*) . sum|.
+{.nobreak}由此我們證明了 |sum . map (2*) = (2*) . sum|.
 :::
 
 許多等式可用類似的模式證明：為證明 |e1 = e2|, 我們對兩邊都做融合，看是否能製造出同一個 |foldr|.
@@ -397,7 +397,7 @@ sumMapTwoTimesFusion x y =
 ```spec
   map f . (++ys) = (++ map f ys) . map f  {-"~~."-}
 ```
-{.noindent}其中 |(++ys)| 是 |foldr|. 因此我們可使用摺融合與 |foldr|-|map| 融合：
+{.nobreak}其中 |(++ys)| 是 |foldr|. 因此我們可使用摺融合與 |foldr|-|map| 融合：
 ```{.haskell .invisible}
 -- mapAppendFusion :: Int -> List Int -> Int
 mapAppendFusion f ys =
@@ -409,7 +409,7 @@ mapAppendFusion f ys =
  ===    {- 摺融合 -}
       map f . (++ ys) {-"~~."-}
 ```
-{.noindent}其中，最後一步的融合條件為
+{.nobreak}其中，最後一步的融合條件為
 ```spec
      map f (x : zs)
 ===    {- |map| 之定義 -}
@@ -417,7 +417,7 @@ mapAppendFusion f ys =
 ===    {- |(.)| 之定義 -}
      ((:) . f) x (map f zs) {-"~~."-}
 ```
-{.noindent}雖然看來複雜，其實是運用符號、展開定義即可證成的性質。
+{.nobreak}雖然看來複雜，其實是運用符號、展開定義即可證成的性質。
 :::
 
 在本節的許多例子中，使用摺融合定理大大簡化了證明 --- 幾乎到了只要把式子寫下就快要證完了，「沒什麼可說」的地步。我們再看最後一個例子。
@@ -438,7 +438,7 @@ sumConcatMapSum =
       sum . foldr (++) []
  ===  sum . concat {-"~~."-}
 ```
-{.noindent}第二步的 |foldr|-|map| 融合能成立的原因是 |(+) . sum| 展開之後確實成為 |(\xs n -> sum xs + n)|.
+{.nobreak}第二步的 |foldr|-|map| 融合能成立的原因是 |(+) . sum| 展開之後確實成為 |(\xs n -> sum xs + n)|.
 這一步也可改用摺融合定理證明，其融合條件為 |sum (sum xs : ys) = sum xs + sum ys|, 只需展開定義即可證成。
 
 倒數第二步的摺融合的條件為：|sum (xs ++ ys) = sum xs + sum ys|.
@@ -466,7 +466,7 @@ lengthConcatMapLength =
       length . foldr (++) []
  ===  length . concat {-"~~."-}
 ```
-{.noindent}其融合條件證明如下：
+{.nobreak}其融合條件證明如下：
 ```{.haskell .invisible}
 lengthConcatMapLengthFusion :: List a -> List a -> Int
 lengthConcatMapLengthFusion xs ys =
@@ -501,7 +501,7 @@ mapFilterSplit f g p =
  ===    {- |foldr|-|map| 融合，如下述 -}
       concat . map (filter p . f) {-"~~."-}
 ```
-{.noindent}摺融合的條件為：
+{.nobreak}摺融合的條件為：
 ```{.haskell .invisible}
 mapFilterSplitFuse :: (a -> List a) -> (a -> List a) -> (a -> Bool) ->
                          a -> List a -> List a
@@ -516,7 +516,7 @@ mapFilterSplitFuse f g p x xs =
  ===    {- 假設 -}
       filter p (f x) ++ concat (map g xs) {-"~~."-}
 ```
-{.noindent}至於 |foldr|-|map| 融合, 只需驗證 |((++) . filter p . f) x ys| 確實等於 |filter p (f x) ++ ys|.
+{.nobreak}至於 |foldr|-|map| 融合, 只需驗證 |((++) . filter p . f) x ys| 確實等於 |filter p (f x) ++ ys|.
 
 :::
 :::
@@ -543,7 +543,7 @@ sumsqFusionCond x xs =
  ===    {- 提出 |x| 與 |sum xs| -}
       (\x y -> square x + y) x (sum xs) {-"~~."-}
 ```
-{.noindent}因此，根據定理\@ref{thm:foldr-fusion}, |sumsq = foldr (\x y -> square x + y) 0|.
+{.nobreak}因此，根據定理\@ref{thm:foldr-fusion}, |sumsq = foldr (\x y -> square x + y) 0|.
 :::
 
 :::{.example #ex:minimumMapSumInits}
@@ -578,7 +578,7 @@ mapSumInitsFuse x xss =
  ===   {- |sum (x:xs) = x + sum xs|, |map| 融合 -}
       0 : map (x+) (map sum xss) {-"~~."-}
 ```
-{.noindent}因此我們得到
+{.nobreak}因此我們得到
 ```{.haskell .invisible}
 mapSumInits :: List Int -> List Int
 mapSumInits =
@@ -598,7 +598,7 @@ minimumSumInitsFuse x ys =
  ===    {- |minimum (x+) ys = x + minimum ys|，後述 -}
       0 `min` (x + minimum ys) {-"~~."-}
 ```
-{.noindent}最後一步使用的性質 |minimum (x+) ys = x + minimum ys| 尚待證明，其關鍵性質是 |(x+)| 可分配進 |(`min`)| 之中：|x + (y `min` z) = (x + y) `min` (x + z)|. 總之，我們得到
+{.nobreak}最後一步使用的性質 |minimum (x+) ys = x + minimum ys| 尚待證明，其關鍵性質是 |(x+)| 可分配進 |(`min`)| 之中：|x + (y `min` z) = (x + y) `min` (x + z)|. 總之，我們得到
 ```{.haskell .invisible}
 geqMinimumSumInits :: List Int -> Bool
 geqMinimumSumInits =
@@ -607,7 +607,7 @@ geqMinimumSumInits =
   (>= 0) . minimum . map sum . inits ===
     (>= 0) . foldr (\x y -> 0 `min` (x + y)) 0 {-"~~."-}
 ```
-{.noindent}這是一個只需線性時間的演算法。
+{.nobreak}這是一個只需線性時間的演算法。
 
 我們能否把 |(>=0)| 也融入 |foldr| 之中呢？要使這個融合成立，我們得找到滿足
 |0 `min` (x+y) >= 0 <=> step3 x (y >= 0)| 的 |step3|. 演算如下：
@@ -619,14 +619,14 @@ geqMinimumSumInits =
 <=>    {- 希望找到這樣的 |step3| -}
      step3 x (y>=0) {-"~~."-}
 ```
-{.noindent}然而我們無法找到這樣的 |step3| --- 僅由 |y>=0| 我們無法得知 |x+y >= 0| 是否成立。
+{.nobreak}然而我們無法找到這樣的 |step3| --- 僅由 |y>=0| 我們無法得知 |x+y >= 0| 是否成立。
 我們可說 |(>=0)| 丟失了太多資訊，使得融合無法成立。
 
 也由於同樣的理由，如果我們最初把問題定義為：
 ```spec
   and . map (>=0) . map sum . inits {-"~~,"-}
 ```
-{.noindent}函數 |map (>= 0)| 將無法融合進 |map sum . inits| 之中。
+{.nobreak}函數 |map (>= 0)| 將無法融合進 |map sum . inits| 之中。
 ```texonly
 %} %format
 ```
@@ -644,7 +644,7 @@ geqMinimumSumInits =
 ===    {- 摺融合定理 -}
      h2 . foldr f2 e2 {-"~~."-}
 ```
-{.noindent}此時，我們也常需要藉由兩個融合條件之一來發現步驟函數 |g| 是什麼。
+{.nobreak}此時，我們也常需要藉由兩個融合條件之一來發現步驟函數 |g| 是什麼。
 
 :::{.example}
 習題 \@ref{ex:length-sublists} 曾證明 |length . sublists = exp 2 . length|.
@@ -663,7 +663,7 @@ lengthSublistFuse x xss =
  ===    {- |length (map f) = length| -}
       2 * length xss {-"~~,"-}
 ```
-{.noindent}由此得到步驟函數 |(\x n -> 2 * n)|.
+{.nobreak}由此得到步驟函數 |(\x n -> 2 * n)|.
 
 因此該等式可證明如下：
 ```spec
@@ -675,7 +675,7 @@ lengthSublistFuse x xss =
      exp 2 . foldr Suc Zero
 ===  exp 2 . length {-"~~."-}
 ```
-{.noindent}在第二次摺融合中，基底值 |exp 2 Zero| 確實是 |1|.
+{.nobreak}在第二次摺融合中，基底值 |exp 2 Zero| 確實是 |1|.
 融合條件為 |exp 2 (Suc n) = 2 * exp 2 n|.
 :::
 
@@ -691,7 +691,7 @@ lengthSublistFuse x xss =
 ===  True : map ((>=0) . (x+)) ys
 ===  step x (map (>=0) ys) {-"~~."-}
 ```
-{.noindent}然而我們無法由 |map (>=0) ys| 算出 |map ((>=0) . (x+)) ys|.
+{.nobreak}然而我們無法由 |map (>=0) ys| 算出 |map ((>=0) . (x+)) ys|.
 :::
 :::{.exer}
 使用摺融合定理證明 |sum (xs ++ ys) = sum xs + sum ys|.
@@ -710,7 +710,7 @@ sumAppendPlus ys =
       (+ (sum ys)) . foldr (+) 0
  ===  (+ (sum ys)) . sum {-"~~."-}
 ```
-{.noindent}其中第一個摺融合的條件為 |sum (x:xs) = x + sum xs| ---
+{.nobreak}其中第一個摺融合的條件為 |sum (x:xs) = x + sum xs| ---
 我們由此發現融合後的步驟函數為 |(+)|.
 第二個摺融合的條件證明如下：
 ```{.haskell .invisible}
@@ -737,7 +737,7 @@ sumAppendPlusFusionCond x y ys =
      Suc . foldr Suc Zero
 ===  Suc . length {-"~~."-}
 ```
-{.noindent}其中第一次融合的融合條件可證明如下：
+{.nobreak}其中第一次融合的融合條件可證明如下：
 ```spec
      length ((y:x: tail (head xss)) : map (x:) xss)
 ===    {- |length| 之定義 -}
@@ -745,7 +745,7 @@ sumAppendPlusFusionCond x y ys =
 ===    {- |length . map f = length| -}
      Suc (length xss) {-"~~."-}
 ```
-{.noindent}由此發現步驟函數為 |Suc|.
+{.nobreak}由此發現步驟函數為 |Suc|.
 第二次融合的融合條件則只需展開定義即可證成。
 :::
 :::{.exer}
@@ -754,7 +754,7 @@ sumAppendPlusFusionCond x y ys =
 ```spec
 decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
 ```
-{.noindent}請使用摺融合將 |exp b . decimal| 表示成單一的摺。
+{.nobreak}請使用摺融合將 |exp b . decimal| 表示成單一的摺。
 :::
 :::{.exans}
 基底值為 |base = exp b 0 = 1|.
@@ -768,7 +768,7 @@ decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
 ===    {- 因 $m^{2n} = (m^n)^2$, 回顧：|square x = x * x| -}
      if c then b * square (exp b n) else square (exp b n) {-"~~."-}
 ```
-{.noindent}因此可得
+{.nobreak}因此可得
 ```spec
   exp b . decimal = foldr (\d x -> if c  then b * square x
                                          else square x) 1 {-"~~."-}
@@ -796,14 +796,14 @@ decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
 =   {- 摺融合定理 -}
    foldr step (poly x []) {-"~~."-}
 ```
-{.noindent}其中基底值 |poly x [] = 0|.
+{.nobreak}其中基底值 |poly x [] = 0|.
 而函數 |step| 須滿足融合條件 |poly x (a:as) = step a (poly x as)|。
 尋找 |step| 的過程和第\@pageref{ex:polyDer1}頁的計算完全相同。
 我們會得到
 ```spec
   poly x (a : as) = a + (poly x as) * x {-"~~."-}
 ```
-{.noindent}到此為止我們便找到了 |poly x| 的歸納定義。
+{.nobreak}到此為止我們便找到了 |poly x| 的歸納定義。
 也可以說，我們已得知 |poly x = foldr (\a b -> a + b * x) 0|.
 
 ### 掃描 {#sec:scan-lemma}
@@ -816,7 +816,7 @@ decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
 scanr :: (a -> b -> b) -> b -> List a -> List b
 scanr f e = map (foldr f e) . tails {-"~~."-}
 ```
-{.noindent}給定一個串列 |xs|, |scanr f e| 先算出 |xs| 的所有後段，
+{.nobreak}給定一個串列 |xs|, |scanr f e| 先算出 |xs| 的所有後段，
 然後對每一個後段都做 |foldr f e|.
 \index{list 串列!suffix 後段}
 例如，|scanr (+) 0 [3,7,2,4]| 計算串列 |[3,7,2,4]| 由右到左的累計和：
@@ -830,7 +830,7 @@ scanr f e = map (foldr f e) . tails {-"~~."-}
 ```spec
 tails = foldr (\x xss -> (x : head xss) : xss) [[]] {-"~~,"-}
 ```
-{.noindent}我們試著把 |map (foldr f e)| 融合入 |tails| 中，看看是否能找出一個較有效率的 |scanr| 定義。
+{.nobreak}我們試著把 |map (foldr f e)| 融合入 |tails| 中，看看是否能找出一個較有效率的 |scanr| 定義。
 其融合條件如下：
 ```{.haskell .invisible}
 scanrFusionCond :: (a -> b -> b) -> b -> a -> List (List a) -> List b
@@ -846,7 +846,7 @@ scanrFusionCond f e x xss =
       let ys = map (foldr f e) xss
       in f x (head ys) : ys {-"~~."-}
 ```
-{.noindent}於是我們推導出了 |scanr| 的另一個定義。
+{.nobreak}於是我們推導出了 |scanr| 的另一個定義。
 :::{.lemma title="掃描引理" #lma:scan-lemma}
 對所有 |f|, |e|,
 ```spec
@@ -873,7 +873,7 @@ mss = maximum . map sum . segments {-"~~."-}
 ```{.haskell .invisible}
 segments = concat . map inits . tails
 ```
-{.noindent}要解此問題，我們和第\@ref{sec:maximum-segment-sum}節中一樣先做前段-後段分解，
+{.nobreak}要解此問題，我們和第\@ref{sec:maximum-segment-sum}節中一樣先做前段-後段分解，
 ```{.haskell .invisible}
 mssDer00 :: List Int -> Int
 mssDer00 =
@@ -893,7 +893,7 @@ mssDer00 =
 ```{.haskell .invisible}
  where mps = maximum . map sum . inits
 ```
-{.noindent}也就是說：要找出最大區段和，我們可以對*每一個後段，找出其最大前段和*。
+{.nobreak}也就是說：要找出最大區段和，我們可以對*每一個後段，找出其最大前段和*。
 
 剛讀過掃描引理\@ref{lma:scan-lemma}的讀者可能立刻注意到
 |map mps . tails| 這個子算式：
@@ -927,7 +927,7 @@ maxMapSumFuse x xss =
  ===    {- |maximum . map (x+) = (x+) . maximum| -}
       0 `max` (x + maximum (map sum xss)) {-"~~."-}
 ```
-{.noindent}因此我們推導出了：
+{.nobreak}因此我們推導出了：
 ```{.haskell .invisible}
 mpsDer00 :: List Int -> Int
 mpsDer00 =
@@ -951,7 +951,7 @@ mssDer01 =
  ===    {- 掃描引理\ref{lma:scan-lemma} -}
       maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
 ```
-{.noindent}我們得到 |mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0|.
+{.nobreak}我們得到 |mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0|.
 這是一個使用線性時間、線性空間的演算法。
 
 由於 |scanr| 也是一個摺，我們可再嘗試把 |maximum| 融合進去，試圖消除 |scanr| 產生的中間串列，以便得到一個使用線性時間、常數空間的演算法。
@@ -980,7 +980,7 @@ bananaSplit f1 e1 f2 e2 =
 ```{.haskell .invisible}
  where g x (y,z) = (f1 x y, f2 x z)
 ```
-{.noindent}其中 |g x (y,z) = (f1 x y, f2 x z)|.
+{.nobreak}其中 |g x (y,z) = (f1 x y, f2 x z)|.
 :::
 分裂運算元 |fork| 的英文稱呼是 ``split'', 在程式推導圈內有時會用一套稱作「香蕉括號(banana brackets)」的符號表示摺，兩者合起來便是 ``banana-split'' --- 甜點「香蕉船」的英文名稱。
 
@@ -1016,7 +1016,7 @@ steepSumId =
  ===   {- 摺融合 -}
      foldr (\x (b, s) -> (x > s && b, x + s)) (True, 0) {-"~~."-}
 ```
-{.noindent}其融合條件的證明與第\@ref{sec:steep}節中幾乎相同。
+{.nobreak}其融合條件的證明與第\@ref{sec:steep}節中幾乎相同。
 
 ### 累積參數與摺融合
 
@@ -1026,16 +1026,16 @@ steepSumId =
 ```spec
 reverse = foldr (\x xs -> xs ++ [x]) [] {-"~~."-}
 ```
-{.noindent}為增進其效率，我們創造了函數 |revcat|，其定義為：
+{.nobreak}為增進其效率，我們創造了函數 |revcat|，其定義為：
 ```spec
 revcat :: List a -> List a -> List a
 revcat xs ys = reverse xs ++ ys {-"~~."-}
 ```
-{.noindent}但如果把參數都移除，上述定義其實等同於：
+{.nobreak}但如果把參數都移除，上述定義其實等同於：
 ```spec
 revcat = (++) . reverse {-"~~."-}
 ```
-{.noindent}推導 |revcat| 的歸納定義就是計算 |(++)| 與 |reverse| 的融合！
+{.nobreak}推導 |revcat| 的歸納定義就是計算 |(++)| 與 |reverse| 的融合！
 
 為了導出一個較快的 |revcat| 實作，我們嘗試把 |(++) . reverse| 融合為一個 |foldr|.
 其推導大綱如下：
@@ -1055,7 +1055,7 @@ appendReverseDer00 =
        base :: List a -> List a
        base = undefined
 ```
-{.noindent}我們可暫停一下，看看這個式子的型別。
+{.nobreak}我們可暫停一下，看看這個式子的型別。
 函數 |(++)| 的型別為 |List a -> (List a -> List a)|, |(++) . reverse| 與 |foldr step base| 的型別也相同。
 如果摺融合成功，我們會得到的是一個*傳回函數的 |foldr|* --- 輸入為 |List a|, 輸出為 |List a -> List a|.
 其中 |base| 的型別為 |List a -> List a|, 而 |step| 的型別將是 |a -> (List a -> List a) -> (List a -> List a)| --- |step x| 將一個函數轉成另一個函數。
@@ -1067,7 +1067,7 @@ appendReverseDer00 =
            = (\xs -> xs)
            = id {-"~~."-}
 ```
-{.noindent}步驟函數 |step| 須滿足的融合條件如下
+{.nobreak}步驟函數 |step| 須滿足的融合條件如下
 ```{.haskell .invisible}
 appendReverseFuse00 :: a -> List a -> List a -> List a
 appendReverseFuse00 x xs =
@@ -1079,16 +1079,16 @@ appendReverseFuse00 x xs =
  where step :: a -> (List a -> List a) -> List a -> List a
        step = undefined
 ```
-{.noindent}簡單地化簡等號左手邊，我們得到：
+{.nobreak}簡單地化簡等號左手邊，我們得到：
 ```spec
      (++) (xs ++ [x]) === step x ((++) xs) {-"~~."-}
 ```
-{.noindent}這個式子無法再規約，因為 |(++)| 還需要一個參數。
+{.nobreak}這個式子無法再規約，因為 |(++)| 還需要一個參數。
 因此我們根據外延相等（定義\@ref{def:extensional-eq}），在等號兩邊各補一個參數 |ys|:
 ```spec
      (++) (xs ++ [x]) ys === step x ((++) xs) ys{-"~~."-}
 ```
-{.noindent}為找出 |step|, 演算如下：
+{.nobreak}為找出 |step|, 演算如下：
 ```{.haskell .invisible}
 appendReverseFuse01 :: a -> List a -> List a -> List a
 appendReverseFuse01 x xs ys =
@@ -1103,15 +1103,15 @@ appendReverseFuse01 x xs ys =
  ===   {- 將 |x|, |((++) xs)|, 與 |ys| 提出 -}
      (\x f -> f . (x:)) x ((++) xs) ys {-"~~."-}
 ```
-{.noindent}根據外延相等，我們已證明
+{.nobreak}根據外延相等，我們已證明
 ```spec
   (++) (xs ++ [x]) = (\x f -> f . (x:)) x ((++) xs) {-"~~."-}
 ```
-{.noindent}因此 |step = (\x f -> f . (x:))|, 而 |revcat| 可寫成如下的摺：
+{.nobreak}因此 |step = (\x f -> f . (x:))|, 而 |revcat| 可寫成如下的摺：
 ```haskell
 revcat = foldr (\x f -> f . (x:)) id {-"~~."-}
 ```
-{.noindent}例如 |revcat "abc" = id . ('c':) . ('b':) . ('a':)|,
+{.nobreak}例如 |revcat "abc" = id . ('c':) . ('b':) . ('a':)|,
 而 |revcat "abc" ys = 'c' : ('b' : ('a' : ys))|.
 
 ### 引入脈絡 {#sec:bring-in-context}
@@ -1131,7 +1131,7 @@ revcat = foldr (\x f -> f . (x:)) id {-"~~."-}
 ```spec
 psuc n = if n >= 0 then n+1 else 0 {-"~~."-}
 ```
-{.noindent}如果參數是非負整數，|psuc| 將它加一，否則傳回 |0|.
+{.nobreak}如果參數是非負整數，|psuc| 將它加一，否則傳回 |0|.
 我們能將 |psuc . sumsq| 融合為一個 |foldr| 嗎？
 
 直覺看來，由於 |sumsq| 一定傳回非負整數，|psuc| 只是將其結果加一。
@@ -1143,11 +1143,11 @@ psuc n = if n >= 0 then n+1 else 0 {-"~~."-}
 ```spec
      psuc (m + n) = m + psuc n {-"~~."-}
 ```
-{.noindent}由於 |square x| 與 |y| 都是非負整數，我們有
+{.nobreak}由於 |square x| 與 |y| 都是非負整數，我們有
 ```spec
      psuc (square x + y) = square x + psuc y {-"~~."-}
 ```
-{.noindent}因此我們可選 |step x y = square x + y| --- 與 |sumsq| 的步驟函數相同。
+{.nobreak}因此我們可選 |step x y = square x + y| --- 與 |sumsq| 的步驟函數相同。
 至於基底值則是 |psuc 0 = 1|.
 因此，
 ```spec
@@ -1169,7 +1169,7 @@ psuc n = if n >= 0 then n+1 else 0 {-"~~."-}
 ```spec
  foldl rhd e [x0,x1,x2,x3] = (((e `rhd` x0) `rhd` x1) `rhd` x2) `rhd` x3 {-"~~."-}
 ```
-{.noindent}有了 |foldl|, 串列反轉可直接定義為 |reverse = foldl (\xs x -> x:xs) []|.
+{.nobreak}有了 |foldl|, 串列反轉可直接定義為 |reverse = foldl (\xs x -> x:xs) []|.
 
 函數 |foldl| 可在輸入串列的長度上歸納定義如下：
 ```spec
@@ -1177,13 +1177,13 @@ foldl :: (b -> a -> b) -> b -> List a -> b
 foldl rhd e []         = e
 foldl rhd e (xs++[z])  = foldl rhd e xs `rhd` z{-"~~."-}
 ```
-{.noindent}由於運算元 |rhd| 右邊的參數才是目前的元素，其型別為 |b -> a -> b|.
+{.nobreak}由於運算元 |rhd| 右邊的參數才是目前的元素，其型別為 |b -> a -> b|.
 由此出發，我們不難導出下述將串列從左邊開始拆解的定義：
 ```spec
 foldl rhd e []      = e
 foldl rhd e (x:xs)  = foldl rhd (e `rhd` x) xs {-"~~."-}
 ```
-{.noindent}我們可注意到這是一個尾遞迴定義，\index{tail recursion 尾遞迴}
+{.nobreak}我們可注意到這是一個尾遞迴定義，\index{tail recursion 尾遞迴}
 因此，如果將 |sum|, |prod| 等函數定義為 |foldl (+) 0|, |foldl (*) 1| 等等，執行時可不佔用堆疊的空間。
 由於這個特性，對一些將 Haskell 用於著重效率的應用的人們來說，|foldl| 才是他們較常使用的「摺」。
 ^[為了效率因素更常被使用的可能是另一個嚴格(strict)版的函數 |foldl'|, 該函數在遞迴呼叫前會先將 |e `rhd` x| 規約成正規式，避免尚待計算的算式被累積著。]
@@ -1227,7 +1227,7 @@ sndDualityInd1 lhd rhd e x xs =
  ===    {- |foldl| 之定義 -}
       foldl rhd e (x:xs) {-"~~."-}
 ```
-{.noindent}在等式推論中段，我們希望 |x `lhd` foldl rhd e xs = foldl rhd (e `rhd` x) xs|.
+{.nobreak}在等式推論中段，我們希望 |x `lhd` foldl rhd e xs = foldl rhd (e `rhd` x) xs|.
 這會需要另一個歸納證明。
 但我們若直接證明此等式，到中途便會無法進行，且會發現我們需要稍做一下推廣，改證明一個較強的性質：
 ```{.equation #eq:sndDualityGen}
@@ -1278,7 +1278,7 @@ hom odot f e xs  = hom odot f e ys `odot` hom odot f e zs
     where n = length xs `div` 2
           (ys,zs) = (take n xs, drop n xs)
 ```
-{.noindent}我們便說 |h| 是一個*串列同構*(*list homomorphism*), 記為 |h = hom odot f e|.
+{.nobreak}我們便說 |h| 是一個*串列同構*(*list homomorphism*), 記為 |h = hom odot f e|.
 \index{list homomorphism 串列同構}
 注意第三個等式蘊含 |odot|（至少在 |h| 的值域內）須滿足結合律：
 |h xs `odot` (h ys `odot` h zs) = h (xs++(ys++zs)) = h ((xs++ys)++zs) = (h xs `odot` h ys) `odot` h zs|.
@@ -1294,7 +1294,7 @@ homFoldlFoldr odot f e =
   hom odot f e  === foldr (\x y -> f x `odot` y) e
                 === foldl (\y x -> y `odot` f x) e {-"~~."-}
 ```
-{.noindent}下述定理則告訴我們反過來也成立：如果 |h| 同時可寫成 |foldr| 及 |foldl|, 則 |h| 是一個串列同構：
+{.nobreak}下述定理則告訴我們反過來也成立：如果 |h| 同時可寫成 |foldr| 及 |foldl|, 則 |h| 是一個串列同構：
 :::{.theorem title="第三同構定理(The Third Homomorphism Theorem)"}
 考慮 |h :: List a -> b|。如果存在 |e :: b|, |lhd :: a -> b -> b|, 及 |rhd :: b -> a -> b| 使得 |h = foldr lhd e = foldl rhd e|,
 則存在 |odot :: b -> b -> b| 使得 |h = hom odot f e| （其中 |f x = x `lhd` e = e `rhd` x|）.
@@ -1323,7 +1323,7 @@ foldN :: (a -> a) -> a -> Nat -> a
 foldN f e Zero     = e
 foldN f e (Suc n)  = f (foldN f e n) {-"~~."-}
 ```
-{.noindent}和串列的情況類似，函數 |foldN f e| 拿一個自然數，將其中的 |Zero| 代換成 |e|, |Suc| 代換成 |f|.
+{.nobreak}和串列的情況類似，函數 |foldN f e| 拿一個自然數，將其中的 |Zero| 代換成 |e|, |Suc| 代換成 |f|.
 留意型別：|Zero| 與 |Suc| 的型別分別是 |Nat| 與 |Nat -> Nat|,
 |foldN| 要將一個型別為 |Nat| 的值轉變為型別為 |a| 的值,
 因此 |e| 的型別為 |a|, 而 |f| 的型別為 |a -> a|.
@@ -1335,7 +1335,7 @@ foldN f e (Suc n)  = f (foldN f e n) {-"~~."-}
   * |(+n) = foldN (Suc) n|,
   * |(*n) = foldN (n+) 0|.
 
-{.noindent}自然數上的 |id :: Nat -> Nat| 也可寫成摺：|id = foldN (Suc) 0|.
+{.nobreak}自然數上的 |id :: Nat -> Nat| 也可寫成摺：|id = foldN (Suc) 0|.
 
 自然數的摺也有一個融合定理：
 :::{.theorem title="摺融合定理(自然數版)" #thm:foldN-fusion}
@@ -1353,7 +1353,7 @@ h . foldN f e = foldN g (h e) {-"~~."-}
 ```spec
   even = foldN not True {-"~~."-}
 ```
-{.noindent}函數 |even . (+n)| 判斷一個數值加上 |n| 之後是否為偶數。
+{.nobreak}函數 |even . (+n)| 判斷一個數值加上 |n| 之後是否為偶數。
 由於 |(+ n) = foldN (Suc) n|, 我們可以嘗試把 |even| 融入 |(+n)|, 變成一個摺。
 根據定理\@ref{thm:foldN-fusion}, 基底值為 |even n|;
 而由於 |even (Suc n) = not (even n)|, 步驟函數為 |not|.
@@ -1371,7 +1371,7 @@ fib 0      = 0
 fib 1      = 1
 fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 ```
-{.noindent}若直接將上述定義當作演算法，我們得做許多重複的計算。
+{.nobreak}若直接將上述定義當作演算法，我們得做許多重複的計算。
 定義 |fib2 n = (fib (1+n), fib n)|.
 請將 |fib2| 融合進 |id :: Nat -> Nat|, 以便得到一個遞迴呼叫次數為 $O(n)$ 的演算法。
 :::
@@ -1386,7 +1386,7 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
    (fib (Suc n) + fib n, fib (Suc n))
 =  (\(x,y) -> (x+y,x)) (fib2 n) {-"~~."-}
 ```
-{.noindent}因此我們得到
+{.nobreak}因此我們得到
 ```spec
 fib2 = foldN (\(x,y) -> (x+y,x)) (1,0) {-"~~."-}
 ```
@@ -1429,13 +1429,13 @@ fib2 = foldN (\(x,y) -> (x+y,x)) (1,0) {-"~~."-}
 data ITree a  = Null   | Node a (ITree a) (ITree a) {-"~~,"-}
 data ETree a  = Tip a  | Bin (ETree a) (ETree a) {-"~~."-}
 ```
-{.noindent}其中 |ITree| 的摺可定義如下：
+{.nobreak}其中 |ITree| 的摺可定義如下：
 ```haskell
 foldIT :: (a -> b -> b -> b) -> b -> ITree a -> b
 foldIT f e Null          = e
 foldIT f e (Node x t u)  = f x (foldIT f e t) (foldIT f e u) {-"~~."-}
 ```
-{.noindent}內標記二元樹 |ITree| 的兩個建構元之型別分別為 |Null :: ITree a| 與 |Node :: a -> ITree a -> ITree a -> ITree a|. 和串列的摺一樣，內標記二元樹的摺將一個 |ITree a| 轉成一個型別為 |b| 的值 --- 藉由將 |Null| 代換為基底值 |e :: b|, 以及將 |Node| 代換為步驟函數 |f :: a -> b -> b -> b|.
+{.nobreak}內標記二元樹 |ITree| 的兩個建構元之型別分別為 |Null :: ITree a| 與 |Node :: a -> ITree a -> ITree a -> ITree a|. 和串列的摺一樣，內標記二元樹的摺將一個 |ITree a| 轉成一個型別為 |b| 的值 --- 藉由將 |Null| 代換為基底值 |e :: b|, 以及將 |Node| 代換為步驟函數 |f :: a -> b -> b -> b|.
 
 外標記二元樹的摺則可定義如下：
 ```haskell
@@ -1443,7 +1443,7 @@ foldET :: (b -> b -> b) -> (a -> b) -> ETree a -> b
 foldET f k (Tip x)    = k x
 foldET f k (Bin t u)  = f (foldET f k t) (foldET f k u) {-"~~."-}
 ```
-{.noindent}型別 |ETree| 的建構元分別為 |Tip :: a -> ETree a| 和 |Bin :: ETree a -> ETree a -> ETree a|.
+{.nobreak}型別 |ETree| 的建構元分別為 |Tip :: a -> ETree a| 和 |Bin :: ETree a -> ETree a -> ETree a|.
 由於 |Tip| 是一個由 |a| 到 |ETree a| 的函數，取代它的得是一個型別為 |a -> b| 的*基底函數*.
 取代 |Bin| 的步驟函數之型別則為 |b -> b -> b|. 有了這兩者，我們便可將 |ETree a| 轉換為 |b|.
 
@@ -1488,7 +1488,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 ```
 :::
 
-{.noindent}兩個定理的融合條件都依循著與串列版相同的原則：當 |h| 與步驟函數碰在一起，融合條件讓我們將 |h| 往裡推。
+{.nobreak}兩個定理的融合條件都依循著與串列版相同的原則：當 |h| 與步驟函數碰在一起，融合條件讓我們將 |h| 往裡推。
 兩個定理都可用單純的歸納法證明。
 
 :::{.exlist}
@@ -1510,7 +1510,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 ```spec
   foldET f k . mapE g = foldET f (k . g) {-"~~."-}
 ```
-{.noindent}由於 |mapE g = foldET Bin f|, 欲證明上式可用摺融合定理。
+{.nobreak}由於 |mapE g = foldET Bin f|, 欲證明上式可用摺融合定理。
 其融合條件 |foldET f k (Bin t u) = f (foldET f k t) (foldET f k u)| 恰巧是 |foldET| 之定義。
 :::
 :::{.exer}
@@ -1522,14 +1522,14 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 ```spec
   mapI f = foldIT (\x t u -> Node (f x) t u) Null {-"~~."-}
 ```
-{.noindent}考慮 |foldIT f e . mapI g| 之融合。其基底值為 |foldIT f e Null = e|.
+{.nobreak}考慮 |foldIT f e . mapI g| 之融合。其基底值為 |foldIT f e Null = e|.
 步驟函數的推導如下：
 ```spec
       foldIT f e (Node (g x) t u)
  ===    {- |foldIT| 之定義 -}
       f (g x) (foldIT f e t) (foldIT f e u)  {-"~~."-}
 ```
-{.noindent}因此 |foldIT f e . mapI g = foldIT (\x y z -> f (g x) y z) e|.
+{.nobreak}因此 |foldIT f e . mapI g = foldIT (\x y z -> f (g x) y z) e|.
 :::
 :::{.exer}
 以摺融合定理證明 |minE (mapE (x +) t) = x + minE t|.
@@ -1544,7 +1544,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
  ===    {- |foldET| 融合，如下述 -}
       (x+) . minE {-"~~."-}
 ```
-{.noindent}融合的基底函數為 |id . (x+) = (x+) . id|,
+{.nobreak}融合的基底函數為 |id . (x+) = (x+) . id|,
 融合條件則為 |x + (y `min` z) = (x + y) `min` (x + z)|。
 :::
 :::{.exer}
@@ -1565,7 +1565,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
  ===    {- |(.)| 之定義 -}
       ((xs++) . (x:) . (ys++)) zs {-"~~."-}
 ```
-{.noindent}因此我們得到 |(++) . tags = foldIT (\x f g -> f . (x:) . g) id|.
+{.nobreak}因此我們得到 |(++) . tags = foldIT (\x f g -> f . (x:) . g) id|.
 :::
 :::
 
@@ -1597,7 +1597,7 @@ partsP = foldrn (\x -> concat . map (extend x)) wrap3 {-"~~,"-}
 ascending [x]       = True
 ascending (x:y:xs)  = x <= y && ascending (y:xs) {-"~~."-}
 ```
-{.noindent}給定一個整數串列，如何將它切成一個個區段，使得每個區段都是遞增的？
+{.nobreak}給定一個整數串列，如何將它切成一個個區段，使得每個區段都是遞增的？
 如果我們讓每個元素都自己成一段，似乎是滿足需求，但這沒什麼意思。
 我們希望讓遞增區段盡量連續，也就是說，我們要區段數目最少的分割法。
 下述函數 |upHills| 將輸入串列以最精簡的方式切成段：
@@ -1605,7 +1605,7 @@ ascending (x:y:xs)  = x <= y && ascending (y:xs) {-"~~."-}
 upHills :: List Int -> List (List Int)
 upHills = shortest . filter (all ascending) . partsP {-"~~."-}
 ```
-{.noindent}其中 |partsP| 把串列任意切段，|filter (all ascending)| 挑出每個區段都是遞增的分割法，而 |shortest| 挑選元素數目最少的串列。
+{.nobreak}其中 |partsP| 把串列任意切段，|filter (all ascending)| 挑出每個區段都是遞增的分割法，而 |shortest| 挑選元素數目最少的串列。
 我們能由此導出一個比較快的演算法嗎？
 
 我們先將 |filter (all ascending)| 融入 |partsP| 之中。
@@ -1618,12 +1618,12 @@ filtAscParts =
  filter (all ascending) . partsP ===
     foldrn (\x -> concat . map (extendAsc x)) wrap3 {-"~~."-}
 ```
-{.noindent}這和 |partsP| 的差別只在 |extend| 變成了 |extendAsc|. 後者的定義為：
+{.nobreak}這和 |partsP| 的差別只在 |extend| 變成了 |extendAsc|. 後者的定義為：
 ```haskell
 extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
                                         else [[x]:ys:yss] {-"~~."-}
 ```
-{.noindent}函數 |extendAsc| 比 |extend| 多做了一個檢查，只在 |x >= head ys| 時將 |(x:ys):yss| 列為一個可能選項。
+{.nobreak}函數 |extendAsc| 比 |extend| 多做了一個檢查，只在 |x >= head ys| 時將 |(x:ys):yss| 列為一個可能選項。
 注意：由於 |ys| 的型別是 |ListP Int|, |head| 一定可成功。
 如果我們使用 |List Int|, 在這裡就得多做些條件判斷。
 雖然每個非空串列 |ListP| 都可用 |List| 表達, 有些問題使用 |ListP| 描述時會比較便於證明與推論。
@@ -1634,13 +1634,13 @@ extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
 ```spec
   shortest (concat (map (extendAsc x) ysss)) === step x (shortest ysss) {-"~~."-}
 ```
-{.noindent}由左手邊開始，由於 |shortest| 可分配進 |concat| （意即 |shortest . concat = shortest . map shortest|），我們可推論：
+{.nobreak}由左手邊開始，由於 |shortest| 可分配進 |concat| （意即 |shortest . concat = shortest . map shortest|），我們可推論：
 ```spec
      shortest (concat (map (extendAsc x) ysss))
  ===   {- |shortest| 分配進 |concat|; |map| 融合 -}
      shortest (map (shortest . extendAsc x) ysss) {-"~~."-}
 ```
-{.noindent}為了有些進展，我們看看 |shortest . extendAsc x| 能如何化簡。
+{.nobreak}為了有些進展，我們看看 |shortest . extendAsc x| 能如何化簡。
 將輸入（非空串列）寫成 |ys : yss|:
 ```spec
       shortest (extendAsc x (ys:yss)) =
@@ -1655,14 +1655,14 @@ extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
 %      concat (map (filter (all ascending) . extend x) ysss)
 % ===  concat (map (\ (ys:yss) -> if all ascending (ys:yss) then extend' x (ys:yss) else []) ysss)
 ```
-{.noindent}因此，融合條件的左手邊可歸約如下：
+{.nobreak}因此，融合條件的左手邊可歸約如下：
 ```spec
      shortest (map (shortest . extendAsc x) ysss)
 ===    {- 前述推導 -}
      shortest (map (\(ys:yss) ->  if x >= head ys then (x:ys):yss
                                        else [x]:ys:yss) ysss) {-"~~."-}
 ```
-{.noindent}我們希望繼續將 |shortest| 往裡推，但此時似乎卡住了。
+{.nobreak}我們希望繼續將 |shortest| 往裡推，但此時似乎卡住了。
 
 
 ```spec
@@ -1720,7 +1720,7 @@ wrap3 x = [[[x]]]
   filter (all ascending) (extend x yss) =
       if all ascending yss then extendAsc x yss else [] {-"~~."-}
 ```
-{.noindent}我們演算如下：
+{.nobreak}我們演算如下：
 ```{.haskell .invisible}
 filtAscPExtendFuse :: Int -> List Int -> List (List Int) -> List (List (List Int))
 filtAscPExtendFuse x ys yss =
@@ -1743,7 +1743,7 @@ filtAscPExtendFuse x ys yss =
 ```{.haskell .invisible}
  where extend x (ys:yss) = [[x]:ys:yss, (x:ys):yss]
 ```
-{.noindent}其中 |extendAsc| 的定義如下：
+{.nobreak}其中 |extendAsc| 的定義如下：
 ```haskell
 extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
                                         else [[x]:ys:yss] {-"~~."-}

@@ -35,7 +35,7 @@ import Common.MiniPrelude hiding (exp, length, take, drop, gcd)
 ```equation
     |(A * B)| ~&= \{ (a,b) \mid a \in |A|, b \in |B| \} \mbox{~~.}
 ```
-{.noindent}但函數又是什麼呢？集合論中，一個型別為 |A -> B| 的函數可視為 |A * B| 的一個子集；若 |f x = y|，該子集中便有 |(x,y)| 這個元素。例如，|double :: Nat -> Nat| 可表示成如下的集合：
+{.nobreak}但函數又是什麼呢？集合論中，一個型別為 |A -> B| 的函數可視為 |A * B| 的一個子集；若 |f x = y|，該子集中便有 |(x,y)| 這個元素。例如，|double :: Nat -> Nat| 可表示成如下的集合：
 ```equation
    \{(0,0), (1,1), (2,4), (3,6), (4,8) \ldots \} \mbox{~~.}
 ```
@@ -51,30 +51,30 @@ fact :: Nat -> Nat
 fact Zero     = 1
 fact (Suc n)  = (Suc n) * fact n {-"~~."-}
 ```
-{.noindent}我們可想成：有一個從集合到集合的函數 |factF|，
+{.nobreak}我們可想成：有一個從集合到集合的函數 |factF|，
 ```equation
   \Varid{factF}~X ~=~ \{(|Zero|,1)\} \cup \{(|Suc n|, (|Suc n|) \times m) \mid (n,m) \in X \} \mbox{~~.}
 ```
-{.noindent}給任何集合 |X|，|factF| 傳回這樣的集合：
+{.nobreak}給任何集合 |X|，|factF| 傳回這樣的集合：
 
   * 新集合中有 |(Zero,1)| --- 這對應到 |fact Zero = 1|.
   * 對 |X| 之中的每一個 |(n,m)|, 新集合中有 |(Suc n, (Suc n) * m)| --- 這對應到 |fact (Suc n)  = (Suc n) * fact n|.
 
 
-{.noindent}而函數 |fact| 的語意就是 |factF| 唯一的定點 (fixed point).\index{fixed point 定點}
+{.nobreak}而函數 |fact| 的語意就是 |factF| 唯一的定點 (fixed point).\index{fixed point 定點}
 意即 |fact| 是唯一滿足 |fact = factF fact| 的集合。
 關於定點的較完整理論可參照第 \@ref{sec:induction-set-theory} 節。
 確實，|fact| 可寫成集合如下：
 ```spec
  fact = {(0,1),(1,1),(2,2),(3,6),(4,24)...} {-"~~."-}
 ```
-{.noindent}若將 |fact| 餵給 |factF|,
+{.nobreak}若將 |fact| 餵給 |factF|,
 ```spec
    factF fact
 =  {(0,1)} `union` {(Suc n, (Suc n) * m) | (n,m) `elem` {(0,1),(1,1),(2,2),(3,6)...}}
 =  {(0,1)} `union` {(1,1),(2,2),(3,6),(4,24)...} {-"~~,"-}
 ```
-{.noindent}我們又得到了 |fact|. 因此 |fact| 確實是 |factF| 的定點。
+{.nobreak}我們又得到了 |fact|. 因此 |fact| 確實是 |factF| 的定點。
 
 但，要把「|fact| 便是 |factF| 的定點」當作 |fact| 的定義，我們還得確定：確實只有這麼一個集合滿足 |fact = factF fact|。
 讀者稍加檢查一下，即可發現確實如此 ---
@@ -95,18 +95,18 @@ h x  = (-1) * h x {-"~~."-}
 ```
 :::
 :::
-{.noindent}若以類似 |fact| 的方式試圖將它們寫成某函數的定點，我們可能寫出如下的 |gF| 和 |hF|:
+{.nobreak}若以類似 |fact| 的方式試圖將它們寫成某函數的定點，我們可能寫出如下的 |gF| 和 |hF|:
 ```spec
 gF X  = {(0,0)} `union` {(n,m) | (Suc n,m) `elem` X}  {-"~~,"-}
 hF X  = {(n,(-1*m)) | (n,m) `elem` X} {-"~~."-}
 ```
-{.noindent}但 |gF| 的定點有
+{.nobreak}但 |gF| 的定點有
 ```spec
   {(0,0),(1,1),(2,1),(3,1)...} {-"~~,"-}
   {(0,0),(1,2),(2,2),(3,2)...} {-"~~,"-}
   {(0,0),(1,10),(2,10),(3,10)...} {-"~~..."-}
 ```
-{.noindent}等無限多個。而 |hF| 有一個唯一定點：空集合，但空集合違反了前述的完整性要求。
+{.nobreak}等無限多個。而 |hF| 有一個唯一定點：空集合，但空集合違反了前述的完整性要求。
 
 如同 |g| 和 |f| 這樣的函數，在我們目前介紹的簡單指稱語意中是沒有定義的。
 它們沒有語意，在我們的語言中是不該有的存在。
@@ -144,7 +144,7 @@ fact :: Nat -> Nat
 fact Zero     = 1
 fact (Suc n)  = (Suc n) * fact n {-"~~,"-}
 ```
-{.noindent}從操作語意的觀點可被讀解成覆寫規則：看到 |fact Zero|, 均可改寫為 |1|; 看到 |fact (Suc n)|, 均可改寫為 |(Suc n) * fact n|.
+{.nobreak}從操作語意的觀點可被讀解成覆寫規則：看到 |fact Zero|, 均可改寫為 |1|; 看到 |fact (Suc n)|, 均可改寫為 |(Suc n) * fact n|.
 歸約 |fact (Suc (Suc Zero))| 這個式子可被視為是不斷使用這兩條覆寫規則：
 ```spec
    fact (Suc (Suc Zero))
@@ -152,7 +152,7 @@ fact (Suc n)  = (Suc n) * fact n {-"~~,"-}
 =  (Suc (Suc Zero)) * (Suc Zero) * fact Zero
 =  (Suc (Suc Zero)) * (Suc Zero) * 1 {-"~~,"-}
 ```
-{.noindent}其中的每個等號都可讀解為「改寫成」。
+{.nobreak}其中的每個等號都可讀解為「改寫成」。
 
 操作語意中較容易談「執行」與「終止」的概念。
 改寫一個式子相當於執行它，如果已經沒有可改寫之處，也就是碰到了範式，執行便終止了。

@@ -219,7 +219,7 @@ hdParaHeader h attrs = do
   case lookupAttrs "title" attrs of
     Just title -> T.hPutStr h ("\n\\paragraph{") >> T.hPutStr h title >> hPutChar h '}'
     _ | hasClass "noindent" attrs -> T.hPutStr h "\n\\noindent "
-    _ | hasClass "nobreak"  attrs -> return ()
+    _ | hasClass "nobreak"  attrs -> T.hPutStr h "\n\\noindent " -- return ()
     _ -> return ()
   mapM_ (renderLabel h) (attrsId attrs)
 

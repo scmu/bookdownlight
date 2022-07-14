@@ -60,7 +60,7 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
   2. 如果 |n| 的型別是 |Nat|, |Suc n| 的型別也是 |Nat|;
   3. 此外，沒有其他型別是 |Nat| 的東西。
 
-{.noindent}這種定義方式稱作*歸納定義*(inductive definition)。
+{.nobreak}這種定義方式稱作*歸納定義*(inductive definition)。
 其中「沒有其他型別是 |Nat| 的東西」一句話很重要 ---
 這意味著任一個自然數只可能是 |Zero|，或是另一個自然數加一，沒有別的可能。
 任一個自然數都是這麼做出來的：由 |Zero| 開始，套上*有限*個 |Suc|。
@@ -83,7 +83,7 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 <==    {- 因 |P (Suc n) <== P n| -}
      P Zero {-"~~."-}
 ```
-{.noindent}第一步中，我們希望 |P (Suc (Suc (Suc Zero)))| 成立，根據 |P (Suc n) <== P n|, 只要 |P (Suc (Suc Zero))| 即可。第二步中，我們希望 |P (Suc (Suc Zero))| 成立，同樣根據|P (Suc n) <== P n|，只要 |P (Suc Zero)| 成立即可... 最後，只要 |P Zero| 成立，|P (Suc Zero)| 即成立，但 |P Zero| 是已知的。因此我們已論證出 |P 3| 成立！
+{.nobreak}第一步中，我們希望 |P (Suc (Suc (Suc Zero)))| 成立，根據 |P (Suc n) <== P n|, 只要 |P (Suc (Suc Zero))| 即可。第二步中，我們希望 |P (Suc (Suc Zero))| 成立，同樣根據|P (Suc n) <== P n|，只要 |P (Suc Zero)| 成立即可... 最後，只要 |P Zero| 成立，|P (Suc Zero)| 即成立，但 |P Zero| 是已知的。因此我們已論證出 |P 3| 成立！
 
 由上述推演中，我們發現：數學歸納法的兩個前提 |P Zero| 與 |P (Suc n) <== P n| 給了我們一個*對任一個自然數|m|, 生成一個 |P m| 之證明*的方法。
 這是由於自然數本就是一個歸納定義出的資料型別：任一個自然數 |m| 都是有限個 |Suc| 套在 |Zero| 之上的結果，因此，只要反覆用 |P (Suc n) <== P n| 拆，總有碰到 |P Zero| 的一天。
@@ -93,7 +93,7 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 ```spec
   {-"\mbox{\bf 自然數上之歸納法}:~"-} (forall n . P n) {-"~"-}<== {-"~"-} P Zero && (forall n . P (Suc n) <== P n) {-"~~."-}
 ```
-{.noindent}這只是把之前的文字描述改寫成二階邏輯，但可清楚看出：給定 |P|, 我們希望證明它對所有自然數都成立，只需要提供 |P Zero| 和 |P (Suc n) <== P n| 兩個證明。
+{.nobreak}這只是把之前的文字描述改寫成二階邏輯，但可清楚看出：給定 |P|, 我們希望證明它對所有自然數都成立，只需要提供 |P Zero| 和 |P (Suc n) <== P n| 兩個證明。
 其中 |P Zero| 是確定 |P| 對 |0| 成立的*基底* (base case)，\index{induction 歸納!base case 基底}
 |P (Suc n) <== P n| 則被稱作*歸納步驟*(inductive step)：\index{induction 歸納!inductive step 歸納步驟}
 在*假設 |P n| 成立的前提下，想辦法「多做一步」，論證 |P (Suc n)| 也成立*。餘下的就可交給數學歸納法這個架構了。
@@ -105,18 +105,18 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 exp :: Nat -> Nat -> Nat
 exp b n = ?
 ```
-{.noindent}問號部分該怎麼寫？沒有其他線索很難進行，因此我們回想：|n| 是自然數，而任何自然數只可能是 |Zero| 或 |Suc| 做出的。我們便分成這兩個狀況考慮吧：
+{.nobreak}問號部分該怎麼寫？沒有其他線索很難進行，因此我們回想：|n| 是自然數，而任何自然數只可能是 |Zero| 或 |Suc| 做出的。我們便分成這兩個狀況考慮吧：
 ```spec
 exp :: Nat -> Nat -> Nat
 exp b Zero     = ?
 exp b (Suc n)  = ?
 ```
-{.noindent}其中，|exp b Zero| 較簡單：顯然應該是 $\Varid{b}^0 = 1$. 至於 |exp b (Suc n)| 的右手邊該怎麼寫？似乎很難一步定出來。
+{.nobreak}其中，|exp b Zero| 較簡單：顯然應該是 $\Varid{b}^0 = 1$. 至於 |exp b (Suc n)| 的右手邊該怎麼寫？似乎很難一步定出來。
 但*假設 |exp b n| 已經順利算出了$\Varid{b}^{\Varid{n}}$*, 由於 $\Varid{b}^{1+\Varid{n}} = \Varid{b} \times \Varid{b}^{\Varid{n}}$, |exp b (Suc n)| 與之的關係可寫成：
 ```spec
 exp b (Suc n) = b * exp b n {-"~~."-}
 ```
-{.noindent}如此一來我們便完成了一個計算乘冪的程式：
+{.nobreak}如此一來我們便完成了一個計算乘冪的程式：
 ```haskell
 exp :: Nat -> Nat -> Nat
 exp b Zero     = 1
@@ -133,7 +133,7 @@ exp :: Int -> Int -> Int
 exp b 0  = 1
 exp b n  = b * exp b (n-1) {-"~~."-}
 ```
-{.noindent}|n+k| pattern 曾引起激烈討論。支持者主要著眼於它在教學上的方便：這方便我們討論數學歸納法、做證明、並讓我們更明顯地看出自然數與串列的相似性。
+{.nobreak}|n+k| pattern 曾引起激烈討論。支持者主要著眼於它在教學上的方便：這方便我們討論數學歸納法、做證明、並讓我們更明顯地看出自然數與串列的相似性。
 反對者則批評它與 type class 的衝突。後來由反方勝出。
 
 有些 Haskell 教科書堅持書中出現的程式碼須是能在一個字一個字地鍵入電腦後即可執行的。
@@ -162,7 +162,7 @@ exp b n  = b * exp b (n-1) {-"~~."-}
 =    {- |exp| 之基底 -}
    2 * 2 * 2 * 1 {-"~~."-}
 ```
-{.noindent}第一步中，要算出 |exp 2 (Suc (Suc (Suc Zero)))|, 我們得先算出 |exp (Suc (Suc Zero))|. 要算出後者，在第二步中我們得先算出 |exp (Suc Zero)|... 直到我們碰到 |exp b Zero|.
+{.nobreak}第一步中，要算出 |exp 2 (Suc (Suc (Suc Zero)))|, 我們得先算出 |exp (Suc (Suc Zero))|. 要算出後者，在第二步中我們得先算出 |exp (Suc Zero)|... 直到我們碰到 |exp b Zero|.
 
 {title="自然數上的歸納定義"}
 我們將 |b| 固定，稍微抽象一點地看 |exp b :: Nat -> Nat| 這個函數。該定義符合這樣的模式：
@@ -171,7 +171,7 @@ f :: Nat -> a
 f Zero     = e
 f (Suc n)  = ... f n ... {-"~~."-}
 ```
-{.noindent}這類函數的輸入是 |Nat|，其定義中 |f (Suc n)| 的狀況以 |f n| 定出，此外沒有其他對 |f| 的呼叫。若一個函數符合這樣的模式，我們說它是*在自然數上歸納定義*出的，其中 |f Zero| 那條稱作其基底，|f (Suc n)| 那條稱作其歸納步驟。我們日後將看到的許多程式都符合這個模式。
+{.nobreak}這類函數的輸入是 |Nat|，其定義中 |f (Suc n)| 的狀況以 |f n| 定出，此外沒有其他對 |f| 的呼叫。若一個函數符合這樣的模式，我們說它是*在自然數上歸納定義*出的，其中 |f Zero| 那條稱作其基底，|f (Suc n)| 那條稱作其歸納步驟。我們日後將看到的許多程式都符合這個模式。
 
 數學上，若一個函數能為其值域內的每個值都找到一個輸出，我們說它是個全函數(total function)，否則是部分函數(partial function).
 計算上，當我們說 |f| 是一個全函數，意謂只要 |x| 型別正確並可算出值，|f x| 便能終止並算出一個值，不會永久跑下去，也不會丟出錯誤。
@@ -196,7 +196,7 @@ f (Suc n)  = ... f n ... {-"~~."-}
 (*) :: Nat -> Nat -> Nat
 m * n = ?
 ```
-{.noindent}若不用組件，我們目前會的寫程式方法只有歸納法，也只有這招可試試看了。
+{.nobreak}若不用組件，我們目前會的寫程式方法只有歸納法，也只有這招可試試看了。
 但，|(*)| 有兩個參數，我們該把 |(m *) :: Nat -> Nat| 視為一個函數，分別考慮 |n| 是 |Zero| 或 |Suc ...| 的情況，還是把
 |(* n) :: Nat -> Nat| 視為一個函數，考慮 |m| 是 |Zero| 或 |Suc ...| 的情況？答案是兩者皆可，並無根本性的差異。只是現在我們做的選擇會影響到之後與 |(*)| 相關的證明怎麼寫(見第\@ref{sec:inductive-proof-on-Nat}節)。本書中的習慣是拆左手邊的參數，因此我們考慮以下兩種情況。
 ```spec
@@ -204,7 +204,7 @@ m * n = ?
 Zero     * n  = ?
 (Suc m)  * n  = ... m * n ....
 ```
-{.noindent}基底狀況中，|Zero * n| 的合理結果應是 |Zero|.
+{.nobreak}基底狀況中，|Zero * n| 的合理結果應是 |Zero|.
 歸納步驟中，我們得想法算出 |(Suc m) * n|, 但我們可假設 |m * n| 已經算出了。
 稍作思考後，讀者應可同意以下的做法：
 ```spec
@@ -212,7 +212,7 @@ Zero     * n  = ?
 Zero     * n  = Zero
 (Suc m)  * n  = n + (m * n) {-"~~,"-}
 ```
-{.noindent}如果已有 |m * n|，多做一個 |(n+)|, 就可得到 |(Suc m) * n|了。
+{.nobreak}如果已有 |m * n|，多做一個 |(n+)|, 就可得到 |(Suc m) * n|了。
 
 如果我們的程式語言中連加法都沒有呢？加法可看成連續地做 |Suc|:
 ```spec
@@ -220,7 +220,7 @@ Zero     * n  = Zero
 Zero     + n  = n
 (Suc m)  + n  = Suc (m + n) {-"~~."-}
 ```
-{.noindent}此處 |(+)| 是我們定義的、可將任意兩個自然數相加的加法，而 |Suc| 只做「加一」，是基本的資料建構元。
+{.nobreak}此處 |(+)| 是我們定義的、可將任意兩個自然數相加的加法，而 |Suc| 只做「加一」，是基本的資料建構元。
 為求一致，我們同樣在左邊的參數上做歸納。
 基底狀況中，|Zero + n| 只應是 |n|. 想計算 |(Suc m) + n|, 先假設 |m+n| 已經算出，再多套一個 |Suc|. 不難看出 |m + n| 是把 |n| 當做基底，在外面套上 |m| 個 |Suc| 的結果。
 ^[「這樣做不是很慢嗎？」是的。本章的自然數表示法，以及其引申出的運算元都不應看作有效率的實作，而是理論工具。了解加法與乘法可這樣看待後，許多其相關性質都可依此推導出來。]
@@ -233,7 +233,7 @@ Zero     + n  = n
 ::: {.theorem #thm:exp-plus-times}
   對任何 |b, m, n :: Nat|, |exp b (m + n) = exp b m * exp b n|.
 :::
-{.noindent}我們試著證明定理\@ref{thm:exp-plus-times}。數學歸納法是我們目前唯一的工具，
+{.nobreak}我們試著證明定理\@ref{thm:exp-plus-times}。數學歸納法是我們目前唯一的工具，
 而要使用它，第一個問題是：該用 |b|, |m|, 或 |n| 的哪一個來做歸納呢（意即把哪一個拆解）？
 
 觀察定理\@ref{thm:exp-plus-times}中待證明式的等號兩邊，並參照 |exp|, |(+)|, 與 |(*)|的定義。
@@ -286,13 +286,13 @@ expPlusTimesP1 b m n =
 ```spec
   {-"\mbox{\bf 自然數上之歸納法}:~"-} (forall k . P k) {-"~"-}<== {-"~"-} P Zero && (forall k . P (Suc k) <== P k) {-"~~."-}
 ```
-{.noindent}證明\@ref{thm:exp-plus-times}欲證的是 |exp b (m + n) = exp b m * exp b n|，並在 |m| 上做歸納。
+{.nobreak}證明\@ref{thm:exp-plus-times}欲證的是 |exp b (m + n) = exp b m * exp b n|，並在 |m| 上做歸納。
 更精確地說，就是選用了下述的 |P|:%
 ^[在程式推導圈子中，|(<=>)| 常用來代表「只用在真假值上、且滿足遞移律的等號」。本書中使用 |(<=>)| 以和 |(=)| 做區分。]
 ```spec
 P m <=> (exp b (m + n) = exp b m * exp b n) {-"~~,"-}
 ```
-{.noindent}在證明中改變的是 |m|，而 |b| 與 |n| 是固定的。數學歸納法可證明 |(forall m . P m)|, 展開後正是 |(forall m . exp b (m + n) = exp b m * exp b n)|. 而根據數學歸納法，我們需提供 |P Zero| 與 |(forall m . P (Suc m) <== P m)| 的證明。
+{.nobreak}在證明中改變的是 |m|，而 |b| 與 |n| 是固定的。數學歸納法可證明 |(forall m . P m)|, 展開後正是 |(forall m . exp b (m + n) = exp b m * exp b n)|. 而根據數學歸納法，我們需提供 |P Zero| 與 |(forall m . P (Suc m) <== P m)| 的證明。
 
 證明\@ref{thm:exp-plus-times}中「{\bf 情況} |m := Zero|」的部分，就是 |P Zero| 的證明。
 而「{\bf 情況} |m := Suc m|」則是 |(forall m . P (Suc m) <== P m)| 的證明。
@@ -355,7 +355,7 @@ fact :: Nat -> Nat
 fact Zero     = 1
 fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
 ```
-{.noindent}我們在定理 \@ref{thm:length-perms} 中將會談到階層與排列的關係。
+{.nobreak}我們在定理 \@ref{thm:length-perms} 中將會談到階層與排列的關係。
 
 
 ## 串列與其歸納定義 {#sec:induction-lists}
@@ -364,7 +364,7 @@ fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
 ```spec
 data List a = [] | a : List a {-"~~."-}
 ```
-{.noindent}這個定義可以理解為
+{.nobreak}這個定義可以理解為
 
   1. |[]| 是一個串列，
   2. 若 |xs| 是一個元素型別為|a|的串列，|x| 型別為 |a|, 則 |x:xs| 也是一個元素型別為|a|的串列，
@@ -384,19 +384,19 @@ f :: List a -> b
 f []      = e
 f (x:xs)  = ... f xs ...
 ```
-{.noindent}來看些例子吧！「算一個陣列的和」可能是許多人學到陣列後得寫的頭幾個練習程式。串列版的和可以這麼寫：
+{.nobreak}來看些例子吧！「算一個陣列的和」可能是許多人學到陣列後得寫的頭幾個練習程式。串列版的和可以這麼寫：
 ```spec
 sum :: List Int -> Int
 sum []      = 0
 sum (x:xs)  = x + sum xs {-"~~."-}
 ```
-{.noindent}基底狀況中，空串列的和應是|0|。歸納步驟中，我們要算|x:xs| 的和，可假設我們已算出|xs| 的和，再加上|x| 即可。計算串列長度的 |length| 有很類似的定義 ：
+{.nobreak}基底狀況中，空串列的和應是|0|。歸納步驟中，我們要算|x:xs| 的和，可假設我們已算出|xs| 的和，再加上|x| 即可。計算串列長度的 |length| 有很類似的定義 ：
 ```haskell
 length :: List a -> Nat
 length []      = Zero
 length (x:xs)  = Suc (length xs) {-"~~."-}
 ```
-{.noindent}在歸納步驟中，我們想計算|x:xs| 的長度，只需假設我們已知|xs| 的長度，然後加一。
+{.nobreak}在歸納步驟中，我們想計算|x:xs| 的長度，只需假設我們已知|xs| 的長度，然後加一。
 事實上，|length| 剛好體現了前述「|List a| 只是在每個|Suc|上添了資訊的自然數」一事：
 |length| 把串列走過一遍，將 |[]| 代換成 |Zero|，並將每個 |(_:)| 中附加的資訊拋棄，代換成 |Suc|。
 
@@ -406,7 +406,7 @@ map :: (a -> b) -> List a -> List b
 map f []      = []
 map f (x:xs)  = f x : map f xs {-"~~."-}
 ```
-{.noindent}基底狀況的合理結果是|[]|. 歸納步驟中，要對 |x:xs| 中的每個元素都做 |f|,
+{.nobreak}基底狀況的合理結果是|[]|. 歸納步驟中，要對 |x:xs| 中的每個元素都做 |f|,
 我們可假設已經知道如何對 |xs| 中的每個元素都做 |f|, 把其結果接上 |f x| 即可。
 
 函數 |(++)| 把兩個串列接起來。如果我們在其左邊的參數上做歸納定義，可得到：%
@@ -416,7 +416,7 @@ map f (x:xs)  = f x : map f xs {-"~~."-}
 []      ++ ys  = ys
 (x:xs)  ++ ys  = x : (xs ++ ys) {-"~~."-}
 ```
-{.noindent}空串列接上 |ys| 仍是 |ys|. 歸納步驟中，要把 |x:xs| 接上 |ys|, 我們可假設已有辦法把 |xs| 接上 |ys|, 然後只需添上 |x| 即可。
+{.nobreak}空串列接上 |ys| 仍是 |ys|. 歸納步驟中，要把 |x:xs| 接上 |ys|, 我們可假設已有辦法把 |xs| 接上 |ys|, 然後只需添上 |x| 即可。
 
 請讀者比較一下|(++)|與自然數加法|(+)|的定義，會發現兩者的結構一模一樣！
 如果串列是在每個|Suc|中加上資料的自然數，|(++)|就是串列上的加法了。
@@ -424,7 +424,7 @@ map f (x:xs)  = f x : map f xs {-"~~."-}
 ```{.equation #eq:length-append}
   |length (xs ++ ys) = length xs + length ys| \mbox{~~.}
 ```
-{.noindent}習題 \@ref{ex:length-append} 中將證明此性質。
+{.nobreak}習題 \@ref{ex:length-append} 中將證明此性質。
 
 最後，|(++)| 是反覆使用 |(:)|, 函數 |concat| 則是反覆使用 |(++)|:
 ```spec
@@ -439,7 +439,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 ```spec
   {-"\mbox{\bf 串列上之歸納法}:~"-} (forall xs . P xs) {-"~"-}<== {-"~"-} P [] && (forall x xs . P (x:xs) <== P xs) {-"~~."-}
 ```
-{.noindent}以文字敘述的話：給定一個述語 |P :: List a -> Bool|, 若要證明 |P xs| 對所有 |xs| 都成立，只需證明 |P []| 和「對所有 |x| 和 |xs|, 若 |P xs| 則 |P (x:xs)|」。
+{.nobreak}以文字敘述的話：給定一個述語 |P :: List a -> Bool|, 若要證明 |P xs| 對所有 |xs| 都成立，只需證明 |P []| 和「對所有 |x| 和 |xs|, 若 |P xs| 則 |P (x:xs)|」。
 
 下述的 *|map| 融合定理*(*map-fusion theorem*)
 \index{map-fusion map 融合定理@@{|map|-fusion |map| 融合定理}}
@@ -449,7 +449,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 對任何 |f| 與 |g|,
 |map f . map g = map (f.g)|.
 :::
-{.noindent}作為一個例子，我們試著證明定理\@ref{thm:map-fusion}。
+{.nobreak}作為一個例子，我們試著證明定理\@ref{thm:map-fusion}。
 我們目前只會用歸納證明，但是 |map f . map g = map (f.g)| 的左右邊都是函數，
 沒有出現串列也沒有出現自然數。該拿什麼東西來歸納呢？
 
@@ -459,7 +459,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 ```equation
     |map f (map g xs) = map (f.g) xs| \mbox{~ ~.}
 ```
-{.noindent}我們便可以在|xs|上做歸納了！
+{.nobreak}我們便可以在|xs|上做歸納了！
 :::{.proof}
 當 |xs := []|，等式兩邊皆歸約為 |[]|.
 考慮 |xs := x:xs| 的情況：
@@ -562,7 +562,7 @@ reverse :: List a -> List a
 reverse []      = []
 reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 ```
-{.noindent}另，關於 |reverse| 效率的討論詳見第 \@ref{sec:efficiency-basics} 節。
+{.nobreak}另，關於 |reverse| 效率的討論詳見第 \@ref{sec:efficiency-basics} 節。
 :::
 :::{.exer #ex:length-map}
 證明對所有 |f|, |length . map f = length|.
@@ -612,7 +612,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 不論左右邊，最關鍵的值都是 |xs|.
 因此我們在 |xs| 之上做歸納。
 
-{.noindent}**狀況** |xs:=[]|:
+{.nobreak}**狀況** |xs:=[]|:
 ```spec
    ([] ++ ys) ++ zs
 =   {- |(++)| 之定義 -}
@@ -621,7 +621,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
    [] ++ (ys ++ zs) {-"~~."-}
 ```
 
-{.noindent}**狀況** |xs:= x:xs|:
+{.nobreak}**狀況** |xs:= x:xs|:
 ```spec
    ((x:xs) ++ yz) ++ zs
 =    {- |(++)| 之定義 -}
@@ -643,7 +643,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 :::{.exans}
 檢視 |length|, |(++)|, 與 |(+)| 的定義，會發現等號兩邊都須對 |xs| 做分析才能化簡。因此我們對 |xs| 做歸納。
 
-{.noindent}**狀況** |xs := []|.
+{.nobreak}**狀況** |xs := []|.
 ```{.haskell .invisible}
 lengthAppendPf0 ys =
 ```
@@ -657,7 +657,7 @@ lengthAppendPf0 ys =
       length [] +: length ys {-"~~."-}
 ```
 
-{.noindent}**狀況**  |xs := x : xs|.
+{.nobreak}**狀況**  |xs := x : xs|.
 ```{.haskell .invisible}
 lengthAppendPf1 :: a -> List a -> List a -> Nat
 lengthAppendPf1 x xs ys =
@@ -729,7 +729,7 @@ sumConcatInd xs xss =
  ===    {- |map| 之定義 -}
       sum (map sum (xs:xss)) {-"~~."-}
 ```
-{.noindent}讀者對這個證明最大的疑問可能是：我們怎麼知道該用 |sum (xs ++ ys) = sum xs + sum ys| 呢？
+{.nobreak}讀者對這個證明最大的疑問可能是：我們怎麼知道該用 |sum (xs ++ ys) = sum xs + sum ys| 呢？
 為什麼當我們遇到 |sum (xs ++ concat xss)|, 我們不是把 |xs| 再拆成首和尾，甚至把 |xss| 拆開？
 這是許多綜合考量的結果。
 首先，我們預期會使用歸納假設，因此證明前幾步的目的均為把 |sum| 推到 |concat xss| 左側，試圖做出 |sum (concat xss)|.
@@ -781,7 +781,7 @@ sumConcatInd xs xss =
 ===  sum (length xs : map length xss)
 ===  sum (map length (xs:xss)) {-"~~."-}
 ```
-{.noindent}我們需要的性質是 |length (xs ++ ys) = length xs + length ys| .
+{.nobreak}我們需要的性質是 |length (xs ++ ys) = length xs + length ys| .
 :::
 :::{.exer #ex:map-concat}
 證明對所有 |f|, |map f . concat = concat . map (map f)|.
@@ -799,7 +799,7 @@ sumConcatInd xs xss =
 ===  concat (map f xs : map (map f xss))
 ===  concat (map (map f (xs : xss))) {-"~~."-}
 ```
-{.noindent}我們需要的性質是 |map f (xs ++ ys) = map f xs ++ map f ys| .
+{.nobreak}我們需要的性質是 |map f (xs ++ ys) = map f xs ++ map f ys| .
 :::
 :::
 
@@ -815,7 +815,7 @@ filter :: (a -> Bool) -> List a -> List a
 filter p []      = []
 filter p (x:xs)  = if p x then x : filter p xs else filter p xs {-"~~."-}
 ```
-{.noindent}在 |filter| 的許多性質中，我們試著證明下述性質作為例子：
+{.nobreak}在 |filter| 的許多性質中，我們試著證明下述性質作為例子：
 :::{.theorem #thm:filter-map}
 |filter p . map f = map f . filter (p . f)|.
 :::
@@ -859,7 +859,7 @@ filterMapPf1 p f x xs =
 ```equation
   |three (if p then e1 else e2) {-"~\stackrel{?}{=}~"-} if p then three e1 else three e2| {-"~~."-}
 ```
-{.noindent}上述式子的左手邊直接化簡成|3|, 但右手邊卻不會終止，因為 |if| 得知道 |p| 的值。
+{.nobreak}上述式子的左手邊直接化簡成|3|, 但右手邊卻不會終止，因為 |if| 得知道 |p| 的值。
 我們找到了 \@eqref{eq:fn-if-distribute} 的反例！
 
 在允許可能不終止的程式存在的世界中，\@eqref{eq:fn-if-distribute}得多些附加條件。
@@ -875,7 +875,7 @@ filter p []      = []
 filter p (x:xs)  | p x        = x : filter p xs
                  | otherwise  = filter p xs {-"~~."-}
 ```
-{.noindent}若在此定義下證明定理\@ref{thm:filter-map}，依「證明的結構與程式的結構相同」的原則，順理成章地，我們可在 |xs:=x:xs| 中再分出 |p (f x)| 成立與不成立的兩個子狀況：
+{.nobreak}若在此定義下證明定理\@ref{thm:filter-map}，依「證明的結構與程式的結構相同」的原則，順理成章地，我們可在 |xs:=x:xs| 中再分出 |p (f x)| 成立與不成立的兩個子狀況：
 ```spec
  {-"\mbox{\bf 狀況}~"-} xs:=[]:  ...
  {-"\mbox{\bf 狀況}~"-} xs:=x:xs: ...
@@ -890,7 +890,7 @@ filter p (x:xs)  | p x        = x : filter p xs
          filter p (map f xs)
       =  ... {-"~~."-}
 ```
-{.noindent}這個定義中不用 |if|, 因此證明中也用不上 \@eqref{eq:fn-if-distribute}, 但該證明要成立仍須假設所有程式都正常終止 --- 我們少證了一個 「|p (f x)| 不終止」的情況（而確實，在此情況下\@eqref{eq:fn-if-distribute}並不成立）。喜歡用哪個方式純屬個人偏好。
+{.nobreak}這個定義中不用 |if|, 因此證明中也用不上 \@eqref{eq:fn-if-distribute}, 但該證明要成立仍須假設所有程式都正常終止 --- 我們少證了一個 「|p (f x)| 不終止」的情況（而確實，在此情況下\@eqref{eq:fn-if-distribute}並不成立）。喜歡用哪個方式純屬個人偏好。
 
 前幾章提過的 |takeWhile| 與 |dropWhile| 兩函數型別與 |filter| 相同。他們可寫成如下的歸納定義：
 ```spec
@@ -902,7 +902,7 @@ dropWhile :: (a -> Bool) -> List a -> List a
 dropWhile p []      = []
 dropWhile p (x:xs)  = if p x then dropWhile p xs else x:xs {-"~~."-}
 ```
-{.noindent}兩者都是在輸入串列上做歸納。兩者也都可用保護式語法定義。
+{.nobreak}兩者都是在輸入串列上做歸納。兩者也都可用保護式語法定義。
 
 :::{.exlist}
 :::{.exer #ex:take-cat-drop}
@@ -930,7 +930,7 @@ elem x (y:xs)  = (x == y) || elem x xs {-"~~."-}
 ```spec
   elem z xs {-"~"-}==>{-"~"-} elem z (xs ++ ys) {-"~~."-}
 ```
-{.noindent}以口語說出的話：「若|z| 出現在|xs| 中，|z| 也出現在|xs ++ ys| 中」。
+{.nobreak}以口語說出的話：「若|z| 出現在|xs| 中，|z| 也出現在|xs ++ ys| 中」。
 欲證明上式，該從哪一側推到哪一側呢？
 一般認為從式子較長、或結構較複雜的那側開始，化簡成較短、較簡單的那側，是較容易的。
 因此我們嘗試由右側推到左側：由 |elem z (xs ++ ys)| 開始，尋找使之成立的條件，
@@ -950,7 +950,7 @@ elem x (y:xs)  = (x == y) || elem x xs {-"~~."-}
      elem z (x:xs) {-"~~."-}
 ```
 :::
-{.noindent}讀者可注意：第1, 2, 4 步使用的邏輯關係都是 |(<=>)| ，第 3 步卻是 |(<==)|，因此整個證明建立了「若|elem z (x:xs)|，則|elem z ((x:xs) ++ ys)|」。
+{.nobreak}讀者可注意：第1, 2, 4 步使用的邏輯關係都是 |(<=>)| ，第 3 步卻是 |(<==)|，因此整個證明建立了「若|elem z (x:xs)|，則|elem z ((x:xs) ++ ys)|」。
 
 :::{.exlist}
 :::{.exer}
@@ -1010,19 +1010,19 @@ allElemFilterPf1 p x xs =
 ```spec
 inits xs = map (\n -> take n xs) [0 .. length xs] {-"~~."-}
 ```
-{.noindent}如果不用組件，改用歸納定義呢？我們試試看：
+{.nobreak}如果不用組件，改用歸納定義呢？我們試試看：
 ```spec
 inits :: List a -> List (List a)
 inits []      = ?
 inits (x:xs)  = ?
 ```
-{.noindent}基底狀況 |inits []| 的可能選擇是 |[[]]| （見後述）。至於歸納步驟該怎麼寫？
+{.nobreak}基底狀況 |inits []| 的可能選擇是 |[[]]| （見後述）。至於歸納步驟該怎麼寫？
 我們用例子來思考。比較 |inits [2,3]| 與 |inits [1,2,3]|:
 ```spec
   inits [2,3]    = [[],[2],[2,3]] {-"~~,"-}
   inits [1,2,3]  = [[],[1],[1,2],[1,2,3]] {-"~~."-}
 ```
-{.noindent}假設我們已算出 |inits [2,3]|, 如何把它加工變成 |inits [1,2,3]|? 請讀者暫停一下，思考看看！
+{.nobreak}假設我們已算出 |inits [2,3]|, 如何把它加工變成 |inits [1,2,3]|? 請讀者暫停一下，思考看看！
 
 一個思路是：如果在 |[[],[2],[2,3]]| 中的每個串列前面都補一個 |1|, 我們就有了 |[[1],[1,2],[1,2,3]]|. 再和 |inits [1,2,3]| 比較，就只差一個空串列了！
 因此 |inits| 的一種定義方式是：
@@ -1063,7 +1063,7 @@ initsp (x:xs)  = [x] : map (x:) (initsp xs) {-"~~."-}
 upto Zero     = [Zero]
 upto (Suc n)  = 0 : map (Suc) (upto n) {-"~~."-}
 ```
-{.noindent}使得 |upto n = [0.. n]|.
+{.nobreak}使得 |upto n = [0.. n]|.
 假設 |inits| 已如本節一般地歸納定義，證明對所有 |xs|,
 |inits xs = map (\n -> take n xs) (upto (length xs))|.
 您可能會需要 |map| 融合定理（定理\@ref{thm:map-fusion}），
@@ -1071,9 +1071,9 @@ upto (Suc n)  = 0 : map (Suc) (upto n) {-"~~."-}
 :::{.exans}
 在 |xs| 上做歸納。
 
-\noindent **情況** |xs := []|. 此時等號兩邊都是 |[[]]|.
+{.noindent}**情況** |xs := []|. 此時等號兩邊都是 |[[]]|.
 
-\noindent **情況** |xs := x:xs|.
+{.noindent}**情況** |xs := x:xs|.
 ```{.haskell .invisible}
 initsEquival x xs =
 ```
@@ -1110,7 +1110,7 @@ tails :: List a -> List (List a)
 tails []      = [[]]
 tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
 ```
-{.noindent}在習題 \@ref{ex:zip-inits-tails} 中我們將證明一個將 |inits| 與 |tails| 牽上關係的定理：將 |inits| 傳回的前段與 |tails| 傳回的後段照其順序對應，每對接起來都是原來的串列。
+{.nobreak}在習題 \@ref{ex:zip-inits-tails} 中我們將證明一個將 |inits| 與 |tails| 牽上關係的定理：將 |inits| 傳回的前段與 |tails| 傳回的後段照其順序對應，每對接起來都是原來的串列。
 
 {title="連續區段"}
 給定一個串列，許多傳統最佳化問題的目標是計算符合某條件的*連續區段*（簡稱「區段」）。%
@@ -1122,7 +1122,7 @@ tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
 segments :: List a -> List (List a)
 segments = concat . map inits . tails {-"~~."-}
 ```
-{.noindent}但 |segments| 無法寫成本章目前這種形式的歸納定義。我們將在以後的章節再討論到 |segments|.
+{.nobreak}但 |segments| 無法寫成本章目前這種形式的歸納定義。我們將在以後的章節再討論到 |segments|.
 
 :::{.exlist}
 :::{.exer}
@@ -1132,7 +1132,7 @@ segments :: List a -> List (List a)
 segments []      = ?
 segments (x:xs)  = ... segments xs ... {-"~~,"-}
 ```
-{.noindent}在歸納步驟中希望由 |segments xs| 湊出 |segments (x:xs)|。
+{.nobreak}在歸納步驟中希望由 |segments xs| 湊出 |segments (x:xs)|。
 這是能在不對輸入串列（型別為|List a|）做任何限制之下做得到的嗎？
 如果做不到，為什麼？
 :::
@@ -1142,11 +1142,11 @@ segments (x:xs)  = ... segments xs ... {-"~~,"-}
 ```spec
 [[],[1],[1,2],[1,2,3],[2],[2,3],[3]] {-"~~."-}
 ```
-{.noindent}而 |segments [0,1,2,3]| 的結果可能是：
+{.nobreak}而 |segments [0,1,2,3]| 的結果可能是：
 ```spec
 [[],[0],[0,1],[0,1,2],[0,1,2,3],[1],[1,2],[1,2,3],[2],[2,3],[3]] {-"~~."-}
 ```
-{.noindent}乍看之下，要多做的一步是：在空串列或所有|1|開頭的串列前面補上 |0|.
+{.nobreak}乍看之下，要多做的一步是：在空串列或所有|1|開頭的串列前面補上 |0|.
 之所以只擴充|1|開頭的串列，因為只有這些是原本便靠在左邊，和 |0| 相鄰的
 （也就是說它們是|[1,2,3]|的前段）。
 
@@ -1164,14 +1164,14 @@ fan :: a -> List a -> List (List a)
 fan x []      = [[x]]
 fan x (y:xs)  = (x:y:xs) : map (y:) (fan x xs) {-"~~."-}
 ```
-{.noindent}有了 |fan|, 我們不難定義 |perms :: List a -> List (List a)|, 計算一個串列所有可能
+{.nobreak}有了 |fan|, 我們不難定義 |perms :: List a -> List (List a)|, 計算一個串列所有可能
 的*排列*。例如，|perms [1,2,3] = [[1,2,3], [2,1,3], [2,3,1], [1,3,2], [3,1,2], [3,2,1]]|：
 ```haskell
 perms :: List a -> List (List a)
 perms []      = [[]]
 perms (x:xs)  = concat (map (fan x) (perms xs)) {-"~~."-}
 ```
-{.noindent}讀者可思考為何我們需要 |concat|? 如果沒有，會出現什麼錯誤？
+{.nobreak}讀者可思考為何我們需要 |concat|? 如果沒有，會出現什麼錯誤？
 
 基於 |perm| 的這個定義，我們證明一個定理：*長度為 |n| 的串列有 |fact n| 種排列*。
 這個證明將使用到許多輔助性質與引理，有些已經是我們之前證明過的習題，有些則可作為接下來的習題。
@@ -1313,7 +1313,7 @@ sublists (x:xs)  = yss ++ map (x:) yss {-"~~,"-}
 ```equation
    &|splits [1,2,3] = [([],[1,2,3]), ([1],[2,3]), ([1,2],[3]), ([1,2,3,[]])]|\mbox{~~.}
 ```
-{.noindent}另一種說法是 |splits xs = zip (inits xs) (tails xs)|.
+{.nobreak}另一種說法是 |splits xs = zip (inits xs) (tails xs)|.
 :::
 :::{.exans .compact}
 ```haskell
@@ -1321,7 +1321,7 @@ splits :: List a -> List (List a :* List a)
 splits []      = [([],[])]
 splits (x:xs)  = ([],x:xs) : map ((x:)***id) (splits xs) {-"~~."-}
 ```
-{.noindent}其中 |(f *** g) (x,y) = (f x, g y)|.
+{.nobreak}其中 |(f *** g) (x,y) = (f x, g y)|.
 :::
 :::{.exer #ex:length-sublists}
 證明 |length . sublists = exp 2 . length|. 也就是說，長度為 |n| 的串列的子串列數目為 $2^n$. 你會需要的性質可能包括 \@eqref{eq:length-append} (|length (xs++ys) = length xs + length ys|), 以及 |length . map f = length|.
@@ -1413,7 +1413,7 @@ parts (x:xs)  = concat (map (extend x) (parts xs)) {-"~~,"-}
   where  extend x []        = [[[x]]]
          extend x (ys:yss)  = [[x]:ys:yss, (x:ys):yss] {-"~~."-}
 ```
-{.noindent}遞迴呼叫 |parts xs| 找出 |xs| 的所有劃分，
+{.nobreak}遞迴呼叫 |parts xs| 找出 |xs| 的所有劃分，
 輔助函數 |extend x :: List (List a) -> List (List (List a))| 則作用在其中一個劃分上。
 我們得分出兩個狀況：
 
@@ -1421,7 +1421,7 @@ parts (x:xs)  = concat (map (extend x) (parts xs)) {-"~~,"-}
      我們把這兩種選擇收集到一個串列中，因此 |extend| 的結果有三層 |List|。
   2. 如果該劃分是空的，加入 |x| 的劃分必定是 |[[x]]|，但仍需放入一個串列中，表示「只有這一個選擇」。
 
-{.noindent}呼叫 |map (extend x)| 的結果需再用一個 |concat| 聯集在一起。
+{.nobreak}呼叫 |map (extend x)| 的結果需再用一個 |concat| 聯集在一起。
 
 :::{.infobox title="反函數"}
 ```texonly
@@ -1434,7 +1434,7 @@ parts (x:xs)  = concat (map (extend x) (parts xs)) {-"~~,"-}
 ```spec
   parts = filter (all (not . null)) . inv concat {-"~~."-}
 ```
-{.noindent}計算 |parts xs| 時，我們用 |inv concat| 找出所有滿足 |concat yss = xs| 的 |List (List a)|, 並且只挑出不含空串列的。
+{.nobreak}計算 |parts xs| 時，我們用 |inv concat| 找出所有滿足 |concat yss = xs| 的 |List (List a)|, 並且只挑出不含空串列的。
 
 上述定義可以轉換成本節的歸納定義。相關研究可參考 @MuBird:03:Theory.
 ```texonly
@@ -1456,11 +1456,11 @@ ins :: a -> List a -> List (List a)
 ins x []      = []
 ins x (y:ys)  = (x:y:ys) : map (y:) (ins x ys) {-"~~."-}
 ```
-{.noindent}請證明對所有 |x|, |ys|, 與 |zs|,
+{.nobreak}請證明對所有 |x|, |ys|, 與 |zs|,
 ```{.equation #eq:append-ins}
   |map (++zs) (ins x ys) ++  map (ys++) (ins x zs)| &= |ins x (ys ++ zs) {-"~~."-}|
 ```
-{.noindent}意即：在 |ys ++ zs| 之中插入 |x| 的所有方法，
+{.nobreak}意即：在 |ys ++ zs| 之中插入 |x| 的所有方法，
 是 1. 把 |x| 插入 |ys| 之中，並把每個結果的右邊接上 |zs|,
 以及 2. 把 |x| 插入 |zs| 之中，並把每個結果的左邊接上 |ys|.
 
@@ -1516,7 +1516,7 @@ insCat x y ys zs =
  ===     {- 9. |ins| 與 |(++)| 之定義 -}
      ins x ((y:ys)++zs) {-"~~."-}
 ```
-{.noindent}雖然步驟多、式子長，但策略確定後，整個證明的架構便很清楚。第 1 到 7 步都是為了可在第 8 步使用歸納而做的準備。
+{.nobreak}雖然步驟多、式子長，但策略確定後，整個證明的架構便很清楚。第 1 到 7 步都是為了可在第 8 步使用歸納而做的準備。
 為湊出 |map (++zs) (ins x ys) ++ map (ys++) (ins x zs)|, 第 2 至第 4 步把 |map (++zs)| 往裡推，把第一個 |map (y:)| 往外提；第 5, 6 步則提出另一個 |map (y:)|。式子變成 |map (y:) ... ++ map (y:) ...| 的形式後，共同的 |map (y:)| 可在第 7 步提出來。
 如此，終於可使用歸納假設了。
 *整個證明中，要配對哪個變數、把式子中的哪些項往哪兒移動，都被符號引導著而有線索可循。*
@@ -1546,7 +1546,7 @@ insCat' x y z ys zs =
    (x:y:ys++(z:zs)) : map (++(z:zs)) (map (y:) (ins x ys)) ++
      ((y:ys ++ (x:z:zs)) : map ((y:ys) ++) (map (z:) (ins x zs))) {-"~~."-}
 ```
-{.noindent}要從這樣的式子中再整理出
+{.nobreak}要從這樣的式子中再整理出
 |map (++(z:zs)) (ins x (y:ys)) ++ map ((y:ys) ++) (ins x (z:zs))|
 以便做歸納假設，
 我們得看出如何把（本來不需展開的）|ins x (z:zs)| 給收回來。
@@ -1595,7 +1595,7 @@ insCat' x y z ys zs =
 data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
 data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 ```
-{.noindent}型別 |ETree| 可讀解為一個歸納資料結構，我們可在它之上以歸納法定義函數。
+{.nobreak}型別 |ETree| 可讀解為一個歸納資料結構，我們可在它之上以歸納法定義函數。
 例如，下述的函數 |minE| 計算一個 |ETree| 中最小的元素，|mapE f| 則將函數 |f| 作用在樹中的每個元素上。
 ```haskell
 minE :: ETree Int -> Int
@@ -1606,7 +1606,7 @@ mapE :: (a -> b) -> ETree a -> ETree b
 mapE f (Tip x)    = Tip (f x)
 mapE f (Bin t u)  = Bin (mapE f t) (mapE f u) {-"~~."-}
 ```
-{.noindent}我們也有如下的歸納原則：
+{.nobreak}我們也有如下的歸納原則：
 ```spec
   {-"\mbox{\bf ETree 上之歸納法}:~"-} (forall t :: ETree a . P t) {-"~"-}<== {-"~"-}
     (forall x . P (Tip x)) && (forall t u . P (Bin t u) <== P t && P u) {-"~~."-}
@@ -1616,7 +1616,7 @@ mapE f (Bin t u)  = Bin (mapE f t) (mapE f u) {-"~~."-}
 ```spec
   minE (mapE (x +) t) = x + minE t {-"~~."-}
 ```
-{.noindent}左手邊將樹中的每個元素都加上 |x|, 然後取最小的。右手邊則告訴我們不必這麼麻煩，先取最小的，再加上 |x| 即可！
+{.nobreak}左手邊將樹中的每個元素都加上 |x|, 然後取最小的。右手邊則告訴我們不必這麼麻煩，先取最小的，再加上 |x| 即可！
 :::{.proof}
 基底狀況 |t := Tip y| 很容易成立。至於歸納狀況 |t := Bin t u|,
 使其成立的關鍵性質是加法可分配至 |(`min`)| 中：|x + (y `min` z) = (x+y) `min` (x+z)|:
@@ -1653,7 +1653,7 @@ minEmapEplusPf1 x t u =
               (Node 5  (Node 4 Null Null)
                        (Node 6 Null Null)) {-"~~,"-}
 ```
-{.noindent}則 |tags t = [1,2,3,4,5,6]|.
+{.nobreak}則 |tags t = [1,2,3,4,5,6]|.
 :::
 :::{.exans .compact}
 ```haskell
@@ -1795,13 +1795,13 @@ lenLeavesPf1 x t u =
 ```spec
   data Nat = Zero | Suc Nat {-"~~."-}
 ```
-{.noindent}第\@ref{sec:math-induction}節對這行定義的解釋是：
+{.nobreak}第\@ref{sec:math-induction}節對這行定義的解釋是：
 
   1. |Zero| 的型別是 |Nat|;
   2. 如果 |n| 的型別是 |Nat|, |Suc n| 的型別也是 |Nat|;
   3. 此外，沒有其他型別是 |Nat| 的東西。
 
-{.noindent}如果我們把一個型別視作一個集合，上述條件定出了怎麼樣的集合呢？
+{.nobreak}如果我們把一個型別視作一個集合，上述條件定出了怎麼樣的集合呢？
 ^[請注意：「把型別視為集合」僅在簡單的語意之中成立。本書後來將會討論更複雜的語意，屆時型別並不只是集合。]
 用 |Nat| 表示我們定出的這個新型別。上述第 1.點告訴我們 |Zero| 是 |Nat| 的成員，也就是 |{Zero} `sse` Nat|. 第 2.點則表示，從 |Nat| 這個集合中取出任一個元素 |n|, 加上 |Suc|, 得到的結果仍會在 |Nat| 之中。也就是說 |{Suc n || n `mem` Nat} `sse` Nat|. 集合基本定理告訴我們 |X `sse` Z && Y `sse` Z| 和
 |X `union` Y `sse` Z| 是等價的，所以：%
@@ -1809,15 +1809,15 @@ lenLeavesPf1 x t u =
 ```{.equation #eq:Nat-Ind-0}
     |{Zero} `union` { Suc n || n `mem` Nat }| & ~\subseteq~ |Nat| \mbox{~~.}
 ```
-{.noindent}意思是說，如果我們定義一個*集合到集合*的函數 |NatF|:
+{.nobreak}意思是說，如果我們定義一個*集合到集合*的函數 |NatF|:
 ```spec
   NatF X = {Zero} `union` { Suc n | n `mem` X } {-"~~,"-}
 ```
-{.noindent}那麼 \@eqref{eq:Nat-Ind-0} 可以改寫為
+{.nobreak}那麼 \@eqref{eq:Nat-Ind-0} 可以改寫為
 ```equation
    |NatF Nat| &~\subseteq~ |Nat| \mbox{~~,}
 ```
-{.noindent}也就是說，|Nat| 是 |NatF| 的一個前定點！
+{.nobreak}也就是說，|Nat| 是 |NatF| 的一個前定點！
 
 至於 3.呢？它告訴我們 |Nat| 僅含恰巧能滿足 1.和 2.的元素，沒有多餘。
 意即，|Nat| 是*滿足 1.和 2.的集合之中最小的*。
@@ -1841,12 +1841,12 @@ lenLeavesPf1 x t u =
 <=>   {- |(`union`)| 的泛性質：|X `union` Y `sse` Z {-"~"-}<=>{-"~"-} X `sse` Z && Y `sse` Z| -}
     {Zero} `sse` P {-"~"-}&&{-"~"-} {Suc n | n `mem` P} `sse` P {-"~~."-}
 ```
-{.noindent}也就是說，如果證出|{Zero} `sse` P| 和 |{Suc n || n `mem` P} `sse` P|，我們就有 |Nat `sse` P|。其中，
+{.nobreak}也就是說，如果證出|{Zero} `sse` P| 和 |{Suc n || n `mem` P} `sse` P|，我們就有 |Nat `sse` P|。其中，
 
   1. |{Zero} `sse` P| 翻成口語便是「|P| 對 |Zero| 成立」，
   2. |{Suc n || n `mem` P} `sse` P| 則是「若 |P| 對 |n| 成立，|P| 對 |Suc n| 亦成立」。
 
-{.noindent}正是數學歸納法的兩個前提！
+{.nobreak}正是數學歸納法的兩個前提！
 
 原來，*數學歸納法之所以成立，是因為自然數被定義為某函數的最小前定點*。
 事實上，當我們說某型別是「歸納定義」的，意思便是它是某個函數的最小前定點。
@@ -1860,19 +1860,19 @@ lenLeavesPf1 x t u =
 ```spec
 data ListNat {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} Nat : ListNat {-"~~,"-}
 ```
-{.noindent}可理解為 |ListNat = mu ListNatF|，而 |ListNatF| 定義為：
+{.nobreak}可理解為 |ListNat = mu ListNatF|，而 |ListNatF| 定義為：
 ```spec
   ListNatF X = { [] } `union` { n : xs | xs `mem` X, n `mem` Nat  } {-"~~."-}
 ```
-{.noindent}至於如下定義的、有型別參數的串列，
+{.nobreak}至於如下定義的、有型別參數的串列，
 ```spec
 data List a {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} a : List a {-"~~,"-}
 ```
-{.noindent}則可理解為 |List a = mu(ListF a)| --- |List a| 是 |ListF a| 的最小前定點，其中 |ListF| 定義如下：
+{.nobreak}則可理解為 |List a = mu(ListF a)| --- |List a| 是 |ListF a| 的最小前定點，其中 |ListF| 定義如下：
 ```spec
   ListF A X = { [] } `union` { x : xs | xs `mem` X, x `mem` A } {-"~~."-}
 ```
-{.noindent}給定某型別 |A|, 當我們要證明某性質 |P| 對所有 |List A| 都成立，實質上是想要證明 |List A `sse` P| （同樣地，此處 |P| 代表所有使述語 |P| 成立的值之集合）。我們推論如下：
+{.nobreak}給定某型別 |A|, 當我們要證明某性質 |P| 對所有 |List A| 都成立，實質上是想要證明 |List A `sse` P| （同樣地，此處 |P| 代表所有使述語 |P| 成立的值之集合）。我們推論如下：
 ```spec
   List A `sse` P
 <==   {- |List a = mu(ListF a)| -}
@@ -1882,7 +1882,7 @@ data List a {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} a : List a {-"~~,"-}
 <=>   {- |(`union`)| 的泛性質 -}
   {[]} `sse` P  {-"~"-}&&{-"~"-} { x : xs | xs `mem` P, x `mem` A } `sse` P {-"~~."-}
 ```
-{.noindent}其中 |{[]} `sse` P| 翻成口語即是「|P []| 成立」；
+{.nobreak}其中 |{[]} `sse` P| 翻成口語即是「|P []| 成立」；
 |{ x : xs || xs `mem` P, x `mem` A } `sse` P| 則是
 「若 |P xs| 成立，對任何 |x::A|, |P (x:xs)| 成立」。
 
@@ -1906,7 +1906,7 @@ data List a {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} a : List a {-"~~,"-}
 data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
 data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 ```
-{.noindent}說說看它們分別是什麼函數的最小前定點，並找出它們的歸納原則。
+{.nobreak}說說看它們分別是什麼函數的最小前定點，並找出它們的歸納原則。
 :::
 :::
 
@@ -1917,7 +1917,7 @@ data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 f Zero     = ...
 f (Suc n)  = ... f n ...
 ```
-{.noindent}我們知道這樣定義出的函數是個全函數、對所有輸入都會終止、和歸納法有密切關係...。
+{.nobreak}我們知道這樣定義出的函數是個全函數、對所有輸入都會終止、和歸納法有密切關係...。
 以後的幾個章節中，我們將逐步放鬆限制，允許更有彈性的函數定義模式。
 我們先從歸納法的一些較簡單的變化開始。
 
@@ -1936,7 +1936,7 @@ f (Suc n)  = ... f n ...
 f1 One      = e                                   fb b        = e
 f1 (Suc n)  = ... f1 n ... {-"~~,\qquad\qquad"-}  fb (Suc n)  = ... fb n ... {-"~~."-}
 ```
-{.noindent}我們可把 |f1| 理解為：另外訂了一個資料型別 |data NatP = One || Suc NatP|,
+{.nobreak}我們可把 |f1| 理解為：另外訂了一個資料型別 |data NatP = One || Suc NatP|,
 以 |One| 為基底狀況，而 |f1| 是 |NatP| 之上的全函數。|fb| 的情況也類似。
 與使用 |Nat| 的函數混用時，我們就得在這兩個型別之間作轉換。這相當於檢查給 |f1| 的輸入都是大於 |1| 的整數。實務上為了方便，我們仍用同一個型別實作 |Nat| 與 |NatP|, 就如同實務上用 |Int| 實作 |Nat| 一樣。
 
@@ -1954,7 +1954,7 @@ maximumP :: ListP Int -> Int
 maximumP [x]     = x
 maximumP (x:xs)  = x `max` maximumP xs {-"~~."-}
 ```
-{.noindent}Haskell 標準函式庫中另有一個函數 |maximum :: List Int -> Int|, 但該函數需假設 |Int| 中有一個相當於 $-\infty$ 的值存在，以便當作 |maximum []| 的結果：
+{.nobreak}Haskell 標準函式庫中另有一個函數 |maximum :: List Int -> Int|, 但該函數需假設 |Int| 中有一個相當於 $-\infty$ 的值存在，以便當作 |maximum []| 的結果：
 ```spec
 maximum []      = -infty
 maximum (x:xs)  = x `max` maximum xs {-"~~."-}
@@ -1985,7 +1985,7 @@ partsP [x]     = [[[x]]]
 partsP (x:xs)  = concat (map (extend x) (partsP xs)) {-"~~,"-}
   where extend x (ys:yss) = [[x]:ys:yss, (x:ys):yss] {-"~~."-}
 ```
-{.noindent}由於每個劃分一定是非空串列，|extend| 不需考慮輸入為 |[]| 的情況。
+{.nobreak}由於每個劃分一定是非空串列，|extend| 不需考慮輸入為 |[]| 的情況。
 :::
 
 {title="多個參數的歸納定義"}
@@ -2002,7 +2002,7 @@ drop Zero     xs      = xs
 drop (Suc n)  []      = []
 drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 ```
-{.noindent}我們可把 |take|/|drop| 想成在自然數上歸納定義成的高階函數：
+{.nobreak}我們可把 |take|/|drop| 想成在自然數上歸納定義成的高階函數：
 |take (Suc n)| 的值是一個 |List a -> List a| 的函數。
 定義 |take (Suc n)| 時，我們假設 |take n| 已有定義。
 唯一的特殊處是我們另分出兩個子情況：串列為 |[]|, 或串列為 |x:xs|.
@@ -2018,9 +2018,9 @@ drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 在 |n| 上做歸納。在 |n := []| 的情況下，等號兩邊都化簡為 |[]|.
 在 |n:=Suc n| 的情況中，我們再細分出兩種情形：
 
-{.noindent}**狀況** |n := Suc n|, |xs := []|. 顯然等號兩邊都化簡為 |[]|.
+{.nobreak}**狀況** |n := Suc n|, |xs := []|. 顯然等號兩邊都化簡為 |[]|.
 
-{.noindent}**狀況** |n := Suc n|, |xs := x:xs|:
+{.nobreak}**狀況** |n := Suc n|, |xs := x:xs|:
 ```spec
    take (Suc n) (x:xs) ++ drop (Suc n) (x:xs)
 =    {- |take| 與 |drop| 之定義 -}
@@ -2145,7 +2145,7 @@ fib 0      = 0
 fib 1      = 1
 fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 ```
-{.noindent}但這和我們之前談到的歸納定義稍有不同。
+{.nobreak}但這和我們之前談到的歸納定義稍有不同。
 我們已知定義 |f (Suc n)| 時可假設 |f| 在 |n| 之上已有定義。
 但在 |fib| 的定義中，|fib (2+n)| 用到了 |fib| 的前*兩個*值。這樣的定義是可以的嗎？
 
@@ -2159,11 +2159,11 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 >
 > 則我們可得知 |P| 對所有自然數皆成立。
 
-{.noindent}以更形式化的方式可寫成：
+{.nobreak}以更形式化的方式可寫成：
 ```spec
   {-"\mbox{\bf 完全歸納}:~"-} (forall n . P n) {-"~"-} <==  (forall n . P n  <== (forall i < n . P i)) {-"~~."-}
 ```
-{.noindent}請注意：前提 |P n  <== (forall i < n . P i)| 隱含 |P 0| 成立，因為當 |n := 0|, 由於沒有自然數 |i| 滿足 |i < n|, 算式 |(forall i < n . P i)| 可化簡為 |True|.
+{.nobreak}請注意：前提 |P n  <== (forall i < n . P i)| 隱含 |P 0| 成立，因為當 |n := 0|, 由於沒有自然數 |i| 滿足 |i < n|, 算式 |(forall i < n . P i)| 可化簡為 |True|.
 
 在完全歸納法之中，證明 |P n| 時，我們可假設 |P| 對*所有*小於 |n| 的值都已成立了。
 對寫程式的人來說，有了完全歸納法，表示我們日後定義自然數上的函數 |f :: Nat -> a| 時，每個 |f n| 都可以自由使用 |f| 在*所有*小於 |n| 的輸入之上的值。因此 |fib (2+n)| 可以用到 |fib (1+n)| 與 |fib n|, 因為 |n < 1+n < 2+n|.
@@ -2187,7 +2187,7 @@ binary n     = m : binary (n -: m) {-"~~,"-}
    where  m     = last (takeWhile (<=n) twos)
           twos  = iterate (2 *:) 1 {-"~~."-}
 ```
-{.noindent}函數 |binary| 是一個完全歸納定義，和上述的證明對應得相當密切：串列 |twos| 是 |[1,2,4,8...]| 等等所有二的乘冪，|m| 是其中最接近而不超過 |n| 的。
+{.nobreak}函數 |binary| 是一個完全歸納定義，和上述的證明對應得相當密切：串列 |twos| 是 |[1,2,4,8...]| 等等所有二的乘冪，|m| 是其中最接近而不超過 |n| 的。
 遞迴呼叫 |binary (n -: m)| 是許可的，因為 |n - m < n|, 而根據完全歸納，我們已假設對所有 |i < n|, |binary i| 皆有定義。
 :::
 
@@ -2197,7 +2197,7 @@ f :: Nat -> a
 f b = ....                 {- 一些基底情況 -}
 f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 ```
-{.noindent}|f n| 的右手邊可以出現不只一個遞迴呼叫，只要參數都小於 |n|.
+{.nobreak}|f n| 的右手邊可以出現不只一個遞迴呼叫，只要參數都小於 |n|.
 但我們必須*確定上述定義中的幾個子句足以包含所有狀況，沒有狀況被遺漏*。
 例如，我們若 把 |fib| 定義中的 |fib 1 = ...| 基底狀況去掉，
 計算 |fib 2 = fib 1 + fib 0| 時便會出錯。
@@ -2209,9 +2209,9 @@ f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 :::{.exans}
 使用完全歸納。
 
-{.noindent}**狀況** |n := Zero|: 等號兩邊都歸約為 |[]|.
+{.nobreak}**狀況** |n := Zero|: 等號兩邊都歸約為 |[]|.
 
-{.noindent}**狀況** |n > Zero|。
+{.nobreak}**狀況** |n > Zero|。
 假設對於任何 |0 <= i < n|, |sum (binary i) = i|.
 ```spec
    sum (binary n) =
@@ -2230,11 +2230,11 @@ $\alpha = (1+\sqrt{5})/2$. 這個證明可用 |n := 1| 和 |n := 2| 當基底狀
 本證明的關鍵性質是 $\alpha^2 = (3+\sqrt{5})/2 = \alpha + 1$.
 使用完全歸納證明 |fib (2+n) > {-"\alpha^n"-}|，以 |n := 1| 和 |n := 2| 當基底狀況。
 
-{.noindent}**狀況** |n := 1|: |fib 3 = 2 > {-"\alpha"-}|.
+{.nobreak}**狀況** |n := 1|: |fib 3 = 2 > {-"\alpha"-}|.
 
-{.noindent}**狀況** |n := 2|: |fib 4 = 3 > {-"(3+\sqrt{5})/2 = \alpha^2"-}|.
+{.nobreak}**狀況** |n := 2|: |fib 4 = 3 > {-"(3+\sqrt{5})/2 = \alpha^2"-}|.
 
-{.noindent}**狀況** |n := 2+n| 且 |2+n > 4|。
+{.nobreak}**狀況** |n := 2+n| 且 |2+n > 4|。
 假設對於任何 |3 <= i < 2+n|, |fib i > {-"\alpha^{i-2}"-}|. 論證：
 ```spec
     fib (2+n)
@@ -2268,7 +2268,7 @@ fibs 1        = [1,0]
 fibs (Suc n)  = (x1+:x0) : x1 : x0 : xs  {-"~~,"-}
     where (x1:x0:xs) = fibs n {-"~~."-}
 ```
-{.noindent}由 |fib| 到 |fibs| 的轉換可能令讀者想起演算法中的*動態規劃*(*dynamic programming*)\index{dynamic programming 動態規劃}。我們將在日後談到這個話題。
+{.nobreak}由 |fib| 到 |fibs| 的轉換可能令讀者想起演算法中的*動態規劃*(*dynamic programming*)\index{dynamic programming 動態規劃}。我們將在日後談到這個話題。
 
 {title="串列上的完全歸納"}
 串列與自然數是類似的資料結構。串列上的完全歸納原則便是將 |Zero| 代換為 |[]|,
@@ -2276,12 +2276,12 @@ fibs (Suc n)  = (x1+:x0) : x1 : x0 : xs  {-"~~,"-}
 ```spec
 ys < xs  <=> ys `mem` tails xs && ys /= xs {-"~~."-}
 ```
-{.noindent}也就是說 |ys| 是 |xs| 的一個後段，但不是 |xs| 自己。
+{.nobreak}也就是說 |ys| 是 |xs| 的一個後段，但不是 |xs| 自己。
 有了如上定義，串列上的完全歸納法是：
 ```spec
   {-"\mbox{\bf 串列的完全歸納}:~"-} (forall xs . P xs) {-"~"-} <==  (forall xs . P xs  <== (forall ys < xs . P ys)) {-"~~."-}
 ```
-{.noindent}應用在編程上，當定義 |f (xs:)| 時，遞迴呼叫可作用在 |xs| 的任何後段上。
+{.nobreak}應用在編程上，當定義 |f (xs:)| 時，遞迴呼叫可作用在 |xs| 的任何後段上。
 
 但對許多串列上的函數而言，這樣的模式還不夠靈活。我們得用下一節說到的良基歸納。
 
@@ -2317,7 +2317,7 @@ ys < xs  <=> ys `mem` tails xs && ys /= xs {-"~~."-}
 ```spec
   (x1,y1) <: (x2,y2) {-"~"-}<=>{-"~"-} x1 < x2 && y1 < y2 {-"~~,"-}
 ```
-{.noindent}其中 |x1|, |y1|, |x2|, |y2| 都是自然數。
+{.nobreak}其中 |x1|, |y1|, |x2|, |y2| 都是自然數。
 這麼一來，不論 |(1,4) <: (2,3)| 或 |(2,3) <: (1,4)| 都不成立，但 |(<:)| 仍是個良基序 --- 任何兩個自然數形成的序對不論以什麼方式遞減，最晚也得停在 |(0,0)|.
 
 如果 |(<:)| 是個良基序，我們便可在其上做歸納。以直覺來理解的話，如果某函數定義成如此的形式（假設這幾個子句已經包括參數的所有可能情況）：
@@ -2326,7 +2326,7 @@ f :: A -> B
 f b = ....                 {- 一些基底情況 -}
 f x = ... f y ... f z ...  {- 如果 |y <: x| 且 |z <: x| -}
 ```
-{.noindent}由任何 |f x| 開始，若 |x| 不是基底情況之一，我們需遞迴呼叫 |f y| 和 |f z|。
+{.nobreak}由任何 |f x| 開始，若 |x| 不是基底情況之一，我們需遞迴呼叫 |f y| 和 |f z|。
 但 |y| 和 |z| 在 |(<:)| 這個序上比 |x|「小」了一點。
 此後即使再做遞迴呼叫，每次使用的參數又更小了一點。
 而由於 |(<:)| 是良基序，|f| 的參數不可能永遠「小」下去 --- |f| 非得停在某個基底情況不可。
@@ -2339,7 +2339,7 @@ f x = ... f y ... f z ...  {- 如果 |y <: x| 且 |z <: x| -}
 >
 > 則我們可得知 |P| 對所有 |A| 皆成立。
 
-{.noindent}或著可寫成如下形式：
+{.nobreak}或著可寫成如下形式：
 ```spec
   {-"\mbox{\bf 良基歸納}:~"-}  (forall x . P x) {-"~"-} <==  (forall x . P x  <== (forall y <: x . P y)) {-"~~,"-}
                               {-"\qquad\mbox{其中 $(\lhd)$ 為一個良基序。}"-}
@@ -2371,13 +2371,13 @@ qsort []      = []
 qsort (x:xs)  = qsort ys ++ [x] ++ qsort zs {-"~~,"-}
   where (ys,zs) = (filter (<=x) xs, filter (<x) xs) {-"~~."-}
 ```
-{.noindent}空串列是已經排序好的。當輸入為非空串列 |x:xs|，我們將 |xs| 分為小於等於 |x| 的，以及大於 |xs| 的，分別遞迴排序，再將結果接在一起。
+{.nobreak}空串列是已經排序好的。當輸入為非空串列 |x:xs|，我們將 |xs| 分為小於等於 |x| 的，以及大於 |xs| 的，分別遞迴排序，再將結果接在一起。
 
 函數 |qsort| 會正常終止，因為每次遞迴呼叫時，作為參數的串列都會減少至少一個元素（因為 |x| 被取出了），而串列的長度又不可能小於 |0|. 若要稍微形式地談這件事，可從良基歸納的觀點來看。如果定義：
 ```spec
 ys <: xs {-"~"-}<=>{-"~"-} length ys < length xs {-"~~,"-}
 ```
-{.noindent}在 |qsort (x:xs)| 子句中，|ys <: xs| 和 |zs <: xs| 均被滿足，而 |(<:)| 是一個良基序。因此 |qsort| 是一個奠立在 |(<:)| 之上的良基歸納定義。
+{.nobreak}在 |qsort (x:xs)| 子句中，|ys <: xs| 和 |zs <: xs| 均被滿足，而 |(<:)| 是一個良基序。因此 |qsort| 是一個奠立在 |(<:)| 之上的良基歸納定義。
 :::
 
 :::{.example title="合併排序"}
@@ -2394,7 +2394,7 @@ msort [x]  = [x]
 msort xs   = merge (msort ys) (msort zs) {-"~~,"-}
   where (ys,zs) = (take (n `div` 2) xs, drop (n `div` 2) xs) {-"~~."-}
 ```
-{.noindent}要論證 |msort| 會正常終止，或著說，要將 |msort| 視為一個良基歸納定義，我們可用和例\@ref{ex:quicksort}中一樣的良基序|(<:)|.
+{.nobreak}要論證 |msort| 會正常終止，或著說，要將 |msort| 視為一個良基歸納定義，我們可用和例\@ref{ex:quicksort}中一樣的良基序|(<:)|.
 
 但此處請讀者小心檢查：在 |msort xs| 子句中，|ys <: xs| 和 |zs <: xs| 有被滿足嗎？
 當 |length xs = n|, 串列 |ys| 與 |zs| 的長度分別是 |n `div` 2| 和 |n - n `div` 2|. 當 |length xs = 1| 時，|ys| 與 |zs| 的長度分別是... |0| 和 |1| --- |zs| 並沒有變短！
@@ -2412,7 +2412,7 @@ gcd :: (Nat :* Nat) -> Nat
 gcd (m,n)  | m == n     = n
            | otherwise  = gcd ((m `max` n) -: (m `min` n), m `min` n) {-"~~."-}
 ```
-{.noindent}這個程式總會正常終止嗎？為什麼？
+{.nobreak}這個程式總會正常終止嗎？為什麼？
 
 事實上，若 |m| 或 |n| 其中之一為 |0|, |gcd (m,n)| 是不會終止的 ---
 讀者不妨也試試看。
@@ -2426,7 +2426,7 @@ gcd (m,n)  | m == n     = n
 <   {- |m|, |n| 均為正整數 -}
    m + n {-"~~."-}
 ```
-{.noindent}因此，我們可得知 |gcd| 在 |m|, |n| 均為正整數時會正常終止。
+{.nobreak}因此，我們可得知 |gcd| 在 |m|, |n| 均為正整數時會正常終止。
 如果把 |gcd| 當作一個良基歸納，我們用了如下的良基序：
 ```texonly
 %{
@@ -2438,7 +2438,7 @@ gcd (m,n)  | m == n     = n
 ```spec
   (m1, n1) <: (m2, n2) {-"~"-}<=>{-"~"-}  m1+n1 < m2+n2 {-"~~,"-}
 ```
-{.noindent}其中 |m1|, |n1|, |m2|, |n2| 均為正整數。
+{.nobreak}其中 |m1|, |n1|, |m2|, |n2| 均為正整數。
 ```texonly
 %}
 ```
@@ -2453,7 +2453,7 @@ interleave []      ys  = ys
 interleave xs      []  = xs
 interleave (x:xs)  ys  = x : interleave ys xs {-"~~."-}
 ```
-{.noindent}這可視為一個良基歸納定義嗎？
+{.nobreak}這可視為一個良基歸納定義嗎？
 若將 |interleave| 做為傳回函數的高階函數看待，我們比較難看出它是定義在什麼良基序上的。
 但若把 |interleave| 的兩個參數一起考慮，我們不難看出什麼度量在遞迴呼叫後「變小」了：兩個參數長度的和！
 
@@ -2464,7 +2464,7 @@ interleave' ([],    ys)  = ys
 interleave' (xs,    [])  = xs
 interleave' (x:xs,  ys)  = x : interleave' (ys,xs) {-"~~."-}
 ```
-{.noindent}函數 |interleave'| 是個良基定義 --- 參數中的兩個串列雖然交換位置，但它們長度的總和會變小。也就是說 |interleave'| 可視為定義在這個良基序上的函數：
+{.nobreak}函數 |interleave'| 是個良基定義 --- 參數中的兩個串列雖然交換位置，但它們長度的總和會變小。也就是說 |interleave'| 可視為定義在這個良基序上的函數：
 ```texonly
 %{
 %format xs1
@@ -2490,7 +2490,7 @@ mc91 :: Nat -> Nat
 mc91 n  | n > 100    = n -: 10
         | otherwise  = mc91 (mc91 (n +: 11)) {-"~~."-}
 ```
-{.noindent}讀者不妨先猜猜看 |mc91| 會傳回什麼？答案是，|mc| 和以下函數是等價的：
+{.nobreak}讀者不妨先猜猜看 |mc91| 會傳回什麼？答案是，|mc| 和以下函數是等價的：
 ```spec
 mc91'  | n > 100    = n -: 10
        | otherwise  = 91 {-"~~."-}
@@ -2510,7 +2510,7 @@ merge (x:xs)  []      = x:xs
 merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
                                    else y : merge (x:xs) ys {-"~~."-}
 ```
-{.noindent}如果兩個串列之中有一個為空串列，合併的結果是另一個。
+{.nobreak}如果兩個串列之中有一個為空串列，合併的結果是另一個。
 如果兩個都不是空串列，我們比較其第一個元素，以便決定將哪個當作合併後的第一個元素。
 
 但，|merge| 最後一個子句的第一個遞迴呼叫中，|y:ys| 沒有變短；第二個遞迴呼叫中，|x:xs| 沒有變短。
@@ -2525,7 +2525,7 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
     x_1 y_1 (<;<) x_2 y_2 ~~\equiv~~
        x_1 < x_2 ~\vee~ (x_1 = x_2 \wedge y_1 < y_2)  \mbox{~~.}
 ```
-{.noindent}如前所述，先比較 |x1| 與 |x2|, 如果相等，再比較 |y1| 與 |y2|.
+{.nobreak}如前所述，先比較 |x1| 與 |x2|, 如果相等，再比較 |y1| 與 |y2|.
 
 我們可以再稍微擴充一些，考慮 $x_i$ 與 $y_i$ 型別不同的情況：
 :::{.definition}
@@ -2535,13 +2535,13 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
        x_1 \lhd x_2 ~\vee~ (x_1 = x_2 \wedge y_1 \prec y_2)  \mbox{~~.}
 ```
 :::
-{.noindent}上述定義也可擴充到三個、四個... 元素的序對上。此處便不把他們寫出來了。
+{.nobreak}上述定義也可擴充到三個、四個... 元素的序對上。此處便不把他們寫出來了。
 
 關於詞典序的有趣性質相當多，此處僅用到下述性質
 :::{.theorem}
 如果 $(\lhd)$ 與 $(\prec)$ 均為良基序，$(\lhd;\prec)$ 也是良基序。
 :::
-{.noindent}因此，$(\lhd;\prec)$ 也可用來做歸納定義。
+{.nobreak}因此，$(\lhd;\prec)$ 也可用來做歸納定義。
 我們把使用詞典序的良基序歸納稱作「詞典序歸納」。
 
 回頭看 |merge| 的定義。先考慮下述、在第\@ref{sec:wholemeal}節中出現的 uncurried 版本：
@@ -2552,12 +2552,12 @@ merge' (x:xs,  [])    = x:xs
 merge' (x:xs,  y:ys)  = if x <= y  then  x : merge' (xs, y:ys)
                                    else  y : merge' (x:xs, ys) {-"~~."-}
 ```
-{.noindent}如果 |(<:)| 是比較串列長度的良基序，我們可說 |merge'| 是在 $(\lhd;\lhd)$ 之上的歸納定義。確實，
+{.nobreak}如果 |(<:)| 是比較串列長度的良基序，我們可說 |merge'| 是在 $(\lhd;\lhd)$ 之上的歸納定義。確實，
 
   * |(xs, y:ys) (<:;<:) (x:xs,  y:ys)|, 因為 |xs <: x:xs|;
   * |(x:xs, ys) (<:;<:) (x:xs,  y:ys)|, 因為 |x:xs = x:xs| 且 |ys <: y:ys|.
 
-{.noindent}至於 |merge| 則是 |merge'| 的 curried 版本，因此也是定義良好的。
+{.nobreak}至於 |merge| 則是 |merge'| 的 curried 版本，因此也是定義良好的。
 
 如前所述，函數 |merge| 的定義不一定得看成辭典序歸納 --- 它也可和 |interleave| 一樣看成另一種較簡單的良基歸納 --- 比較兩參數的長度之和。
 接下來的例子就得倚靠辭典序歸納了。
@@ -2572,7 +2572,7 @@ ack 0        n        = Suc n
 ack (Suc m)  0        = ack m 1
 ack (Suc m)  (Suc n)  = ack m (ack (Suc m) n) {-"~~."-}
 ```
-{.noindent}該函數定義上的特殊處之一是 |ack (Suc m) n| 的結果又被當作 |ack m| 的參數，因此較難以用理解 |interleave| 的方式理解。
+{.nobreak}該函數定義上的特殊處之一是 |ack (Suc m) n| 的結果又被當作 |ack m| 的參數，因此較難以用理解 |interleave| 的方式理解。
 但它可以視為詞典序 |(<;<)| 上的歸納：
 
   * |(m,1) (<;<) (Suc m,0)|，因為 |m < Suc m|;
@@ -2621,7 +2621,7 @@ odd = \n ->  case n of
 ```
 :::
 :::
-{.noindent}上述的定義可以合併成一個：|evenOdd| 是一個序對，其中有兩個函數 |Nat -> Bool|，其中是 |fst evenOdd| 就是 |even|，|snd evenOdd| 就是 |odd|:
+{.nobreak}上述的定義可以合併成一個：|evenOdd| 是一個序對，其中有兩個函數 |Nat -> Bool|，其中是 |fst evenOdd| 就是 |even|，|snd evenOdd| 就是 |odd|:
 ```haskell
 evenOdd :: ((Nat -> Bool) :* (Nat -> Bool))
 evenOdd = (  \n -> case n of{-"~~"-}  Zero   -> True

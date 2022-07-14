@@ -31,7 +31,7 @@ import Chapters.Basics (square, ETree(..), ITree(..), positions, fork)
 =  {- 性質 n -}
   en {-"~~."-}
 ```
-{.noindent}其中 |spec| 是問題的規格，通常也是一個函數語言程式。
+{.nobreak}其中 |spec| 是問題的規格，通常也是一個函數語言程式。
 根據性質 1, |spec| 等於 |e1|；根據性質 2，|e1| 等於 |e2|... 長此以往，直到我們導出一個符合我們要求的 |en|.
 光這麼看來，這和我們前幾章作的數學證明似乎沒什麼不同。
 差別在於，做證明時我們已有 |spec| 和 |en|，要做的是把 |spec| 到 |en| 之間的步驟補足。
@@ -110,7 +110,7 @@ sumsqDer0 =
  ===    {- |sum| 之定義 -}
    0 {-"~~."-}
 ```
-{.noindent}由此我們得知 |sumsq []| 會被計算成 |0|. 當輸入不是空串列時呢？試計算：
+{.nobreak}由此我們得知 |sumsq []| 會被計算成 |0|. 當輸入不是空串列時呢？試計算：
 ```{.haskell .invisible}
 sumsqDer1 :: Int -> List Int -> Int
 sumsqDer1 x xs =
@@ -126,7 +126,7 @@ sumsqDer1 x xs =
  ===    {- |sumsq| 之定義 -}
    square x + sumsq xs {-"~~."-}
 ```
-{.noindent}可得知對任何 |x| 與 |xs|, |sum (x:xs)| 歸約的結果和 |square x + sumsq xs| 會是相同的。
+{.nobreak}可得知對任何 |x| 與 |xs|, |sum (x:xs)| 歸約的結果和 |square x + sumsq xs| 會是相同的。
 總結說來，藉由計算，我們發現 |sumsq| 滿足以下兩條性質：
 ```texonly
 \begin{flalign}
@@ -194,7 +194,7 @@ descend :: Nat -> List Nat
 descend Zero     = []
 descend (Suc n)  = Suc n : descend n {-"~~."-}
 ```
-{.noindent}定義 |sumseries = sum . descend|.
+{.nobreak}定義 |sumseries = sum . descend|.
 請找出 |sumseries| 的歸納定義。
 :::
 :::{.exans}
@@ -212,7 +212,7 @@ sumDescendDer1 n =
  ===   {- |sumseries| 之定義 -}
    (Suc n) +: sumseries n {-"~~."-}
 ```
-{.noindent}因此
+{.nobreak}因此
 ```haskell
 sumseries Zero     = Zero
 sumseries (Suc n)  = (Suc n) +: sumseries n {-"~~."-}
@@ -226,7 +226,7 @@ sumseries (Suc n)  = (Suc n) +: sumseries n {-"~~."-}
 ```spec
 repeatN (n,x) = map (const x) (descend n) {-"~~."-}
 ```
-{.noindent}因此，|repeatN (n,x)| 會傳回一個含 |n| 個 |x| 的串列。
+{.nobreak}因此，|repeatN (n,x)| 會傳回一個含 |n| 個 |x| 的串列。
 例如 |repeatN (3,'a') = "aaa"|.
 請算出一個歸納定義的 |repeatN|.
 :::
@@ -248,7 +248,7 @@ repeatNDer1 n x =
  ===   {- |repeatN| 之定義 -}
    x : repeatN (n,x) {-"~~."-}
 ```
-{.noindent}因此，
+{.nobreak}因此，
 ```haskell
 repeatN (Zero,   x)  = []
 repeatN (Suc n,  x)  = x : repeatN (n,x) {-"~~."-}
@@ -262,7 +262,7 @@ repeatN (Suc n,  x)  = x : repeatN (n,x) {-"~~."-}
 ```spec
 rld = concat . map repeatN {-"~~."-}
 ```
-{.noindent}例如， |rld [(2,'a'), (3,'b'), (1,'c')] = "aabbbc"|.
+{.nobreak}例如， |rld [(2,'a'), (3,'b'), (1,'c')] = "aabbbc"|.
 請導出 |rld| 的歸納定義。
 :::
 :::{.exans}
@@ -274,7 +274,7 @@ rld = concat . map repeatN {-"~~."-}
 =    {- |map| 與 |concat| 之定義 -}
    [] {-"~~."-}
 ```
-{.noindent}歸納狀況：
+{.nobreak}歸納狀況：
 ```{.haskell .invisible}
 rldDer1 :: Nat -> a -> List (Nat, a) -> List a
 rldDer1 n x xs =
@@ -290,7 +290,7 @@ rldDer1 n x xs =
  ===    {- |rld| 之定義 -}
       repeatN (n,x) ++ rld xs {-"~~."-}
 ```
-{.noindent}因此我們已推導出：
+{.nobreak}因此我們已推導出：
 ```haskell
 rld []          = []
 rld ((n,x):xs)  = repeatN (n,x) ++ rld xs {-"~~."-}
@@ -319,13 +319,13 @@ delete         ::  List a -> List (List a)
 delete []      =   []
 delete (x:xs)  =   xs : map (x:) (delete xs) {-"~~,"-}
 ```
-{.noindent}例如，|delete [1,2,3,4] = [[2,3,4], [1,3,4], [1,2,4], [1,2,3]]|.
+{.nobreak}例如，|delete [1,2,3,4] = [[2,3,4], [1,3,4], [1,2,4], [1,2,3]]|.
 函數 |select :: List a -> List (a :* List a)| 則將一個串列中的元素依次選出。
 例如，|select [1,2,3,4] = [(1,[2,3,4]), (2,[1,3,4]), (3,[1,2,4]), (4,[1,2,3])]|. 函數 |select| 恰巧可用 |delete| 定義出來：
 ```haskell
 select xs = zip xs (delete xs) {-"~~."-}
 ```
-{.noindent}請推導出 |select| 的歸納定義。**提示**：下述性質可能有用 ---
+{.nobreak}請推導出 |select| 的歸納定義。**提示**：下述性質可能有用 ---
 |zip xs (map f ys) = map (id *** f) (zip xs ys)|.
 :::
 :::{.exans}
@@ -344,7 +344,7 @@ selectDer1 x xs =
  ===   {- |select| 之定義 -}
     (x, xs) : map (id *** (x:)) (select xs) {-"~~."-}
 ```
-{.noindent}因此，
+{.nobreak}因此，
 ```spec
 select []      = []
 select (x:xs)  = (x, xs) : map (id *** (x:)) (select xs) {-"~~."-}
@@ -359,7 +359,7 @@ select (x:xs)  = (x, xs) : map (id *** (x:)) (select xs) {-"~~."-}
 delete xs = map (del xs) [0..length xs-1]
    where del xs i = take i xs ++ drop (1+i) xs {-"~~,"-}
 ```
-{.noindent}（此處我們利用了當 |n| 為負數時，|[0..n]| 化簡成 |[]| 的特性。）
+{.nobreak}（此處我們利用了當 |n| 為負數時，|[0..n]| 化簡成 |[]| 的特性。）
 請用此定義推導出 |delete| 的歸納定義。**提示**：你可能用得上下述性質：
 ```{.equation #eq:gen-split}
   |[0..n] = 0 : map (1+) [0..n-1]|\mbox{,~~ if |n >= 0|,}
@@ -383,7 +383,7 @@ deleteDer1 x xs =
  ===   {- |map| 融合 -}
    del (x:xs) 0 : map (del (x:xs) . (1+)) [0..length xs-1] {-"~~."-}
 ```
-{.noindent}在此暫停一下，觀察 |del (x:xs)|. 顯然, |del (x:xs) 0 = xs|. 至於 |del (x:xs) . (1+)|，我們演算看看:
+{.nobreak}在此暫停一下，觀察 |del (x:xs)|. 顯然, |del (x:xs) 0 = xs|. 至於 |del (x:xs) . (1+)|，我們演算看看:
 ```{.haskell .invisible}
 del xs i = take i xs ++ drop (1+i) xs
 
@@ -400,7 +400,7 @@ delSucDer x xs i =
  ===    {- |(.)| 之定義 -}
     ((x:) . del xs) i {-"~~."-}
 ```
-{.noindent}繼續之前的演算：
+{.nobreak}繼續之前的演算：
 ```{.haskell .invisible}
 deleteDer2 x xs =
 ```
@@ -413,7 +413,7 @@ deleteDer2 x xs =
  ===   {- |delete| 之定義 -}
     xs : map (x:) (delete xs) {-"~~."-}
 ```
-{.noindent}由此，我們導出了正文中 |delete| 的歸納定義.
+{.nobreak}由此，我們導出了正文中 |delete| 的歸納定義.
 :::
 :::
 
@@ -430,7 +430,7 @@ deleteDer2 x xs =
 ```spec
 data List a = [] | a : List a {-"~~."-}
 ```
-{.noindent}我們可看出這是一個偏一邊的表示法。
+{.nobreak}我們可看出這是一個偏一邊的表示法。
 對於串列的左邊的操作都可以在常數時間內完成。
 因此，我們可在常數時間內判斷一個串列 |xs| 究竟是 |[]| 還是可分解成頭和尾；
 產生 |[]| 只需要常數時間；在 |xs| 的左邊添加一個元素，傳回 |x:xs|，也是常數時間內可完成的動作。
@@ -440,7 +440,7 @@ data List a = [] | a : List a {-"~~."-}
 []      ++ ys  = ys
 (x:xs)  ++ ys  = x : (xs ++ ys) {-"~~."-}
 ```
-{.noindent}若我們試著看看 |[1,2,3] ++ [4,5]| 是怎麼被算出來的
+{.nobreak}若我們試著看看 |[1,2,3] ++ [4,5]| 是怎麼被算出來的
 ```spec
    (1 : 2 : 3 : []) ++ (4 : 5 : [])
 =  1 : ((2 : 3 : []) ++ (4 : 5 : []))
@@ -448,7 +448,7 @@ data List a = [] | a : List a {-"~~."-}
 =  1 : 2 : 3 : ([] ++ (4 : 5 : []))
 =  1 : 2 : 3 : 4 : 5 : [] {-"~~,"-}
 ```
-{.noindent}可發現 |(++)| 需把第一個參數從頭到尾走過一遍。
+{.nobreak}可發現 |(++)| 需把第一個參數從頭到尾走過一遍。
 因此，若第一個參數的長度是 |n|，|(++)| 是一個時間複雜度為 $O(n)$ 的函數。
 函數 |last| 的情況也類似。
 
@@ -468,7 +468,7 @@ data List a = [] | a : List a {-"~~."-}
 reverse []      = []
 reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 ```
-{.noindent}這個程式的效率如何呢？我們看看 |reverse [1,2,3,4]| 如何被歸約：
+{.nobreak}這個程式的效率如何呢？我們看看 |reverse [1,2,3,4]| 如何被歸約：
 ```spec
    reverse [1,2,3,4]
 =  reverse [2,3,4] ++ [1]
@@ -477,7 +477,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 =  (((reverse [] ++ [4]) ++ [3]) ++ [2]) ++ [1]
 =  ((([] ++ [4]) ++ [3]) ++ [2]) ++ [1] {-"~~."-}
 ```
-{.noindent}為了把 |[1]| 接在左邊，|(++ [1])| 需要走過一個長度為 |3| 的串列。
+{.nobreak}為了把 |[1]| 接在左邊，|(++ [1])| 需要走過一個長度為 |3| 的串列。
 而在那之前，|(++ [2])| 需要走過一個長度為 |2| 的串列。
 推廣說來，要反轉一個長度為 |n| 的串列，|(++)| 會被使用 $O(n)$ 次。每個 |(++)| 左邊的串列長度也是 $O(n)$，因此 |reverse| 是一個需時 $O(n^2)$ 的演算法！
 「反轉串列」這個看來很基本的操作竟需要 $O(n^2)$ 的時間，似乎令人難以接受。
@@ -490,27 +490,27 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 ```spec
 data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 ```
-{.noindent}以下函數傳回樹中所有的標籤：
+{.nobreak}以下函數傳回樹中所有的標籤：
 ```haskell
 tips :: ETree a -> List a
 tips (Tip x)    = [x]
 tips (Bin t u)  = tips t ++ tips u {-"~~."-}
 ```
-{.noindent}函數 |tips| 最壞情況的時間複雜度為何？請做出一個含有 |n| 個標籤的樹 |t|，使得 |tips t| 僅需要 $O(n)$ 的時間算完；也請做出一個含有 |n| 個標籤的樹 |u|，使得 |tips u| 需要 $O(n^2)$ 的時間。
+{.nobreak}函數 |tips| 最壞情況的時間複雜度為何？請做出一個含有 |n| 個標籤的樹 |t|，使得 |tips t| 僅需要 $O(n)$ 的時間算完；也請做出一個含有 |n| 個標籤的樹 |u|，使得 |tips u| 需要 $O(n^2)$ 的時間。
 :::
 :::{.exans}
 令 |t| 為一個向右傾斜的樹：
 ```spec
 t = Bin (Tip 1) (Bin (Tip 2) .. (Bin (Tip (n-1)) (Tip n))) {-"~~,"-}
 ```
-{.noindent}|tip t| 展開成為 |[1] ++ ([2] .. ([n-1] ++ [n]))|, 可在 $O(n)$ 時間內歸約成範式。
+{.nobreak}|tip t| 展開成為 |[1] ++ ([2] .. ([n-1] ++ [n]))|, 可在 $O(n)$ 時間內歸約成範式。
 這是最好的情況。
 令 |u| 為一個向左傾斜的樹：
 ```spec
 u =  Bin (Bin (... (Bin (Bin (Tip 1) (Tip 2)) (Tip 3)))...
        (Tip (n-1))) (Tip n) {-"~~,"-}
 ```
-{.noindent}|tip u| 展開成為 |((..(([1] ++ [2])++[3])..) .. ++ [n-1]) ++ [n]|, 需要 $O(n^2)$ 的時間，也是 |tips| 最壞情況的時間複雜度.
+{.nobreak}|tip u| 展開成為 |((..(([1] ++ [2])++[3])..) .. ++ [n-1]) ++ [n]|, 需要 $O(n^2)$ 的時間，也是 |tips| 最壞情況的時間複雜度.
 :::
 :::
 
@@ -529,7 +529,7 @@ u =  Bin (Bin (... (Bin (Bin (Tip 1) (Tip 2)) (Tip 3)))...
 ```haskell
 poly x as = sum (zipWith (*) as (iterate (* x) 1)) {-"~~,"-}
 ```
-{.noindent}其中 |iterate (* x) 1| 產生無限串列 $[1, x, x^2, x^3 ...]$, |zipWith| 計算 $[a_0, a_1 x, \ldots a_n x^n]$, |sum| 計算總和。
+{.nobreak}其中 |iterate (* x) 1| 產生無限串列 $[1, x, x^2, x^3 ...]$, |zipWith| 計算 $[a_0, a_1 x, \ldots a_n x^n]$, |sum| 計算總和。
 
 讀者應已對 |sum| 和 |zipWith| 很熟悉了。函數 |iterate| 在第 \@ref{sec:list-generation} 節中使用過，|iterate f x| 會展開為無限長的串列 |[x, f x, f (f x)...]|，每個元素分別是把 |f| 使用|0|次、|1|次、|2|次... 的結果。
 函數 |iterate| 可定義為
@@ -537,7 +537,7 @@ poly x as = sum (zipWith (*) as (iterate (* x) 1)) {-"~~,"-}
 iterate :: (a -> a) -> a -> List a
 iterate f x = x : map f (iterate f x) {-"~~."-}
 ```
-{.noindent}我們可將之理解成：|iterate f x| 的第一個元素是 |x|；剩下的元素呢？是把 |iterate f x| 本身拿來，對每個元素多做一次 |f|!
+{.nobreak}我們可將之理解成：|iterate f x| 的第一個元素是 |x|；剩下的元素呢？是把 |iterate f x| 本身拿來，對每個元素多做一次 |f|!
 
 讀到此的讀者可能有些疑問：這是一個合法的歸納定義嗎？以及，我們原已說定不談無限的資料結構，何以在此卻出現了呢？
 
@@ -559,7 +559,7 @@ iterate f x = x : map f (iterate f x) {-"~~."-}
 =   {- |map| 融合 -}
   x : f x : f (f x) : map (f . f . f) (iterate f x)
 ```
-{.noindent}可發現越展開，式子中便累積越多個 |map f|.
+{.nobreak}可發現越展開，式子中便累積越多個 |map f|.
 
 在 |poly| 之中，|iterate| 雖產生無限長的餘資料，但立刻被 |zipWith| 截短了。
 ^[此處我們假設 |as| 為有限長的串列，並把 |zipWith| 視為在其第一個參數之上的歸納定義。]
@@ -604,7 +604,7 @@ polyDer1 x a as =
  ===   {- |poly| 的定義 -}
       a + (poly x as) * x {-"~~."-}
 ```
-{.noindent}第 |4| 步中關於 |zipWith| 與 |map| 的性質幫助我們將 |map (*x)| 往外提、將 |zipWith| 往裡推。事實上，該性質不限於乘法，而可適用於任何滿足結合律的運算子 |otimes|。我們可非正式地理解如下：
+{.nobreak}第 |4| 步中關於 |zipWith| 與 |map| 的性質幫助我們將 |map (*x)| 往外提、將 |zipWith| 往裡推。事實上，該性質不限於乘法，而可適用於任何滿足結合律的運算子 |otimes|。我們可非正式地理解如下：
 ```spec
    zipWith otimes [a,b,c] (map (`otimes` x) [d,e,f])
 =  [a `otimes` (d `otimes` x), b `otimes` (e `otimes` x), c `otimes` (f `otimes` x)]
@@ -612,7 +612,7 @@ polyDer1 x a as =
    [(a `otimes` d) `otimes` x, (b `otimes` e) `otimes` x, (c `otimes` f) `otimes` x]
 =  map (`otimes` x) (zipWith otimes [a,b,c] [d,e,f]) {-"~~."-}
 ```
-{.noindent}第 |5| 步之中的 |sum . map (* x) = (* x) . sum| 在習題\@ref{ex:sum-map-times}中證明過，需要乘法與加法的分配律。
+{.nobreak}第 |5| 步之中的 |sum . map (* x) = (* x) . sum| 在習題\@ref{ex:sum-map-times}中證明過，需要乘法與加法的分配律。
 在本推導中，它的功能是將 |sum| 往右推。
 它也是使 |poly| 可以加速的關鍵性質：共同的 |(*x)| 可以提出來 ---
 左手邊可能做了的許多次 |(*x)| 其實只需做一次。
@@ -622,7 +622,7 @@ polyDer1 x a as =
 poly x []        = 0
 poly x (a : as)  = a + (poly as) * x {-"~~."-}
 ```
-{.noindent}在這個定義中，函數 |poly| 遞迴多少次，便做多少個乘法。
+{.nobreak}在這個定義中，函數 |poly| 遞迴多少次，便做多少個乘法。
 因此本演算法所需的乘法數目為 $O(n)$.
 
 快速版本的函數 |poly| 相當於把 $a_0 + a_1 x + a_2 x^2 + ... + a_n x^n$ 轉換成
@@ -674,7 +674,7 @@ exp :: Nat -> Nat -> Nat
 exp b Zero     = 1
 exp b (Suc n)  = b *: exp b n {-"~~."-}
 ```
-{.noindent}以這個演算法計算 $b^n$ 時會需要 $O(n)$ 個乘法。是否有更快的做法呢？
+{.nobreak}以這個演算法計算 $b^n$ 時會需要 $O(n)$ 個乘法。是否有更快的做法呢？
 ```texonly
 %{
 %format tt = "\mymathbb{1}"
@@ -694,14 +694,14 @@ binary 0  = []
 binary n  | even n  = ff : binary (n `div` 2)
           | odd n   = tt : binary (n `div` 2) {-"~~."-}
 ```
-{.noindent}例如，|map binary [1,2,3,4] = [[tt], [ff,tt], [tt,tt], [ff,ff,tt]]|.
+{.nobreak}例如，|map binary [1,2,3,4] = [[tt], [ff,tt], [tt,tt], [ff,ff,tt]]|.
 函數 |binary| 在每次遞迴呼叫時將參數減半，因此 |binary n| 只需要 $O(\log n)$ 的時間。
 我們讓 |binary| 傳回反轉的二進位數是為了方便定義 |decimal :: List Bool -> Nat| --- |binary| 的反函數，將 |binary| 的結果轉回成原有的數字：
 ```haskell
 decimal []      = 0
 decimal (c:cs)  = if c then 1 + 2 * decimal cs else 2 * decimal cs {-"~~."-}
 ```
-{.noindent}我們可證明 |decimal . binary = id|.
+{.nobreak}我們可證明 |decimal . binary = id|.
 
 回到 |exp|, 試計算如下
 ```spec
@@ -711,7 +711,7 @@ decimal (c:cs)  = if c then 1 + 2 * decimal cs else 2 * decimal cs {-"~~."-}
 =    {- |decimal . binary = id| -}
    exp b . decimal . binary {-"~~."-}
 ```
-{.noindent}由於 |binary n| 只需 $O(\log n)$ 的時間，如果我們能把 |exp b . decimal| 的計算時間也縮減到 $O(\log n)$, 我們就有個只需對數時間的演算法了！
+{.nobreak}由於 |binary n| 只需 $O(\log n)$ 的時間，如果我們能把 |exp b . decimal| 的計算時間也縮減到 $O(\log n)$, 我們就有個只需對數時間的演算法了！
 
 令 |roll b = exp b . decimal|。顯然 |roll b [] = 1|. 考慮輸入為 |c:cs| 的情況，在以下的推導中，我們假設 $|exp b n| = b^n$ 擁有乘冪該有的各種算術性質：
 ```{.haskell .invisible}
@@ -731,7 +731,7 @@ rollDer b c cs =
  ===    {- |roll| 之定義  -}
     if c then b * square (exp2 b cs) else square (roll b cs){-"~~."-}
 ```
-{.noindent}因此，我們推導出了在 $O(\log n)$ 時間內計算 $b^n$ 的程式如下：
+{.nobreak}因此，我們推導出了在 $O(\log n)$ 時間內計算 $b^n$ 的程式如下：
 ```spec
 exp b = roll b . binary
 
@@ -756,7 +756,7 @@ exp b 0 = 1
 exp b n  | even n  = square (exp b (n `div` 2))
          | odd n   = b * square (exp b (n `div` 2)) {-"~~."-}
 ```
-{.noindent}由於遞迴呼叫中的 |n| 總是變小，本定義可視為 |n| 之上的良基歸納。
+{.nobreak}由於遞迴呼叫中的 |n| 總是變小，本定義可視為 |n| 之上的良基歸納。
 :::
 :::
 
@@ -793,7 +793,7 @@ exp b n  | even n  = square (exp b (n `div` 2))
 runsum :: List Int -> List Int
 runsum = map sum . tails {-"~~."-}
 ```
-{.noindent}由於使用多個 |sum| 函數走訪每個後段，如此定義出的 |runsum| 將是一個執行時間為 $O(n^2)$ 的函數。
+{.nobreak}由於使用多個 |sum| 函數走訪每個後段，如此定義出的 |runsum| 將是一個執行時間為 $O(n^2)$ 的函數。
 
 但讀者想必已覺得可不用如此費事：我們應該可以在由右到左走訪串列的過程中*記住目前為止的和*，避免重算 |sum|。事實上，同樣的道理可用在 |sum| 以外的更多函數上。給定函數 |f :: List A -> B|, 並假設 |f| 能寫成如下的形式：
 ```texonly
@@ -814,7 +814,7 @@ runsum = map sum . tails {-"~~."-}
 tails []      = [[]]
 tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
 ```
-{.noindent}據此推導 |scan|. 顯然 |scan [] = [e]|. 我們考慮 |scan (x:xs)| 的情況：
+{.nobreak}據此推導 |scan|. 顯然 |scan [] = [e]|. 我們考慮 |scan (x:xs)| 的情況：
 ```{.haskell .invisible}
 scanSumLemmaDer1 f oplus x xs =
 ```
@@ -825,7 +825,7 @@ scanSumLemmaDer1 f oplus x xs =
  ===    {- |map| 與 |f| 之定義 -}
       (x `oplus` f xs) : map f (tails xs) {-"~~."-}
 ```
-{.noindent}推演到此，好像只能把上式收回成 |(x `oplus` f xs) : scan xs| 了，對改進複雜度並沒有什麼幫助。
+{.nobreak}推演到此，好像只能把上式收回成 |(x `oplus` f xs) : scan xs| 了，對改進複雜度並沒有什麼幫助。
 為了增進效率，我們希望申論：|f xs| 是已經算出了的，不必重複算。此處將用到幾個關鍵性質。首先，對所有 |xs|, |tails xs| 的第一個元素永遠是 |xs|！這可寫成
 ```{.equation #eq:head-tails}
   |head (tails xs)|&|= xs|\mbox{~~.}
@@ -853,13 +853,13 @@ scanSumLemmaDer2 f oplus x xs =
       let ys = map f (tails xs)
       in (x `oplus` head ys) : ys {-"~~."-}
 ```
-{.noindent}由此我們得到
+{.nobreak}由此我們得到
 ```spec
 scan []      =  [e]
 scan (x:xs)  =  let  ys = scan xs
                 in   (x `oplus` head ys) : ys {-"~~."-}
 ```
-{.noindent}給定長度為 |n| 的串列，歸納定義的 |scan| 只將 |oplus| 使用 |n| 次。當 |oplus| 只需常數時間，這是一個時間複雜度為 $O(n)$ 的演算法。函數 |runsum| 則是當 |e = 0|, |oplus = (+)| 時的特例。
+{.nobreak}給定長度為 |n| 的串列，歸納定義的 |scan| 只將 |oplus| 使用 |n| 次。當 |oplus| 只需常數時間，這是一個時間複雜度為 $O(n)$ 的演算法。函數 |runsum| 則是當 |e = 0|, |oplus = (+)| 時的特例。
 
 一個函數 |f :: List A -> B| 若可寫成 \@eqref{eq:f-fold-scan} 的形式，我們說此函數是一個「摺(fold)」.
 \index{fold 摺}
@@ -878,7 +878,7 @@ scan (x:xs)  =  let  ys = scan xs
 ```spec
 positions z = map fst . filter ((==z) . snd) . zip [Zero..] {-"~~."-}
 ```
-{.noindent}|positions z xs| 傳回 |z| 在 |xs| 中出現的所有位置。
+{.nobreak}|positions z xs| 傳回 |z| 在 |xs| 中出現的所有位置。
 上述的定義方式會產生許多中間串列。
 我們能用第 \@ref{sec:fold-unfold-transform} 節中的方式，利用展開-收回轉換為 |positions| 推導出一個歸納定義，並藉此將中間串列消除嗎？
 
@@ -898,14 +898,14 @@ positionsDer1 z x xs =
       if x==z then Zero : map fst (filter ((==z) . snd) (zip [1..] (x:xs)))
          else map fst (filter ((==z) . snd) (zip [1..] (x:xs))) {-"~~."-}
 ```
-{.noindent}結果我們卡在這兒了：最後的式子中，|zip| 的參數是 |[1..]|, 但 |positions| 的定義要求這個參數得是 |[Zero ..]|. 我們無法將式子收回得到 |positions z xs|.
+{.nobreak}結果我們卡在這兒了：最後的式子中，|zip| 的參數是 |[1..]|, 但 |positions| 的定義要求這個參數得是 |[Zero ..]|. 我們無法將式子收回得到 |positions z xs|.
 
 看來，問題是 |positions| 的定義把 |Zero| 給寫死了。如果我們索性把該位置變成一個變數呢？
 我們定義：
 ```haskell
 posFrom z i = map fst . filter ((z==) . snd) . zip [i..]
 ```
-{.noindent}函數 |positions| 是 |posFrom| 的特例：|positions z = posFrom z 0|.
+{.nobreak}函數 |positions| 是 |posFrom| 的特例：|positions z = posFrom z 0|.
 而 |posFrom| 的歸納定義可用展開-收回轉換找出：
 ```{.haskell .invisible}
 posFromDer1 :: Eq a => a -> Nat -> a -> List a -> List Nat
@@ -923,7 +923,7 @@ posFromDer1 z i x xs =
       if x==z then i : posFrom z (Suc i) xs
          else posFrom z (Suc i) xs {-"~~."-}
 ```
-{.noindent}由此我們可得：
+{.nobreak}由此我們可得：
 ```spec
 posFrom z i []      =  []
 posFrom z i (x:xs)  =  if x==z then i : posFrom z (1+i) xs
@@ -942,7 +942,7 @@ posFrom z i (x:xs)  =  if x==z then i : posFrom z (1+i) xs
 index :: List a -> List (Nat :* a)
 index = zip [Zero .. ] {-"~~."-}
 ```
-{.noindent}請試著為 |index| 導出一個歸納定義。如果不成功，找出一個更通用的輔助函數，並導出其歸納定義。
+{.nobreak}請試著為 |index| 導出一個歸納定義。如果不成功，找出一個更通用的輔助函數，並導出其歸納定義。
 :::
 :::{.exans}
 試著展開-收回 |index (x:xs)|：
@@ -952,13 +952,13 @@ index = zip [Zero .. ] {-"~~."-}
  ===  {- |[Zero ..] = Zero: [1 ..]|, |zip| 之定義 -}
      (Zero,x) : zip [1..] xs {-"~~."-}
 ```
-{.noindent}我們又發現 zip [1..] 無法收回成 index xs.
+{.nobreak}我們又發現 zip [1..] 無法收回成 index xs.
 因此，我們定義：
 ```haskell
 indexFrom :: Nat -> List a -> List (Nat :* a)
 indexFrom i = zip [i..] {-"~~."-}
 ```
-{.noindent}試著推導 |indexFrom| 的歸納定義如下：
+{.nobreak}試著推導 |indexFrom| 的歸納定義如下：
 ```spec
      indexFrom i (x:xs)
  === zip [i .. ] (x:xs)
@@ -966,7 +966,7 @@ indexFrom i = zip [i..] {-"~~."-}
      (i,x) : zip [Suc i..] xs
  === (i,x) : indexFrom (Suc i) xs {-"~~."-}
 ```
-{.noindent}因此我們已得到：
+{.nobreak}因此我們已得到：
 ```spec
 indexFrom i []      = []
 indexFrom i (x:xs)  = i,x) : indexFrom (Suc i) xs {-"~~."-}
@@ -985,14 +985,14 @@ steep :: List Int -> Bool
 steep []      = True
 steep (x:xs)  = x > sum xs && steep xs {-"~~."-}
 ```
-{.noindent}如果當作一個程式，當輸入串列長度為 |n|, 由於反覆呼叫 |sum|, 上述的程式需要 $O(n^2)$ 的時間。
+{.nobreak}如果當作一個程式，當輸入串列長度為 |n|, 由於反覆呼叫 |sum|, 上述的程式需要 $O(n^2)$ 的時間。
 但每次算出的 |sum xs| 和 |x| 比較後便立刻被丟棄，似乎很浪費。我們能否把 |sum| 的結果存下來呢？
 下述函數 |steepsum| 把 |steep| 與 |sum| 都算出來，放在一個序對中：
 ```spec
 steepsum :: List Int -> (Bool :* Int)
 steepsum xs = (steep xs, sum xs) {-"~~."-}
 ```
-{.noindent}我們看看 |steepsum| 能否算得快一點？
+{.nobreak}我們看看 |steepsum| 能否算得快一點？
 
 根據定義，|steepsum [] = (True, 0)|. 我們看看 |xs = x:xs| 的例子：
 ```{.haskell .invisible}
@@ -1012,13 +1012,13 @@ steepsumDer1 x xs =
       let (b, s) = steepsum xs
       in (x > s && b, x + s) {-"~~."-}
 ```
-{.noindent}我們已推導出：
+{.nobreak}我們已推導出：
 ```haskell
 steepsum []      =  (True, 0)
 steepsum (x:xs)  =  let (b, s) = steepsum xs
                     in (x > s && b, x + s) {-"~~."-}
 ```
-{.noindent}這是一個只用 $O(n)$ 時間的程式。
+{.nobreak}這是一個只用 $O(n)$ 時間的程式。
 有了 |steepsum|，我們可重新定義 |steep| 為 |steep = fst . steepsum|。
 
 讓一個函數*多傳回一些值*的動作稱作*組對*(*tupling*) --- 因為多傳回的值被放在一個序對中。\index{tupling 組對}
@@ -1031,11 +1031,11 @@ steepsum (x:xs)  =  let (b, s) = steepsum xs
 fork :: (a -> b) -> (a -> c) -> a -> (b :* c)
 (fork f g) x = (f x, g x) {-"~~."-}
 ```
-{.noindent}函數 |steepsum| 的定義可較簡潔地寫成：
+{.nobreak}函數 |steepsum| 的定義可較簡潔地寫成：
 ```spec
 steepsum = fork steep sum {-"~~."-}
 ```
-{.noindent}本書將在適當時採用這種寫法。
+{.nobreak}本書將在適當時採用這種寫法。
 
 {title="責任越大，能力越強？"}
 某個意義上，函數 |steepsum| 做的事比 |steep| 多：
@@ -1061,7 +1061,7 @@ steepsum = fork steep sum {-"~~."-}
 ```spec
 data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 ```
-{.noindent}下述函數 |size :: ETree a -> Int| 計算一棵樹中標籤的數目（對 |ETree| 而言是 |Tip| 出現的次數）； |repl t xs| 則將 |t| 原有的標籤丟棄，改用串列 |xs| 由右至左依序重新為 |t| 上標籤。
+{.nobreak}下述函數 |size :: ETree a -> Int| 計算一棵樹中標籤的數目（對 |ETree| 而言是 |Tip| 出現的次數）； |repl t xs| 則將 |t| 原有的標籤丟棄，改用串列 |xs| 由右至左依序重新為 |t| 上標籤。
 觀察：在遞迴呼叫中，我們用 |take| 和 |drop| 將串列 |xs| 截成適當的長度：
 ```haskell
 size (Tip _)    = 1
@@ -1072,7 +1072,7 @@ repl (Tip _)    xs = Tip (head xs)
 repl (Bin t u)  xs = Bin (repl t (take n xs)) (repl u (drop n xs))
     where n = size t {-"~~."-}
 ```
-{.noindent}如果 |t| 是一個向左傾斜的二元樹，|repl t xs| 不僅會反覆計算 |size|，也會反覆地將 |take| 與 |drop| 用在 |xs| 上，使得上述的 |repl| 成為一個 $O(n^2)$ 的演算法。
+{.nobreak}如果 |t| 是一個向左傾斜的二元樹，|repl t xs| 不僅會反覆計算 |size|，也會反覆地將 |take| 與 |drop| 用在 |xs| 上，使得上述的 |repl| 成為一個 $O(n^2)$ 的演算法。
 利用組對的技巧，我們能讓 |repl| 的時間複雜度小一些嗎？
 
 ```texonly
@@ -1117,7 +1117,7 @@ repTail :: ETree a -> List b -> (ETree b :* List b)
 repTail s xs = (repl s (take n xs), drop n xs) {-"~~,"-}
   where n = size s {-"~~."-}
 ```
-{.noindent}那麼 |Bin (repl t (take n1 xs)) (repl u (take n2 (drop n1 xs)))| 似乎有可能收回成為這樣的式子：|xs| 先被丟給 |repTail t|，將 |t| 標記好，並得到剩下的串列 |drop n1 xs|。這個剩下的串列又可以丟給 |repTail u|, 兩者都只把 |xs| 走過一次。
+{.nobreak}那麼 |Bin (repl t (take n1 xs)) (repl u (take n2 (drop n1 xs)))| 似乎有可能收回成為這樣的式子：|xs| 先被丟給 |repTail t|，將 |t| 標記好，並得到剩下的串列 |drop n1 xs|。這個剩下的串列又可以丟給 |repTail u|, 兩者都只把 |xs| 走過一次。
 我們試著導出 |repTail| 的歸納定義。
 基底狀況 |s := Tip y| 比較容易，我們考慮 |s := Bin t u| 的情況，
 並演算如下（令 |n1 = size t|，|n2 = size u|, 因此 |size (Bin t u)= n1 + n2|）：
@@ -1158,7 +1158,7 @@ repTail (Bin t u)  xs =  let  (t', xs')   = repTail t xs
                               (u', xs'')  = repTail u xs'
                          in (Bin t' u', xs'') {-"~~."-}
 ```
-{.noindent}確實如同所預期的，串列 |xs| 被 |repTail t| 使用，得到標籤過的新樹 |t'|, 和剩下的串列 |xs'|. 後者再被 |repTail u| 用來給 |u| 上標籤。最後我們得傳回剩下的串列 |xs''|. 實際上把串列變短的動作發生在基底狀況 |repTail (Tip _)| 中。串列中的每個元素只會在每次遇見 |Tip| 時被取出一次，因此這是一個線性時間的演算法。
+{.nobreak}確實如同所預期的，串列 |xs| 被 |repTail t| 使用，得到標籤過的新樹 |t'|, 和剩下的串列 |xs'|. 後者再被 |repTail u| 用來給 |u| 上標籤。最後我們得傳回剩下的串列 |xs''|. 實際上把串列變短的動作發生在基底狀況 |repTail (Tip _)| 中。串列中的每個元素只會在每次遇見 |Tip| 時被取出一次，因此這是一個線性時間的演算法。
 
 \todo{|repsort t = rep t (sort (leaves t []))|.}
 
@@ -1170,7 +1170,7 @@ repTail (Bin t u)  xs =  let  (t', xs')   = repTail t xs
 ```spec
 data ITree a = Null | Node a (ITree a) (ITree a) {-"~~."-}
 ```
-{.noindent}*猴麵包樹(baobab)*，又稱猢猻木，是一種樹幹相當粗的樹。%
+{.nobreak}*猴麵包樹(baobab)*，又稱猢猻木，是一種樹幹相當粗的樹。%
 ^[猴麵包樹原產於馬達加斯加、非洲等地，也被寫進了《小王子》之中。]
 如果一個 |ITree Int| 的*每個*標籤都大於其兩個子樹的標籤總和，我們便說它是一棵猴麵包樹。
 以下的函數判定一棵樹是否為猴麵包樹（其中 |sumT :: ITree Int -> Int| 計算一個樹中所有標籤的總和）：
@@ -1180,7 +1180,7 @@ baobab Null          =  True
 baobab (Node x t u)  =  baobab t && baobab u &&
                           x > (sumT t + sumT u) {-"~~."-}
 ```
-{.noindent}因反覆呼叫 |sumT|, 當樹的大小為 |n| 時，|baobab| 的執行時間為 $O(n^2)$.
+{.nobreak}因反覆呼叫 |sumT|, 當樹的大小為 |n| 時，|baobab| 的執行時間為 $O(n^2)$.
 請使用組對的技巧，在 $O(n)$ 的時間內算出 |baobab|.
 :::
 :::{.exans}
@@ -1189,7 +1189,7 @@ baobab (Node x t u)  =  baobab t && baobab u &&
 baosum :: Tree Int -> (Bool, Int)
 baosum = fork baobab sumT {-"~~."-}
 ```
-{.noindent}如果 |baosum| 有時間效率為 $O(n)$ 的定義，我們可重定義 |baobab = fst . baosum|.
+{.nobreak}如果 |baosum| 有時間效率為 $O(n)$ 的定義，我們可重定義 |baobab = fst . baosum|.
 當 |t := Null|, 我們有 |baosum Null = (True, 0)|.
 考慮 |t := Node x t u|:
 ```{.haskell .invisible}
@@ -1215,7 +1215,7 @@ baosumDerInd x t u =
           (c,z) = baosum u
      in (b && c && x > (y + z), x + y + z) {-"~~."-}
 ```
-{.noindent}如此，我們已經導出：
+{.nobreak}如此，我們已經導出：
 ```haskell
 baosum Null          = (True, 0)
 baosum (Node x t u)  =
@@ -1236,7 +1236,7 @@ depth :: ETree a -> Nat
 depth (Tip _)    = Zero
 depth (Bin t u)  = Suc (depth t `max` depth u) {-"~~."-}
 ```
-{.noindent}下列函數 |deepest| 則傳回一棵樹中最深的標籤：
+{.nobreak}下列函數 |deepest| 則傳回一棵樹中最深的標籤：
 ```haskell
 deepest :: ETree a -> List a
 deepest (Tip x)    = [x]
@@ -1245,7 +1245,7 @@ deepest (Bin t u)  | m <  n  = deepest u
                    | m >  n  = deepest t
     where (m,n) = (depth t, depth u) {-"~~."-}
 ```
-{.noindent}請用組對的技巧，避免重複計算 |depth|.
+{.nobreak}請用組對的技巧，避免重複計算 |depth|.
 **注意**: 完成的程式中，|(++)| 仍可能需要 $O(n^2)$ 的時間。
 我們將在習題\@ref{ex:deepestAux}處理這個問題。
 :::
@@ -1255,7 +1255,7 @@ deepest (Bin t u)  | m <  n  = deepest u
 dd :: ETree a -> (List a, Nat)
 dd = fork deepest depth {-"~~."-}
 ```
-{.noindent}顯然 |dd (Tip x) = ([x], 0)|.
+{.nobreak}顯然 |dd (Tip x) = ([x], 0)|.
 以下我們考慮歸納情況時，用一個非標準的語法同時處理守衛算式的三個式子：
 ```spec
       dd (Bin t u)
@@ -1275,7 +1275,7 @@ dd = fork deepest depth {-"~~."-}
       | m >  n  -> (xs, 1 + m))
       where ((xs,m),(ys,n)) = (dd t, dd u) {-"~~."-}
 ```
-{.noindent}因此我們得到：
+{.nobreak}因此我們得到：
 ```haskell
 dd (Tip x)    = ([x],0)
 dd (Bin t u)  | m <  n  = (ys, 1 + n)
@@ -1316,19 +1316,19 @@ rep y (Bin t u) = Bin (rep y t) (rep y u) {-"~~."-}
 repmin :: ETree Int -> a -> (ETree a :* Int)
 repmin y = fork (rep y) minE {-"~~."-}
 ```
-{.noindent}使用本節的技巧，讀者們應該已經可以為 |repmin| 導出如下的歸納定義：
+{.nobreak}使用本節的技巧，讀者們應該已經可以為 |repmin| 導出如下的歸納定義：
 ```haskell
 repmin y (Tip x)    =  (Tip y, x)
 repmin y (Bin t u)  =  let  (t', m) = repmin y t
                             (u', n) = repmin y u
                        in (Bin t' u', m `min` n) {-"~~."-}
 ```
-{.noindent}該定義只將 |t| 走訪一次。然後我們定義：
+{.nobreak}該定義只將 |t| 走訪一次。然後我們定義：
 ```haskell
 transform :: ETree Int -> ETree Int
 transform t =  let (t', m) = repmin m t in t' {-"~~."-}
 ```
-{.noindent}函數 |transform| 用 |repmin| 算出 |t| 的最小標籤 |m|, 同時又用 |m| 來標記 |t|... 於是，似乎確實用一次走訪就完成了兩件事！這是怎麼做到的呢？
+{.nobreak}函數 |transform| 用 |repmin| 算出 |t| 的最小標籤 |m|, 同時又用 |m| 來標記 |t|... 於是，似乎確實用一次走訪就完成了兩件事！這是怎麼做到的呢？
 
 函數 |transform| 有個特殊之處：變數 |m| 既是 |repmin| 的傳回值，又是其參數。
 這是一個*循環程式*(*circular program*)。
@@ -1338,7 +1338,7 @@ transform t =  let (t', m) = repmin m t in t' {-"~~."-}
 t = Bin  (Bin (Tip 4) (Tip 2))
          (Bin (Bin (Tip 3) (Tip 1)) (Tip 5))
 ```
-{.noindent}|repmin| 將輸入 |t| 走訪一遍，邊走邊建立了一個未算出的算式 |(4 `min` 2) `min` ((3 `min` 1) `min` 5)|.
+{.nobreak}|repmin| 將輸入 |t| 走訪一遍，邊走邊建立了一個未算出的算式 |(4 `min` 2) `min` ((3 `min` 1) `min` 5)|.
 該算式就是 |m| 的值，其實也可視作一棵樹，其結構和 |t| 一樣，只是把每個 |Bin| 代換成 |min|.
 函數 |repmin| 的另一項工作是新建一棵樹 |t'|，該樹之中每個 |Tip| 的標籤都指到這個算式。
 根據範式順序求值，這個算式還不用立刻被算出來。直到我們終於不得不算出它，例如當 |t'| 被傳回，我們要求電腦把 |t'| 印出來，或著有別的函數需檢查 |t'| 中的標籤時，該算式才被歸約成一個數字 --- 這需要把該算式走訪一遍。
@@ -1366,14 +1366,14 @@ t = Bin  (Bin (Tip 4) (Tip 2))
 ```spec
 average xs = sum xs / length xs {-"~~."-}
 ```
-{.noindent}利用組對，我們可以另定義一個函數 |sumlen = fork sum length|,
+{.nobreak}利用組對，我們可以另定義一個函數 |sumlen = fork sum length|,
 並推導其歸納定義，在一次走訪中同時計算串列的和與長度：
 ```haskell
 sumlen []      =  (0,0)
 sumlen (x:xs)  =  let (s,l) = sumlen xs
                   in (x + s, 1 + l) {-"~~."-}
 ```
-{.noindent}然後平均便可定義成 |average' xs = let (s,l) = sumlen xs in s/l|.
+{.nobreak}然後平均便可定義成 |average' xs = let (s,l) = sumlen xs in s/l|.
 ```texonly
 %函數 |average| 中，串列 |xs| 需要留在記憶體中的時間較長：|sum xs| 計算過後，|xs| 不能立刻被丟掉，而必須留在記憶體中，等著計算 |length xs|.
 %而 |average'| 只走訪 |xs'| 一次，|xs| 可以邊走訪邊丟棄。
@@ -1394,17 +1394,17 @@ allpairs :: List a -> List (a :* a)
 allpairs []      = []
 allpairs (x:xs)  = map (\y -> (x,y)) xs ++ allpairs xs {-"~~."-}
 ```
-{.noindent}而 |maxdiff| 則計算一個串列中任兩元素前者與後者的最大差：
+{.nobreak}而 |maxdiff| 則計算一個串列中任兩元素前者與後者的最大差：
 ```haskell
 maxdiff :: List Int -> Int
 maxdiff = maximum . map (\(x,y) -> x - y) . allpairs {-"~~."-}
 ```
-{.noindent}當輸入串列長度為 |n|, 如此定義的 |maxdiff| 是一個需時 $O(n^2)$ 的演算法。
+{.nobreak}當輸入串列長度為 |n|, 如此定義的 |maxdiff| 是一個需時 $O(n^2)$ 的演算法。
 定義：
 ```spec
  mdm xs = (maxdiff xs, ???) {-"~~."-}
 ```
-{.noindent}找出 |???| 可能的值，使得 |mdm| 能在 $O(n)$ 時間之內完成計算。
+{.nobreak}找出 |???| 可能的值，使得 |mdm| 能在 $O(n)$ 時間之內完成計算。
 你可假設以下性質：
 ```{.equation #eq:max-minus}
   & |maximum (map (x-) xs) = x - minimum xs| \mbox{~~.}
@@ -1417,7 +1417,7 @@ maxdiff = maximum . map (\(x,y) -> x - y) . allpairs {-"~~."-}
 mdm :: List Int -> (Int :* Int)
 mdm xs = (maxdiff xs, minimum xs) {-"~~."-}
 ```
-{.noindent}我們試圖找出 |mdm| 的歸納定義。顯然 |mdm [] = (-infty, infty)|.
+{.nobreak}我們試圖找出 |mdm| 的歸納定義。顯然 |mdm [] = (-infty, infty)|.
 考慮歸納情況（令 |minus (x,y) = x-y|）：
 ```{.haskell .invisible}
 minus (x,y) = x-y
@@ -1432,7 +1432,7 @@ mdmDer1 x xs =
  ===  (  maximum (map minus (map (\y -> (x,y)) xs ++ allpairs xs)),
          x `min` minimum xs) {-"~~."-}
 ```
-{.noindent}集中焦點在序對的第一個元素：
+{.nobreak}集中焦點在序對的第一個元素：
 ```{.haskell .invisible}
 mdmDer2 :: Int -> List Int -> Int
 mdmDer2 x xs =
@@ -1451,7 +1451,7 @@ mdmDer2 x xs =
  ===     {- |maxdiff| 之定義 -}
       (x - minimum xs) `max` maxdiff xs {-"~~."-}
 ```
-{.noindent}回到推導主體：
+{.nobreak}回到推導主體：
 ```{.haskell .invisible}
 mdmDer3 :: Int -> List Int -> (Int :* Int)
 mdmDer3 x xs =
@@ -1467,7 +1467,7 @@ mdmDer3 x xs =
       let (y, z) = mdm xs
       in ((x - z) `max` y, x `min` z)  {-"~~."-}
 ```
-{.noindent}於是我們得知：
+{.nobreak}於是我們得知：
 ```haskell
 mdm []      =  (minBound, maxBound)
 mdm (x:xs)  =  let (y, z) = mdm xs
@@ -1489,7 +1489,7 @@ mdm (x:xs)  =  let (y, z) = mdm xs
 revcat :: List a -> List a -> List a
 revcat xs ys = reverse xs ++ ys {-"~~."-}
 ```
-{.noindent}原有的 |reverse| 可以視為 |revcat| 的特例 --- |reverse xs = revcat xs []|.
+{.nobreak}原有的 |reverse| 可以視為 |revcat| 的特例 --- |reverse xs = revcat xs []|.
 這裡是否也會出現*責任越大，能力越強*的現象：
 看似做了比較多事情的 |revcat| 其實反倒有比較有效率的實作呢？
 我們試著演算看看！當 |xs := []|, 顯然 |revcat [] ys = ys|.
@@ -1508,12 +1508,12 @@ revcatDer x xs ys =
  ===    {- |(++)| 與 |revcat| 之定義 -}
       revcat xs (x : ys) {-"~~."-}
 ```
-{.noindent}因此我們有了：
+{.nobreak}因此我們有了：
 ```spec
 revcat []      ys = ys
 revcat (x:xs)  ys = revcat xs (x:ys) {-"~~."-}
 ```
-{.noindent}我們看看 |revcat [1,2,3,4] []| 如何歸約：
+{.nobreak}我們看看 |revcat [1,2,3,4] []| 如何歸約：
 ```spec
    revcat (1:2:3:4:[]) []
 =  revcat (2:3:4:[]) (1:[])
@@ -1522,7 +1522,7 @@ revcat (x:xs)  ys = revcat xs (x:ys) {-"~~."-}
 =  revcat [] (4:3:2:1:[])
 =  [4,3,2,1] {-"~~."-}
 ```
-{.noindent}串列 |[1,2,3,4]| 中的元素一個個被搬到 |revcat| 的第二個參數中。這是一個常數時間內可完成的動作，而每個元素只會被搬動一次。因此當 |xs| 的長度是 |n|，|reverse xs ys| 可在 $O(n)$ 的時間內執行完畢！
+{.nobreak}串列 |[1,2,3,4]| 中的元素一個個被搬到 |revcat| 的第二個參數中。這是一個常數時間內可完成的動作，而每個元素只會被搬動一次。因此當 |xs| 的長度是 |n|，|reverse xs ys| 可在 $O(n)$ 的時間內執行完畢！
 
 我們剛看到的技巧和第 \@ref{sec:tupling} 節中的組對互為對偶。
 在第 \@ref{sec:tupling} 節中，我們為了導出一個函數的較快版本，讓它多傳回一些資訊。
@@ -1546,19 +1546,19 @@ tags :: ITree a -> List a
 tags Null          = []
 tags (Node x t u)  = tags t ++ [x] ++ tags u {-"~~."-}
 ```
-{.noindent}和習題 \@ref{ex:ETree-tips} 的情況類似，當 |t| 是一棵向左傾斜的樹，|tags| 會需要 $O(n^2)$ 的時間。
+{.nobreak}和習題 \@ref{ex:ETree-tips} 的情況類似，當 |t| 是一棵向左傾斜的樹，|tags| 會需要 $O(n^2)$ 的時間。
 例如，考慮這棵樹 |t| （以下將 |Node x Null Null| 簡寫為 |lv x|）：
 ```spec
   t = Node 7  (Node 6  (Node 4  (Node 2 (lv 1) (lv 3))
                        (lv 5)))
               (lv 8) {-"~~."-}
 ```
-{.noindent}將 |tags t| 展開（並為說明方便，將一些 |[]++[x]++[]| 化簡為 |[x]|），我們會得到：
+{.nobreak}將 |tags t| 展開（並為說明方便，將一些 |[]++[x]++[]| 化簡為 |[x]|），我們會得到：
 ```spec
  ((([1] ++ [2] ++ [3])  ++ [4]
                         ++ [5]) ++ [6]) ++ [7] ++ [8] {-"~~."-}
 ```
-{.noindent}這個式子的結構和 |t| 一樣，只是將 |Node x...| 都變為 |.. ++ [x] ++ ..|.
+{.nobreak}這個式子的結構和 |t| 一樣，只是將 |Node x...| 都變為 |.. ++ [x] ++ ..|.
 我們可看到 |(++[6])| 需要走過一個長度為 |5| 的串列，|(++[7])| 需要走過一個長度為 |6| 的串列。
 
 為了避免 |(++)| 的重複走訪，我們在 |tags t| 的左邊補一個 |(++ys)|, 希望透過遞移律改變括號的順序。我們定義：
@@ -1566,12 +1566,12 @@ tags (Node x t u)  = tags t ++ [x] ++ tags u {-"~~."-}
 tagsAcc :: ITree a -> List a -> List a
 tagsAcc t ys = tags t ++ ys {-"~~."-}
 ```
-{.noindent}利用 |(++)| 的遞移律，讀者應不難導出如下的歸納定義：
+{.nobreak}利用 |(++)| 的遞移律，讀者應不難導出如下的歸納定義：
 ```spec
 tagsAcc Null          ys = ys
 tagsAcc (Node x t u)  ys = tagsAcc t (x : tagsAcc u ys) {-"~~."-}
 ```
-{.noindent}之後我們便可重新定義 |tags t = tagsAcc t []|.
+{.nobreak}之後我們便可重新定義 |tags t = tagsAcc t []|.
 至於 |tagsAcc| 的效率如何呢？
 如果將 |tagsAcc t ys| 展開，我們順利地得到：
 ```spec
@@ -1596,7 +1596,7 @@ tagsDer1 x t u ys =
       tags t ++ (x : tags u ++ ys)
  ===  tagsAcc t (x : tagsAcc u ys) {-"~~."-}
 ```
-{.noindent}我們可導出：
+{.nobreak}我們可導出：
 ```spec
 tagsAcc Null          ys = ys
 tagsAcc (Node x t u)  ys = tagsAcc t (x : tagsAcc u ys) {-"~~."-}
@@ -1627,7 +1627,7 @@ tipsAccDer1 t u ys =
       tips t ++ (tips u ++ ys)
  ===  tipsAcc t (tipsAcc u ys) {-"~~."-}
 ```
-{.noindent}因此，
+{.nobreak}因此，
 ```spec
 tipsAcc (Tip x)    ys = x : ys
 tipsAcc (Bin t u)  ys = tipsAcc t (tipsAcc u ys) {-"~~."-}
@@ -1669,7 +1669,7 @@ sum (x:xs)  = x + sum xs {-"~~."-}
 revcat []      ys = ys
 revcat (x:xs)  ys = revcat xs (x:ys) {-"~~."-}
 ```
-{.noindent}因此，|revcat| 的實作中，遞迴呼叫完成後，電腦不需回到原呼叫之處再執行什麼東西：最後的結果 |ys| 可直接傳回到最上層、第一個呼叫 |revcat| 的地方！
+{.nobreak}因此，|revcat| 的實作中，遞迴呼叫完成後，電腦不需回到原呼叫之處再執行什麼東西：最後的結果 |ys| 可直接傳回到最上層、第一個呼叫 |revcat| 的地方！
 ^[如果該語言的實作確實有做到這點，我們說它實作了*尾呼叫消除*(*tail call elimination*)或*尾呼叫最佳化*(*tail call optimisation*)。有些語言到了蠻晚的版本才支援這個最佳化。]
 
 當一個函數 |f| 呼叫函數 |g| 時，如果該呼叫本身就是函數 |f| 最後的結果，並沒有針對傳回值的額外計算，我們將它稱之為一個*尾呼叫*(*tail call*)。
@@ -1696,7 +1696,7 @@ revcat (x:xs)  ys = revcat xs (x:ys) {-"~~."-}
 =  revcat [] (4:3:2:1:[])
 =  [4,3,2,1] {-"~~,"-}
 ```
-{.noindent}其實看來就像是一個有兩個變數的迴圈，其中一個由 |1:2:3:4:[]| 逐漸縮短為 |[]|，另一個由 |[]| 逐步增長為 |4:3:2:1:[]|.
+{.nobreak}其實看來就像是一個有兩個變數的迴圈，其中一個由 |1:2:3:4:[]| 逐漸縮短為 |[]|，另一個由 |[]| 逐步增長為 |4:3:2:1:[]|.
 函數 |reverse| 的定義 |reverse xs = revcat xs []| 就是為這兩個變數設定初始值：如果要計算 |xs| 的反轉，兩變數應該分別初始化為 |xs| 與 |[]|.
 在 |revcat| 的定義中，|revcat [] ys| 表示該迴圈在第一個變數為 |[]| 時終止，此時程式傳回 |ys|；而|revcat (x:xs) ys = revcat xs (x:ys)| 則指定了在迴圈的每一步中兩個變數的值如何改變。
 函數 |reverse| 與 |revcat| 的組合相當於是這樣的一個指令式語言迴圈（假設 |xs| 與 |ys| 為變數，|XS| 為欲反轉的串列）：
@@ -1731,7 +1731,7 @@ return ys
 sumAcc :: List Int -> Int -> Int
 sumAcc xs y = y + sum xs {-"~~."-}
 ```
-{.noindent}如此定義 |sumAcc| 的直覺理由是：我們想用參數 |y| 存放累積的結果，希望利用 |(+)| 的遞移律逐步把 |sum xs| 的結果搬入 |y| 中。
+{.nobreak}如此定義 |sumAcc| 的直覺理由是：我們想用參數 |y| 存放累積的結果，希望利用 |(+)| 的遞移律逐步把 |sum xs| 的結果搬入 |y| 中。
 同樣地，一但找到了這個定義，之後的演算便相當日常、例行了。
 我們先記下：|sum xs = sumAcc xs 0|.
 接下來試圖導出 |sumAcc| 的歸納定義。
@@ -1745,7 +1745,7 @@ sumAcc xs y = y + sum xs {-"~~."-}
      (y+x) + sum xs
 ===  sumAcc xs (y+x) {-"~~."-}
 ```
-{.noindent}讀者可能發現我們之所以定義 |sumAcc xs y| 為 |y + sum xs|, 而不是 |sum xs + y|, 是為了在使用遞移律的那一步之中讓 |x| 可以就近與 |y| 結合。
+{.nobreak}讀者可能發現我們之所以定義 |sumAcc xs y| 為 |y + sum xs|, 而不是 |sum xs + y|, 是為了在使用遞移律的那一步之中讓 |x| 可以就近與 |y| 結合。
 當然，|(+)| 也滿足交換律，因此兩個定義其實是一樣的。
 當我們處理沒有交換律的運算元時，就得對這類細節更小心了。
 總之，我們可導出以下的程式：
@@ -1813,11 +1813,11 @@ tmp1 = undefined
  f []      = e
  f (x:xs)  = x `oplus` f xs {-"~~,"-}
 ```
-{.noindent}其中 |e :: B|, |oplus :: A -> B -> B|, 此處不假設 |oplus| 滿足遞移律。我們能用一個尾遞迴函數（或著說用一個迴圈）計算 |f| 嗎？直覺上，我們可用一個迴圈將串列從右往左走一遍，並用變數紀錄目前為止算出的值。確實，如果我們要求如下的規格：
+{.nobreak}其中 |e :: B|, |oplus :: A -> B -> B|, 此處不假設 |oplus| 滿足遞移律。我們能用一個尾遞迴函數（或著說用一個迴圈）計算 |f| 嗎？直覺上，我們可用一個迴圈將串列從右往左走一遍，並用變數紀錄目前為止算出的值。確實，如果我們要求如下的規格：
 ```{.equation #eq:fold-loop}
 |loop xs (f ys)| &|= f (xs ++ ys) {-"~~,"-}|
 ```
-{.noindent}（所以 |f xs = loop xs (f []) = loop xs e|）
+{.nobreak}（所以 |f xs = loop xs (f []) = loop xs e|）
 並分析 |xs := []| 和 |xs := xs++[x]| 的情況如下：
 ::: {.multicols}
 ::: {.mcol width="0.4\\textwidth"}
@@ -1849,12 +1849,12 @@ loop (xs ++ [x])  z = loop xs (x `oplus` z) {-"~~."-}
 ```{.equation #eq:fold-loop-rev}
 |loop xs (f ys)| &|= f (reverse xs ++ ys) {-"~~,"-}|
 ```
-{.noindent}可推導出
+{.nobreak}可推導出
 ```haskell
  loop []      z = z
  loop (x:xs)  z = loop xs (x `oplus` z) {-"~~."-}
 ```
-{.noindent}但此時要用 |loop| 計算出 |f xs|，得先將 |xs| 反轉：|f xs = loop (reverse xs) e|.
+{.nobreak}但此時要用 |loop| 計算出 |f xs|，得先將 |xs| 反轉：|f xs = loop (reverse xs) e|.
 這具體印證了我們的觀察：在串列上歸納定義出的函數，處理元素的順序和通常寫法的迴圈是相反的。
 
 ```texonly
@@ -1894,7 +1894,7 @@ return z {-"~~."-}
 expAcc :: Nat -> Nat -> Nat -> Nat
 expAcc b n x = x * exp b n {-"~~."-}
 ```
-{.noindent}如果 |expAcc| 有快速的定義，我們可以令 |exp b n = expAcc b n 1|.
+{.nobreak}如果 |expAcc| 有快速的定義，我們可以令 |exp b n = expAcc b n 1|.
 然後我們針對 |n| 為零、|n| 為非零的偶數，以及 |n| 為奇數三種情況作分析。
 當 |n := 0|, |expAcc b 0 x = x|. 當 |n| 為偶數時，可以被改寫成 |2*n|.
 以下的推導中我們將 |exp b n| 寫成 $b^n$, 並假設它已有乘冪該有的各種性質：
@@ -1914,7 +1914,7 @@ expAccDer1 b n x =
  ===   {- |expAcc| 之定義，|exp b 2 = b * b| -}
       expAcc (b * b) n x {-"~~."-}
 ```
-{.noindent}當 |n| 是奇數，我們將它改寫成 |1+n|:
+{.nobreak}當 |n| 是奇數，我們將它改寫成 |1+n|:
 ```{.haskell .invisible}
 expAccDer2 :: Int -> Int -> Int -> Int
 expAccDer2 b n x =
@@ -1938,7 +1938,7 @@ expAcc b 0 x  = x
 expAcc b n x  | even  n = expAcc (b * b) (n `div` 2) x
               | odd   n = expAcc b (n-1) (x*b) {-"~~."-}
 ```
-{.noindent}確實，這是一般在指令式語言中快速計算乘冪的方式。
+{.nobreak}確實，這是一般在指令式語言中快速計算乘冪的方式。
 一個操作性的理解法是：|expAcc b n x| 開始執行後，第一個參數中總是存放著 |b| 的「|2| 的某個次方」的乘冪（$b$, $b^2$, $b^4$...）。只在 |n| 是奇數時，當時的 |b| 才會被乘入累積參數 |x| 之中。
 
 :::{.exlist}
@@ -1962,7 +1962,7 @@ do n /= 0 ->  if  even  n -> b, n := b * b, n `div` 2
 od;
 return x
 ```
-{.noindent}其迴圈恆式為 |exp B N = x * exp b n|.
+{.nobreak}其迴圈恆式為 |exp B N = x * exp b n|.
 ```texonly
 %} % GCL
 ```
@@ -1983,7 +1983,7 @@ fact :: Nat -> Nat
 fact Zero     = 1
 fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
 ```
-{.noindent}請推導出一個尾遞迴版本。
+{.nobreak}請推導出一個尾遞迴版本。
 您利用了關於 |(*:)| 的什麼性質？
 最後的程式是否像是一個計算 |n| 階層的指令式語言迴圈呢？
 :::
@@ -2000,7 +2000,7 @@ fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
      (y *: (Suc n)) *: fact n
 ===  factAcc n (y *: (Suc n)) {-"~~."-}
 ```
-{.noindent}因此我們有了下述定義。由於 |fact n = factAcc n 1|.
+{.nobreak}因此我們有了下述定義。由於 |fact n = factAcc n 1|.
 這相當於右邊的迴圈：
 ```texonly
 %{
@@ -2038,7 +2038,7 @@ return y {-"~~."-}
 ```spec
 mulAcc m n k = k + m * n {-"~~."-}
 ```
-{.noindent}請推導出一個只使用加減法、乘以二、除以二、奇偶判斷，並在 $O(\log m)$ 的時間內算出 |mulAcc m n k| 的歸納定義。這個定義能被改寫成一個迴圈嗎？其恆式為何？
+{.nobreak}請推導出一個只使用加減法、乘以二、除以二、奇偶判斷，並在 $O(\log m)$ 的時間內算出 |mulAcc m n k| 的歸納定義。這個定義能被改寫成一個迴圈嗎？其恆式為何？
 :::
 :::{.exans}
 針對 |m| 做分析。基底情況中，|mulAcc 0 n k = k + 0 * n = k|.
@@ -2054,7 +2054,7 @@ mulAccDer1 m n k =
       k + m * (2 * n)
  ===  mulAcc m (2*n) k {-"~~."-}
 ```
-{.noindent}當 |m| 為奇數，可被改寫為 |1+m|, 並演算如下：
+{.nobreak}當 |m| 為奇數，可被改寫為 |1+m|, 並演算如下：
 ```spec
       mulAcc (1+m) n k
  ===  k + (1+m) * n
@@ -2063,13 +2063,13 @@ mulAccDer1 m n k =
  ===    {- |(+)| 之遞移律，|mulAcc| 之定義 -}
       mulAcc m n (k + n) {-"~~."-}
 ```
-{.noindent}因此我們得到：
+{.nobreak}因此我們得到：
 ```haskell
 mulAcc 0 n k  = k
 mulAcc m n k  | even n  = mulAcc (m `div` 2) (2*n) k
               | odd n   = mulAcc (m - 1) n (k + n) {-"~~."-}
 ```
-{.noindent}如果改寫成計算 |M * N| 的迴圈，其恆式為 |M * N = k + m * n|.
+{.nobreak}如果改寫成計算 |M * N| 的迴圈，其恆式為 |M * N = k + m * n|.
 :::
 :::
 
@@ -2086,7 +2086,7 @@ dtoN :: List Nat -> Nat
 dtoN []      = 0
 dtoN (d:ds)  = d * exp 10 (length ds) + dtoN ds {-"~~."-}
 ```
-{.noindent}其中 |length ds| 的反覆計算使得 |dtoN| 成為一個需時 $O(n^2)$ 的演算法（|n| 為輸入串列的長度）。
+{.nobreak}其中 |length ds| 的反覆計算使得 |dtoN| 成為一個需時 $O(n^2)$ 的演算法（|n| 為輸入串列的長度）。
 
   1. 使用組對的技巧，導出一個能在 $O(n)$ 時間內計算 |dtoN| 以及一些其他輔助結果的函數。
   2. 使用累積參數，導出一個能在 $O(n)$ 時間內計算 |dtoN| 的尾遞迴函數。**提示**：可試試看用這樣的定義 |dtoNAcc ds n = ..n.. + dtoN ds|.
@@ -2103,17 +2103,17 @@ dtoN (d:ds) = d * exp 10 (length ds) + dtoN ds
 dtoNT :: List Nat -> (Nat :* Nat)
 dtoNT ds = (dtoN ds, exp 10 (length ds)) {-"~~."-}
 ```
-{.noindent}我們可輕易導出：
+{.nobreak}我們可輕易導出：
 ```haskell
 dtoNT []      = (0,1)
 dtoNT (d:ds)  = (d * t + n, 10 * t) {-"~~,"-}
   where (n,t) = dtoNT ds {-"~~."-}
 ```
-{.noindent}若使用累積參數，可定義
+{.nobreak}若使用累積參數，可定義
 ```spec
 dtoNAcc ds n = n * exp 10 (length ds) + dtoN ds {-"~~."-}
 ```
-{.noindent}若有歸納定義，我們可令 |dtoN ds = dtoNAcc ds 0|.
+{.nobreak}若有歸納定義，我們可令 |dtoN ds = dtoNAcc ds 0|.
 基底狀況為 |dtoNAcc [] n = n|.
 至於 |ds := d : ds| 的情況可演算如下：
 ```{.haskell .invisible}
@@ -2130,7 +2130,7 @@ dtoN'der1 d ds n =
  ===    {- |dtoNAcc| 之定義 -}
       dtoNAcc ds (n * 10 + d) {-"~~."-}
 ```
-{.noindent}可推導出：
+{.nobreak}可推導出：
 ```haskell
 dtoNAcc []      n = n
 dtoNAcc (d:ds)  n = dtoNAcc ds (n * 10 + d) {-"~~."-}
@@ -2172,13 +2172,13 @@ masc n  | even  n = 2 * masc (n `div` 2)
 =  35 + 4 * 1
 =  39 {-"~~."-}
 ```
-{.noindent}我們發現式子總能展開成為 |a + b * masc n| 的形式。
+{.nobreak}我們發現式子總能展開成為 |a + b * masc n| 的形式。
 因此我們定義
 ```spec
 mascAcc :: Nat -> Nat -> Nat -> Nat
 mascAcc n a b = a + b * masc n {-"~~."-}
 ```
-{.noindent}但在開始推導 |mascAcc| 前，我們得先確定 |masc| 能由 |mascAcc| 算得出來。
+{.nobreak}但在開始推導 |mascAcc| 前，我們得先確定 |masc| 能由 |mascAcc| 算得出來。
 幸好，我們可以讓 |masc n = mascAcc n 0 1|.
 
 現在我們試著尋找 |mascAcc| 的尾遞迴定義。
@@ -2195,7 +2195,7 @@ mascAccDer1 n a b =
       a + b * 2 * masc n
  ===  mascAcc n a (2 * b) {-"~~."-}
 ```
-{.noindent}而當 |n| 為奇數，可以寫成 |1 + 2 * n| 的形式：
+{.nobreak}而當 |n| 為奇數，可以寫成 |1 + 2 * n| 的形式：
 ```{.haskell .invisible}
 mascAccDer2 :: Int -> Int -> Int -> Int
 mascAccDer2 n a b =
@@ -2209,13 +2209,13 @@ mascAccDer2 n a b =
       (a + b * n) + b * masc n
  ===  mascAcc n (a + b * n) b {-"~~."-}
 ```
-{.noindent}因此我們有了如下的尾遞迴定義：
+{.nobreak}因此我們有了如下的尾遞迴定義：
 ```haskell
 mascAcc 0 a b  = a + b
 mascAcc n a b  | even  n = mascAcc (n `div` 2) a (2 * b)
                | odd   n = mascAcc (n `div` 2) (a + b * (n `div` 2)) b {-"~~."-}
 ```
-{.noindent}在推導 |mascAcc| 的過程中使用了各種四則運算的性質，但總之目標是將式子整理回 |a + b * masc n| 的形式，以便收回成為 |mascAcc|。
+{.nobreak}在推導 |mascAcc| 的過程中使用了各種四則運算的性質，但總之目標是將式子整理回 |a + b * masc n| 的形式，以便收回成為 |mascAcc|。
 
 :::{.exlist}
 :::{.exer}
@@ -2243,7 +2243,7 @@ fusc n  | even  n = fusc (n `div` 2)
 ```spec
  fuscAcc n a b = a * fusc n + b * fusc (1 + n) {-"~~."-}
 ```
-{.noindent}如果 |fuscAcc| 有歸納定義，我們可令 |fusc n = fuscAcc n 1 0|.
+{.nobreak}如果 |fuscAcc| 有歸納定義，我們可令 |fusc n = fuscAcc n 1 0|.
 
 為推導 |fuscAcc|, 針對 |n| 做分析。
 當 |n := 0|, |fuscAcc 0 a b = b|.
@@ -2261,7 +2261,7 @@ fuscAccDer1 n a b =
       (a + b) * fusc n + b * fusc (1 + n)
  ===  fuscAcc n (a + b) b {-"~~."-}
 ```
-{.noindent}當 |n| 為奇數，也就是可改寫為 |1 + 2 * n| 的形式時：
+{.nobreak}當 |n| 為奇數，也就是可改寫為 |1 + 2 * n| 的形式時：
 ```{.haskell .invisible}
 fuscAccDer2 :: Int -> Int -> Int -> Int
 fuscAccDer2 n a b =
@@ -2276,7 +2276,7 @@ fuscAccDer2 n a b =
       a * fusc n + (a + b) * fusc (1 + n)
  ===  fuscAcc n a (a + b) {-"~~."-}
 ```
-{.noindent}因此我們有了如下的程式：
+{.nobreak}因此我們有了如下的程式：
 ```haskell
 fuscAcc 0 a b  = b
 fuscAcc n a b  | even  n = fuscAcc (n `div` 2) (a + b) b
@@ -2306,7 +2306,7 @@ mapAcc f (x:xs)  ys = mapAcc f xs (f x : ys) {-"~~."-}
 mapAcc :: (a -> b) -> List a -> List b -> List b
 mapAcc f xs ys = reverse ys ++ map f xs {-"~~."-}
 ```
-{.noindent}因此 |mapAcc f [] ys = reverse ys|. 而 |xs := x : xs| 的情況推導如下：
+{.nobreak}因此 |mapAcc f [] ys = reverse ys|. 而 |xs := x : xs| 的情況推導如下：
 ```{.haskell .invisible}
 mapAccDer1 f x xs ys =
 ```
@@ -2350,14 +2350,14 @@ mapAccDer1 f x xs ys =
 mapAcc f []      ys = reverse ys
 mapAcc f (x:xs)  ys = mapAcc f xs (f x : ys) {-"~~."-}
 ```
-{.noindent}乍看之下，這個程式的問題似乎是需要多做一次 |reverse|。
+{.nobreak}乍看之下，這個程式的問題似乎是需要多做一次 |reverse|。
 但這可能並不很嚴重：|reverse| 也可用 |revcat| 實作，在線性時間內完成。
 該定義和原歸納定義的 |map f| 的最大差別是：|mapAcc f| 需*等到輸入串列整個被走訪完畢後才會開始傳回第一個結果*。而回顧 |map f| 的歸納定義：
 ```spec
 map f []      = []
 map f (x:xs)  = f x : map f xs {-"~~,"-}
 ```
-{.noindent}歸納狀況中，|f x : ...| 可在走訪到 |x| 時便先產生。考慮這樣的程式：
+{.nobreak}歸納狀況中，|f x : ...| 可在走訪到 |x| 時便先產生。考慮這樣的程式：
 |length . filter p . map f|。根據惰性求值，|f x : ...| 會立刻被 |filter| 與 |length| 接收，然後才開始計算 |map f xs|. 因此 |map f| 回傳的中間串列其實並不會被完整地產生。
 在大部分情況下，歸納定義的 |map f| 是比尾遞迴的 |mapAcc f| 更有效率的函數。
 在許多情形中，*早點產生部分的結果、早點讓它被使用掉*，會是在空間與時間上都更有效率的做法。
@@ -2371,7 +2371,7 @@ revcat :: List a -> (List a -> List a)
 revcat []      = id
 revcat (x:xs)  = revcat xs . (x:) {-"~~."-}
 ```
-{.noindent}|revcat| 是一個傳回 |List a -> List a| 的函數。
+{.nobreak}|revcat| 是一個傳回 |List a -> List a| 的函數。
 在基底狀況，|revcat []| 傳回 |id|.
 歸納狀況中，|revcat xs| 傳回的函數和 |(x:)| 組合在一起。
 這和 |reverse| 其實很像：在基底狀況，|reverse []| 傳回空串列 |[]|,
@@ -2384,7 +2384,7 @@ revcat (x:xs)  = revcat xs . (x:) {-"~~."-}
 ```haskell
 type DList a = List a -> List a {-"~~,"-}
 ```
-{.noindent}一個型別為 |DList a| 的函數 |f| 表示一個「尾段尚未確定」的串列 ---
+{.nobreak}一個型別為 |DList a| 的函數 |f| 表示一個「尾段尚未確定」的串列 ---
 餵給它一個尾巴 |ys|, |f ys| 便會傳回一個真正的串列。
 若 |xs| 是一個型別為 |List a| 的串列， |(xs ++)| 便是如此的一個 |DList a|.
 要將一個 |DList a| 轉成 |List a|, 則只需將 |[]| 傳進去即可。
@@ -2440,7 +2440,7 @@ cons x xs = (x:) . xs {-"~~."-}
      (xs ++) $ ys ++ (zs ++ ws)
 ===  xs ++ (ys ++ (zs ++ ws)) {-"~~."-}
 ```
-{.noindent}由於 |(.)| 的定義，即使 |(xs ++) . (ys ++)| 先被組合在一起，我們仍得到括號往右括的 |xs ++ (ys ++ (zs ++ ws))|！
+{.nobreak}由於 |(.)| 的定義，即使 |(xs ++) . (ys ++)| 先被組合在一起，我們仍得到括號往右括的 |xs ++ (ys ++ (zs ++ ws))|！
 
 我們多研究一個例子。
 在習題 \@ref{ex:ETree-tips} 中，給定一個 |ETree a|, 我們想傳回其所有的標記。
@@ -2451,14 +2451,14 @@ tipsD :: ETree a -> DList a
 tipsD (Tip x)    = (x:)
 tipsD (Bin t u)  = tipsD t . tipsD u {-"~~."-}
 ```
-{.noindent}上述函數會邊走訪輸入的樹，邊產生一個結構與輸入樹相同的 |DList|。
+{.nobreak}上述函數會邊走訪輸入的樹，邊產生一個結構與輸入樹相同的 |DList|。
 例如，考慮如下的樹：
 ```spec
 t = Bin  (Bin  (Bin (Tip 5) (Tip 4))
                (Bin (Tip 3) (Tip 2)))
          (Tip 1){-"~~,"-}
 ```
-{.noindent}|tipsD t| 將會是 |(((5:). (4:)) . ((3:) . (2:))) . (1:)| -- 結構和 |t| 相同，只是將 |t| 的每個 |Tip x| 代換成 |(x:)|, 每個 |Bin| 代換成 |(.)|.
+{.nobreak}|tipsD t| 將會是 |(((5:). (4:)) . ((3:) . (2:))) . (1:)| -- 結構和 |t| 相同，只是將 |t| 的每個 |Tip x| 代換成 |(x:)|, 每個 |Bin| 代換成 |(.)|.
 但當我們傳一個空串列進去，這個由 |(x:)| 和 |(.)| 形成的「樹」將被走訪一遍，並在線性時間內得到 |5:4:3:2:1:[]|。
 事實上，如果我們為 |tipsD| 補一個參數並展開，我們將得到和習題 \@ref{ex:ETree-tipsAcc} 中一樣的結果。
 有了 |tipsD|, 我們可將原有的 |tips| 改定義為 |tips = toList . tipsD|, 或著 |tips t = tipsD t []|.
@@ -2477,7 +2477,7 @@ t = Bin  (Bin  (Bin (Tip 5) (Tip 4))
 ddD :: ETree a -> (DList a, Nat)
 ddD t = let (xs, n) = dd t in ((\zs -> xs++zs), n) {-"~~."-}
 ```
-{.noindent}有了 |ddD| 後，我們可改定義 |dd t = let (f, n) = ddD t in (f [], n)|.
+{.nobreak}有了 |ddD| 後，我們可改定義 |dd t = let (f, n) = ddD t in (f [], n)|.
 
 試著推導 |ddD| 的歸納定義，不難得到 |ddD (Tip x) = ((x:), 0)|.
 考慮 |ddD (Bin t u)|, 為計算方便將 |dd| 改寫為 |if|-|then|-|else| 之形式：
@@ -2510,7 +2510,7 @@ ddDBin t u =
       in (  if m < n then f else if m == n then f . g else g,
             1 + (m `max` n)) {-"~~."-}
 ```
-{.noindent}因此我們得到：
+{.nobreak}因此我們得到：
 ```haskell
 ddD (Tip x)    = ((x:), 0)
 ddD (Bin t u)  | m <  n  = (f, 1 + n)
@@ -2536,7 +2536,7 @@ ddD (Bin t u)  | m <  n  = (f, 1 + n)
 segments :: List a -> List (List a)
 segments = concat . map inits . tails {-"~~."-}
 ```
-{.noindent}其中 |tails :: List a -> List (List a)| 計算一個串列所有的後段(suffixes)，例如 |tails [1,2,3] =|
+{.nobreak}其中 |tails :: List a -> List (List a)| 計算一個串列所有的後段(suffixes)，例如 |tails [1,2,3] =|
 |[[1,2,3],[2,3],[3],[]]|；\index{list 串列!suffix 後段}
 函數 |inits :: List a -> List (List a)| 則計算一個串列的所有前段(prefixes)，例如 |inits [1,2,3] = [[],[1],[1,2],[1,2,3]]|. \index{list 串列!prefix 前段}
 對每一個後段，計算所有的前段，便得到所有的區段了。
@@ -2571,7 +2571,7 @@ tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
 mss :: List Int -> Int
 mss = maximum . map sum . segments {-"~~,"-}
 ```
-{.noindent}這幾乎便是問題的字面翻譯：算出所有的區段，對每個區段算其和，然後挑出最大的一個。
+{.nobreak}這幾乎便是問題的字面翻譯：算出所有的區段，對每個區段算其和，然後挑出最大的一個。
 ^[函數 |maximum :: List Int -> Int| 的定義見例\@ref{ex:maximumP}. 我們得假設整數中有個 |-infty| 作為 |maximum []| 的結果。若要避免 |-infty|，可注意到 |inits|, |tails|, 和 |segments| 都不會傳回空串列 --- 它們的型別都可寫成更嚴格的 |ListP (List a)|。因此我們可改用例\@ref{ex:maximumP}中的 |maximumP|. 本節的推導稍加修改後即可適用。]
 當輸入串列長度為 $n$, 這個定義本身是一個時間複雜度為 $O(n^3)$ 的演算法 --- 該串列的區段有 $O(n^2)$ 個，每個都需分別算總和。
 我們能導出一個更快的演算法嗎？
@@ -2595,11 +2595,11 @@ mssDer1 =
  ===   {- |map| 融合 （定理\ref{thm:map-fusion}） -}
       maximum . map (maximum . map sum . inits) . tails {-"~~."-}
 ```
-{.noindent}細看 |maximum . map sum . inits| 這個子算式，其意思是「給定一個串列，計算其所有*前段*的和的最大值」。我們為這個子算式取個名字，令 |mps = maximum . map sum . inits|，其中 |mps| 為「最大前段和 maximum prefix sum」的縮寫。經由上述演算，我們得知
+{.nobreak}細看 |maximum . map sum . inits| 這個子算式，其意思是「給定一個串列，計算其所有*前段*的和的最大值」。我們為這個子算式取個名字，令 |mps = maximum . map sum . inits|，其中 |mps| 為「最大前段和 maximum prefix sum」的縮寫。經由上述演算，我們得知
 ```spec
   mss = maximum . map mps . tails {-"~~,"-}
 ```
-{.noindent}意思是：要找出所有區段的最大和，我們可以對*每一個後段，找出其最大前段和*。
+{.nobreak}意思是：要找出所有區段的最大和，我們可以對*每一個後段，找出其最大前段和*。
 
 這是解許多區段問題的常見模式：要解決最佳區段問題，先試著解最佳前段問題。
 要算出最佳區段，可*對每一個後段，算出其最佳前段*。
@@ -2611,7 +2611,7 @@ mssDer1 =
 mps []      = e
 mps (x:xs)  = x `oplus` mps xs {-"~~,"-}
 ```
-{.noindent}那麼我們就有了只把 |oplus| 呼叫 |n| 次便計算出 |map mps . tails| 的方法。
+{.nobreak}那麼我們就有了只把 |oplus| 呼叫 |n| 次便計算出 |map mps . tails| 的方法。
 這是可能的嗎？我們推導看看。
 
 基底狀況很容易算出：|mps [] =| |(maximum . map sum . inits) [] =|
@@ -2632,12 +2632,12 @@ msiDer2 x xs =
  ===    {- |maximum . map (x+) = (x+) . maximum| -}
       0 `max` (x + maximum (map sum (inits xs))) {-"~~."-}
 ```
-{.noindent}果然成功了！我們得到：
+{.nobreak}果然成功了！我們得到：
 ```haskell
 mps []      = 0
 mps (x:xs)  = 0 `max` (x + mps xs) {-"~~."-}
 ```
-{.noindent}令 |x `oplus` y = 0 `max` (x + y)|, 函數 |mps| 便符合我們要求的模式了。
+{.nobreak}令 |x `oplus` y = 0 `max` (x + y)|, 函數 |mps| 便符合我們要求的模式了。
 此處 |oplus| 是一個只需常數時間的函數。
 因此，我們將有一個能在線性時間內計算最大區段和的演算法！
 
@@ -2699,7 +2699,7 @@ maxmpsAllDer x xs =
       in (0 `max` (x + head ys)) `max` maximum ys
  ===  (0 `max` (x + head (mpsAll xs))) `max` maximum (mpsAll xs) {-"~~."-}
 ```
-{.noindent}雖然作出了 |maximum (mpsAll xs)|，但還有一個 |head (mpsAll xs)| 無法消掉。
+{.nobreak}雖然作出了 |maximum (mpsAll xs)|，但還有一個 |head (mpsAll xs)| 無法消掉。
 
 這時就用得上*組對*的技巧了 --- 既然需要 |head (mpsAll xs)|，就把它一併歸納地算出來。
 定義：
@@ -2709,7 +2709,7 @@ maxhd xs = (maximum xs, head xs)
 ```spec
   msps xs = (maximum (mpsAll xs), head (mpsAll xs)) {-"~~,"-}
 ```
-{.noindent}藉由簡單的展開-收回，我們可推導出：
+{.nobreak}藉由簡單的展開-收回，我們可推導出：
 ```texonly
 %{
 %format mss'' = mss
@@ -2748,7 +2748,7 @@ do i /= N ->  s := 0 `max` (X i + s) ;
 od ;
 return m
 ```
-{.noindent}這在指令式程式推導的領域中也是一個經典範例。
+{.nobreak}這在指令式程式推導的領域中也是一個經典範例。
 ```texonly
 %} %GCL
 ```
@@ -2778,7 +2778,7 @@ mspsDer1 x xs =
       let (m, s) = msps xs
       in ((0 `max` (x + s)) `max` m, 0 `max` (x + s)) {-"~~."-}
 ```
-{.noindent}因此我們便推導出了第\@ref{sec:maximum-segment-sum}節中的 |msps|.
+{.nobreak}因此我們便推導出了第\@ref{sec:maximum-segment-sum}節中的 |msps|.
 :::
 :::
 
@@ -2800,7 +2800,7 @@ mspsDer1 x xs =
 lp :: List Int -> Int
 lp = maximum . map length . filter plateau . segmentsP {-"~~,"-}
 ```
-{.noindent}其中 |segmentsP| 算出所有的區段，|plateau| 判斷一個區段是否為高原。
+{.nobreak}其中 |segmentsP| 算出所有的區段，|plateau| 判斷一個區段是否為高原。
 過濾出所有的高原後，我們計算每個高原的長度，然後找出最大值。
 ^[函數 |lp| 與 |plateau| 可以有更通用的型別 |Eq a => List a -> Int|, |Eq a => List a -> Bool|.]
 
@@ -2809,7 +2809,7 @@ lp = maximum . map length . filter plateau . segmentsP {-"~~,"-}
 segmentsP :: List a -> List (ListP a)
 segmentsP = concat . map initsP . tailsP {-"~~,"-}
 ```
-{.noindent}函數 |initsP| 與 |tailsP| 則與 |inits| 與 |tails| 類似，但只傳回非空的前後段，定義如下：
+{.nobreak}函數 |initsP| 與 |tailsP| 則與 |inits| 與 |tails| 類似，但只傳回非空的前後段，定義如下：
 ::: {.multicols}
 ::: {.mcol width="0.5\\textwidth"}
 ```haskell
@@ -2838,7 +2838,7 @@ plateau :: ListP Int -> Bool
 plateau [x]       = True
 plateau (x:y:xs)  = x == y && plateau (y:xs) {-"~~."-}
 ```
-{.noindent}由於輸入是非空串列，|plateau| 的定義中考慮的是「有一個元素」和「有兩個以上元素」的兩種情況。
+{.nobreak}由於輸入是非空串列，|plateau| 的定義中考慮的是「有一個元素」和「有兩個以上元素」的兩種情況。
 
 :::{.infobox title="區段問題不傳回區段？"}
 為何我們在最大區段和問題中只傳回最大區段的和、在最長高原問題中只傳回長度，而不傳回該區段本身呢？
@@ -2891,24 +2891,24 @@ lppDer2 x xs =
 ```spec
  filter p . map f = map f . filter (p . f) {-"~~."-}
 ```
-{.noindent}至於 |plateau . (x:)| 能否再化簡？觀察 |plateau| 定義的第二個子句：
+{.nobreak}至於 |plateau . (x:)| 能否再化簡？觀察 |plateau| 定義的第二個子句：
 ```spec
 plateau (x:y:xs)  = x == y && plateau (y:xs) {-"~~,"-}
 ```
-{.noindent}寫成函數組合的形式便是：
+{.nobreak}寫成函數組合的形式便是：
 ```spec
 plateau . (x:) = ((x ==) . head) &&: plateau {-"~~,"-}
 ```
-{.noindent}其中 |(&&:)| 為「提升成函數版」的 |(&&)|, 定義為
+{.nobreak}其中 |(&&:)| 為「提升成函數版」的 |(&&)|, 定義為
 ```haskell
 (&&:) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (f &&: g) x = f x && g x {-"~~."-}
 ```
-{.noindent}函數 |(&&) :: Bool -> Bool -> Bool| 拿兩個布林值、算出一個新布林值，|(&&:)| 則拿兩個函數 |f, g :: a -> Bool|，組合成另一個型別為 |a -> Bool| 的函數，其結果是 |f| 與 |g| 之傳回值的合取。函數 |filter| 與 |(&&:)| 有如下的性質：
+{.nobreak}函數 |(&&) :: Bool -> Bool -> Bool| 拿兩個布林值、算出一個新布林值，|(&&:)| 則拿兩個函數 |f, g :: a -> Bool|，組合成另一個型別為 |a -> Bool| 的函數，其結果是 |f| 與 |g| 之傳回值的合取。函數 |filter| 與 |(&&:)| 有如下的性質：
 ```{.equation #eq:filter-conjunct}
   |filter (p &&: q)| & |= filter p . filter q| \mbox{~~.}
 ```
-{.noindent}有了以上眾多性質，我們演算如下：
+{.nobreak}有了以上眾多性質，我們演算如下：
 ```{.haskell .invisible}
 lppDer3 :: Int -> List (List Int) -> List (ListP Int)
 lppDer3 x =
@@ -2922,7 +2922,7 @@ lppDer3 x =
  ===    {- 因 \eqref{eq:filter-conjunct}: |filter (p &&: q) = filter p . filter q| -}
       map (x:) . filter plateau . filter ((x ==) . head) {-"~~."-}
 ```
-{.noindent}現在整個式子成為 |1 `max` (maximum . map (length . (x:)) . filter plateau . filter ((x ==) . head) . initsP) $ xs|.
+{.nobreak}現在整個式子成為 |1 `max` (maximum . map (length . (x:)) . filter plateau . filter ((x ==) . head) . initsP) $ xs|.
 
 把 |map (x:)| 往左搬之後，式子的右邊出現了 |filter ((x ==) . head) (initsP xs)| --- 產生所有 |xs| 的非空前段，取出第一個元素為 |x| 的。但讀者們可能立刻發現：|initsP| 傳回的每個前段的第一個元素都是一樣的！也就是說我們有以下性質。
 ```texonly
@@ -2961,25 +2961,25 @@ lppDer4 x xs =
  ===   {- |lpp| 之定義 -}
      if x == head xs then 1 + lpp xs else 1 {-"~~."-}
 ```
-{.noindent}由此我們得到
+{.nobreak}由此我們得到
 ```haskell
 lpp [x]     = 1
 lpp (x:xs)  = if x == head xs then 1 + lpp xs else 1 {-"~~."-}
 ```
-{.noindent}然而，我們雖為 |lpp| 推導出了一個歸納定義，該定義並不符合 \@eqref{eq:f-fold-scan}！
+{.nobreak}然而，我們雖為 |lpp| 推導出了一個歸納定義，該定義並不符合 \@eqref{eq:f-fold-scan}！
 後者要求 |lpp| 的右手邊必須是 |x `oplus` lpp xs| 的形式 --- 在 |lpp xs| 之外不能有其他的 |xs|, 而上述的 |lpp| 右手邊多了一個 |head xs|.
 
 這時組對的技巧又派上用場了。定義：
 ```spec
 lpph xs = (lpp xs, head xs) {-"~~,"-}
 ```
-{.noindent}我們可推導出
+{.nobreak}我們可推導出
 ```haskell
 lpph [x]     = (1, x)
 lpph (x:xs)  = (if x == y then 1 + n else 1, x) {-"~~,"-}
    where (n,y) = lpph xs {-"~~."-}
 ```
-{.noindent}該函數符合 \@eqref{eq:f-fold-scan} 的形式，其中 |e = (1,x)|, |x `oplus` (y,n) = (if x == y then 1 + n else 1, x)|.
+{.nobreak}該函數符合 \@eqref{eq:f-fold-scan} 的形式，其中 |e = (1,x)|, |x `oplus` (y,n) = (if x == y then 1 + n else 1, x)|.
 
 {title="總結"}
 綜合目前為止的推導，函數 |lpp| 的推導大架構如下：
@@ -2998,13 +2998,13 @@ lppDer5 x =
  ===    {- 掃描引理 -}
       maximum . map fst . lpphAll {-"~~,"-}
 ```
-{.noindent}其中 |lpphAll| 的定義如下：
+{.nobreak}其中 |lpphAll| 的定義如下：
 ```haskell
 lpphAll [x]     = [(1,x)]
 lpphAll (x:xs)  = (if x == y then 1 + n else 1, x) : (n,y) : ys {-"~~,"-}
   where ((n,y) : ys) = lpphAll xs {-"~~."-}
 ```
-{.noindent}這是一個使用線性時間、線性空間的演算法。
+{.nobreak}這是一個使用線性時間、線性空間的演算法。
 
 ## 參考資料
 
