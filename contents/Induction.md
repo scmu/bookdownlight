@@ -273,7 +273,7 @@ expPlusTimesP1 b m n =
    b *: exp b (m +: n)
  ===    {- 歸納假設 -}
    b *: (exp b m *: exp b n)
- ===    {- |(*)| 之遞移律 -}
+ ===    {- |(*)| 之結合律 -}
    (b *: exp b m) *: exp b n
  ===    {- |exp| 之定義 -}
    exp b (Suc m) *: exp b n {-"~~."-}
@@ -288,7 +288,7 @@ expPlusTimesP1 b m n =
 ```
 {.nobreak}證明\@ref{thm:exp-plus-times}欲證的是 |exp b (m + n) = exp b m * exp b n|，並在 |m| 上做歸納。
 更精確地說，就是選用了下述的 |P|:%
-^[在程式推導圈子中，|(<=>)| 常用來代表「只用在真假值上、且滿足遞移律的等號」。本書中使用 |(<=>)| 以和 |(=)| 做區分。]
+^[在程式推導圈子中，|(<=>)| 常用來代表「只用在真假值上、且滿足結合律的等號」。本書中使用 |(<=>)| 以和 |(=)| 做區分。]
 ```spec
 P m <=> (exp b (m + n) = exp b m * exp b n) {-"~~,"-}
 ```
@@ -339,7 +339,7 @@ P m <=> (exp b (m + n) = exp b m * exp b n) {-"~~,"-}
 證明 |1 * k = k|. 這個證明並不需要歸納。
 :::
 :::{.exer #ex:add-associative}
-證明 |(+)| 之遞移律: |m + (n + k) = (m + n) + k|. 此證明中你使用的述語是什麼？
+證明 |(+)| 之結合律: |m + (n + k) = (m + n) + k|. 此證明中你使用的述語是什麼？
 :::
 :::{.exer #ex:add-right-id}
 證明 |k + 1 = k|. 你需要使用歸納法嗎？用什麼述語？
@@ -1704,8 +1704,8 @@ lenLeavesPf1 x t u =
 :::{.definition title="前序、偏序" #def:preorder}
 給定集合$S$, 令 $(\leq)$ 為 $S$ 上的一個二元關係。如果 $(\leq)$ 滿足：
 
-  * *自反律*：對所有 $x \in S$, |x <= x|.
-  * *遞移律*：對所有 $x,y,z \in S$, |x <= y && y <= z ==> x <= z|,
+  * *自反律*：對所有 $x \in S$, |x <= x|.\index{reflexivity 自反律}
+  * *遞移律*：對所有 $x,y,z \in S$, |x <= y && y <= z ==> x <= z|,\index{transitivity 遞移律}
 
 則 $(\leq)$ 被稱為$S$ 上的一個*前序*(*preorder*).
 \index{preorder 前序}
