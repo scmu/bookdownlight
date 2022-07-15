@@ -18,16 +18,16 @@ renderBlock :: Handle -> Block -> IO ()
 renderBlock h (Para (Attrs attrs :<| is)) = do
   hdParaHeader h attrs
   renderInlines h is
-  hPutStr h "<br>\n"
+  hPutStr h "<br1>\n"
 renderBlock h (Para is) = do
   hPutStr h "<p>"
   renderInlines h is
   hPutStr h "</p>\n"
 renderBlock h (Header hd attrs is) = renderHeader h hd attrs is
 renderBlock h (Blockquote bs) =
-  do hPutStr h "<blockquote>\n"
+  do hPutStr h "\\blockquote{<br>\n"
      renderBlocks h bs
-     hPutStr h "</blockquote>\n"
+     hPutStr h "}<br>\n"
 renderBlock h (List _ lt items) =
   do hPutStr h ("<" ++ ltype  )
      mapM_ renderLItem items
@@ -61,7 +61,7 @@ renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
      Nothing -> return ()
      Just title -> hPutChar h '[' >> T.hPutStr h title >> hPutChar h ']'
    mapM_ (renderLabel h) ids
-   hPutStr h "<br>\n"
+   hPutStr h "<br4>\n"
    renderBlocks h bs
    envEnd h c
  where thmEnvs :: [Text]
@@ -70,12 +70,12 @@ renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
 renderDIV h "figure" cs ids avs bs = do
    T.hPutStr h "<img src='"
    printPositions cs
-   hPutStr h "<br>5\n"
+   hPutStr h "<b5r>\n"
    renderBlocks h bs
    printCaption avs
    mapM_ (renderLabel h) ids
-   hPutStr h "<br>6\n"
-   T.hPutStr h "'><br>7\n"
+   hPutStr h "<br6>\n"
+   T.hPutStr h "'><br7>\n"
  where printPositions cs
          | [] <- ps = return ()
          | otherwise = hPutChar h '[' >> mapM_ (hPutChar h . Data.Text.head) ps >>
@@ -84,7 +84,7 @@ renderDIV h "figure" cs ids avs bs = do
               ps = filter (\c -> c `elem` poses) cs
        printCaption avs =
          case lookup "title" avs of
-           Just cap -> T.hPutStr h "\\caption{" >> T.hPutStr h cap >> T.hPutStr h "}<br>8\n"
+           Just cap -> T.hPutStr h "\\caption{" >> T.hPutStr h cap >> T.hPutStr h "}<br8>\n"
            Nothing -> return ()
 
 renderDIV h "texonly" _ _ _ bs = mapM_ renderTexOnly bs
@@ -98,51 +98,49 @@ renderDIV h "infobox" _ _ avs bs = do
    renderBlocks h (fmap infoindent bs)
    T.hPutStr h "\\end{infobox}"
  where printTitle avs = case lookup "title" avs of
-         Just cap -> T.hPutStr h "{" >> T.hPutStr h cap >> T.hPutStr h "}<br>11\n"
+         Just cap -> T.hPutStr h "{" >> T.hPutStr h cap >> T.hPutStr h "}<br11>\n"
          Nothing -> return ()
-       infoindent (Para is) = Para (Str "&emsp;&emsp; " :<| is )
+       infoindent (Para is) = Para (Str "\\quad " :<| is )
        infoindent b = b
 
 renderDIV h "multicols" _ _ avs bs = do
-  T.hPutStr h "<table>\n"
+  T.hPutStr h "\\\\<br12>\n"
   renderBlocks h bs
-  T.hPutStr h "</table>\\\\"
+  T.hPutStr h "\\\\"
 
 renderDIV h "mcol" _ _ avs bs = do
   case lookup "width" avs of
-    Just w -> do T.hPutStr h "<tr>"
+    Just w -> do T.hPutStr h "\\begin{minipage}{"
                  T.hPutStr h w
-                 T.hPutStr h "<td>"
+                 T.hPutStr h "}<br13>\n"
                  renderBlocks h bs
-                 T.hPutStr h "</td>\n</tr>\n"
+                 T.hPutStr h "\\end{minipage}<br>\n"
     Nothing -> renderBlocks h bs
 
 renderDIV h "exlist" _ _ _ bs = do
-  T.hPutStr h "<div class = 'exlist'>"
-  hPutStr h "<br>14\n"
+  T.hPutStr h "\\begin{exlist}"
+  hPutStr h "<br14>\n"
   renderBlocks h bs
-  T.hPutStr h "</div>"
+  T.hPutStr h "\\end{exlist}"
 
 renderDIV h "exer" _ ids _ bs = do
-  T.hPutStr h "<div class = 'Exercise' style='background-color:DodgerBlue;'>"
+  T.hPutStr h "\\Exercise"
   mapM_ (renderLabel h) ids
-  hPutStr h "<br>15\n"
+  hPutStr h "<br15>\n"
   renderBlocks h bs
-  hPutStr h "</div>"
 
 renderDIV h "exans" cs _ _ bs = do
-  T.hPutStr h "<div class = 'Answer' style='background-color:Tomato;'>"
+  T.hPutStr h "\\Answer"
   printCompact
-  hPutStr h "<br>16\n"
+  hPutStr h "<br16>\n"
   renderBlocks h bs
-  hPutStr h "</div>"
  where printCompact | "compact" `elem` cs = T.hPutStr h "~\\\\ \\vspace{-0.5cm}"
                     | otherwise = return ()
 
  -- catch-all case.
  -- possible instances: example, answer.
 renderDIV h c cs ids avs bs = do
-  envBegin h c >> mapM_ (renderLabel h) ids >> hPutStr h "<br>17"
+  envBegin h c >> mapM_ (renderLabel h) ids >> hPutStr h "<br17>"
   renderBlocks h bs
   envEnd h c
 
@@ -167,7 +165,7 @@ renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
   do envBegin h "<div class='spec'>"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>20\n"
+     hPutStr h "<br20>\n"
      T.hPutStr h txt
      hPutStr h "<br>\n"
      envEnd h "</div>"
@@ -175,24 +173,24 @@ renderCode h ("haskell" : cs) ids _ txt  =
   do when invisible (T.hPutStr h "%if False<br>\n")
      envBegin h "code"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>21\n"
+     hPutStr h "<br21>\n"
      T.hPutStr h txt
      hPutStr h "<br>\n"
      envEnd h "code"
      when invisible (T.hPutStr h "%endif")
  where invisible = "invisible" `elem` cs
 renderCode h ("texonly" : _) _ _ txt =
-  T.hPutStr h txt >> hPutStr h "<br>22\n"
+  T.hPutStr h txt >> hPutStr h "<br22>\n"
 renderCode h ("verbatim" : cs) ids _ txt  =
   do envBegin h "verbatim"
-     hPutStr h "<br>23\n"
+     hPutStr h "<br23>\n"
      T.hPutStr h txt
      hPutStr h "<br>\n"
      envEnd h "verbatim"
 renderCode h _ ids _ txt = do
   do envBegin h "code"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>24\n"
+     hPutStr h "<br24>\n"
      T.hPutStr h txt
      hPutStr h "<br>\n"
      envEnd h "code"
@@ -232,7 +230,7 @@ renderInline :: Handle -> Inline -> IO ()
 renderInline h (Str txt) = T.hPutStr h txt
 renderInline h Space = hPutStr h " "
 renderInline h SoftBreak = hPutStr h ""
-renderInline h LineBreak = hPutStr h "<br>27\n"
+renderInline h LineBreak = hPutStr h "<br27>\n"
 renderInline h (Emph inlines) =
   do hPutStr h "<em>"
      renderInlines h inlines

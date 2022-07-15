@@ -47,10 +47,14 @@ main = -- generate lhs
 genHtmls :: String -> String -> IO ()
 genHtmls base chname = do
     hdl <- openFile htmlname WriteMode
+    readFile htmlHeader >>= TIO.hPutStr hdl
     readFile mdname >>= handleHtml hdl
+    readFile htmlFooter >>= TIO.hPutStr hdl
     hClose hdl
   where mdname  = contents base ++ chname ++ ".md"
         htmlname = htmlChs base ++ chname ++ ".html"
+        htmlHeader = tmpls base ++ "htmlheader.html"
+        htmlFooter = tmpls base ++ "htmlfooter.html"
 
 
 handleHtml :: Handle -> Text -> IO ()
@@ -81,8 +85,8 @@ htmlChs   projBase = htmlBase projBase ++ "Chapters/"
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
 
-textstF :: String -> IO ()
-textstF file = readFile file >>= handle stdout
+-- textstF :: String -> IO ()
+-- textstF file = readFile file >>= handle stdout
             -- T.getContents >>= handle
             -- T.getContents >>= (print . markdown def)
 
