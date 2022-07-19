@@ -92,57 +92,57 @@ renderDIV h "texonly" _ _ _ bs = mapM_ renderTexOnly bs
         renderTexOnly b = renderBlock h b
 
 renderDIV h "infobox" _ _ avs bs = do
-   T.hPutStr h "\\begin{infobox}"
+   T.hPutStr h "<div class = 'infobox'>\n"
    printTitle avs
    hPutStr h "\n"
    renderBlocks h (fmap infoindent bs)
-   T.hPutStr h "\\end{infobox}"
+   T.hPutStr h "</div>"
  where printTitle avs = case lookup "title" avs of
          Just cap -> T.hPutStr h "{" >> T.hPutStr h cap >> T.hPutStr h "}<br>11\n"
          Nothing -> return ()
-       infoindent (Para is) = Para (Str "&emsp;&emsp; " :<| is )
+       infoindent (Para is) = Para (Str " " :<| is )
        infoindent b = b
 
 renderDIV h "multicols" _ _ avs bs = do
   T.hPutStr h "<table>\n"
   renderBlocks h bs
-  T.hPutStr h "</table>\\\\"
+  T.hPutStr h "</table>\n"
 
 renderDIV h "mcol" _ _ avs bs = do
   case lookup "width" avs of
-    Just w -> do T.hPutStr h "<tr>"
+    Just w -> do T.hPutStr h "<tr>\n"
                  T.hPutStr h w
-                 T.hPutStr h "<td>"
+                 T.hPutStr h "<td>\n"
                  renderBlocks h bs
                  T.hPutStr h "</td>\n</tr>\n"
     Nothing -> renderBlocks h bs
 
 renderDIV h "exlist" _ _ _ bs = do
-  T.hPutStr h "<div class = 'exlist'>"
-  hPutStr h "<br>14\n"
+  T.hPutStr h "<div class = 'exlist'>\n<b>Exlist:</b>"
+  hPutStr h "\n"
   renderBlocks h bs
-  T.hPutStr h "</div>"
+  T.hPutStr h "</div>\n"
 
 renderDIV h "exer" _ ids _ bs = do
-  T.hPutStr h "<div class = 'Exercise' style='background-color:DodgerBlue;'>"
+  T.hPutStr h "<div class = 'Exercise'>\n<b>Exercise:</b>"
   mapM_ (renderLabel h) ids
-  hPutStr h "<br>15\n"
+  hPutStr h "\n"
   renderBlocks h bs
-  hPutStr h "</div>"
+  hPutStr h "</div>\n"
 
 renderDIV h "exans" cs _ _ bs = do
-  T.hPutStr h "<div class = 'Answer' style='background-color:Tomato;'>"
+  T.hPutStr h "<div class = 'Answer'>\n<b>Answer:</b>"
   printCompact
-  hPutStr h "<br>16\n"
+  hPutStr h "\n"
   renderBlocks h bs
-  hPutStr h "</div>"
- where printCompact | "compact" `elem` cs = T.hPutStr h "~\\\\ \\vspace{-0.5cm}"
+  hPutStr h "</div>\n"
+ where printCompact | "compact" `elem` cs = T.hPutStr h " "
                     | otherwise = return ()
 
  -- catch-all case.
  -- possible instances: example, answer.
 renderDIV h c cs ids avs bs = do
-  envBegin h c >> mapM_ (renderLabel h) ids >> hPutStr h "<br>17"
+  envBegin h c >> mapM_ (renderLabel h) ids >> hPutStr h "\n"
   renderBlocks h bs
   envEnd h c
 
@@ -161,24 +161,24 @@ renderHeader h hd attrs is =
        seclevel_end 3 = "</h3>"
        seclevel_end 4 = "</h4>"
 
-renderLabel h xs = T.hPutStr h "\\label{" >> T.hPutStr h xs >> hPutChar h '}'
+renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> hPutStr h "'>"
 
 renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
-  do envBegin h "<div class='spec'>"
+  do envBegin h "<pre class='spec'>"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>20\n"
+     hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "<br>\n"
-     envEnd h "</div>"
+     hPutStr h "\n"
+     envEnd h "</pre>"
 renderCode h ("haskell" : cs) ids _ txt  =
   do when invisible (T.hPutStr h "%if False<br>\n")
-     envBegin h "code"
+     envBegin h "<pre>"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>21\n"
+     hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "<br>\n"
-     envEnd h "code"
+     hPutStr h "\n"
+     envEnd h "</pre>"
      when invisible (T.hPutStr h "%endif")
  where invisible = "invisible" `elem` cs
 renderCode h ("texonly" : _) _ _ txt =
@@ -190,12 +190,12 @@ renderCode h ("verbatim" : cs) ids _ txt  =
      hPutStr h "<br>\n"
      envEnd h "verbatim"
 renderCode h _ ids _ txt = do
-  do envBegin h "code"
+  do envBegin h "<code class='haskell'>"
      mapM_ (renderLabel h) ids
-     hPutStr h "<br>24\n"
+     hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "<br>\n"
-     envEnd h "code"
+     hPutStr h "\n"
+     envEnd h "</code>"
 
 envBegin :: Handle -> Text -> IO ()
 envBegin h env = hPutStr h "<div>" >> T.hPutStr h env >> hPutStr h ""
@@ -241,8 +241,8 @@ renderInline h (Strong inlines) =
   do hPutStr h "<b>"
      renderInlines h inlines
      hPutStr h "</b>"
-renderInline h (Code txt) = hPutChar h '`' >> T.hPutStr h txt >> hPutChar h '`'
-renderInline h (HsCode txt) = hPutStr h "<code>" >> T.hPutStr h txt >> hPutStr h "</code>"
+renderInline h (Code txt) = hPutStr h "<code>" >> T.hPutStr h txt >> hPutStr h "<code>"
+renderInline h (HsCode txt) = hPutStr h "<code class='haskell'>" >> T.hPutStr h txt >> hPutStr h "</code>"
 renderInline h (Tex txt) = hPutChar h '$' >> T.hPutStr h txt >> hPutChar h '$'
 renderInline h (Entity txt) = T.hPutStr h txt
 renderInline h (RawHtml txt) = T.hPutStr h txt
@@ -269,11 +269,11 @@ renderInline h (CiteP cites) = -- with multiple citation we ignore options.
 
 latexCmd :: Handle -> Text -> Text -> IO ()
 latexCmd h cmd arg =
-  hPutChar h '\\' >> T.hPutStr h cmd >>
-  hPutChar h '{' >> T.hPutStr h arg >> hPutChar h '}'
+  hPutChar h ' ' >> T.hPutStr h cmd >>
+  hPutChar h ' ' >> T.hPutStr h arg >> hPutChar h ' '
 
 latexCmdOpt :: Handle -> Text -> Text -> Text -> IO ()
 latexCmdOpt h cmd opt arg =
   hPutChar h '\\' >> T.hPutStr h cmd >>
-  hPutChar h '[' >> T.hPutStr h opt >> hPutChar h ']' >>
-  hPutChar h '{' >> T.hPutStr h arg >> hPutChar h '}'
+  hPutChar h '[' >> T.hPutStr h opt >> hPutStr h "]" >>
+  hPutStr h "<b>" >> T.hPutStr h arg >> hPutStr h "</b>"
