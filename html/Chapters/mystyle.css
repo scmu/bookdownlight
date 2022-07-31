@@ -1,0 +1,112 @@
+body {
+    font-family: 'Helvetica' ;
+    background-color: aliceblue;
+    display: flex;
+    flex-direction: row;
+    margin: 0 10%;
+  }
+  .main{
+    display: flex;
+    flex-direction: column;
+
+  }
+  .leftside {
+    display: flex;
+    width: 1300px;
+    background-color: rgb(230, 230, 230);
+    /* flex-direction: column; */
+  }
+  .menu-item{
+    display: flex;
+    flex-direction: column;
+  }
+
+nav > ul {
+  background-color: rgb(230, 230, 230);
+  list-style: none;   /* 移除項目符號 */
+  margin: 0;
+  padding: 0;
+}
+
+nav a {
+  color: inherit; /* 移除超連結顏色 */
+  display: block; /* 讓 <a> 填滿 <li> */
+  font-size: 1.2rem;
+  padding: 10px;
+  text-decoration: none;  /* 移除超連結底線 */
+}
+
+/* 滑鼠移到 <a> 時變成深底淺色 */
+nav li:hover {
+  background-color: rgb(115, 115, 115);
+  color: white;
+}
+
+.flex-nav {
+  display: flex;
+  /* justify-content: center; */
+}
+
+  /* .leftside {
+    width: 40%;
+    padding: 50px;
+    background-color: aqua;
+    border: 1px solid red;
+  } */
+  h1 {
+    color: navy;
+  }
+  h2 {
+    color: navy;
+  }
+  h3 {
+    color: navy;
+  }
+  h4 {
+    color: navy;
+  }
+
+
+
+  .haskell {
+    border-radius: 5px;
+  }
+  p {
+    /* text-indent:2em; */
+  }
+  pre {
+    display: block;
+    word-wrap:break-word;
+    white-space: pre-wrap;
+
+    margin: 20px ;
+    color: rgb(33, 123, 197);
+    /* background-color: aquamarine; */
+  }
+  .infobox {
+    background-color:Pink;
+  }
+  .exlist {
+    background-color:Yellow;
+  }
+  .Exercise{
+    background-color:DodgerBlue;
+    margin: 20px ;
+  }
+  .Answer{
+    background-color:Tomato;
+    margin: 20px ;
+  }
+
+
+
+  @font-face {
+    font-family: 'Helvetica';
+    src: url('../fonts/Helvetica.woff') format("woff"),
+           url('../fonts/Helvetica.ttf') format("truetype"),
+           url('../fonts/Helvetica.eot') format("embedded-opentype");
+  }
+  @font-face {
+    font-family: 'Menlo';
+    src: url('./Menlo-Regular.ttf') format("truetype"),
+  }
