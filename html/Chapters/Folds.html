@@ -1,0 +1,1502 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+<title>bookdownlight</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript"
+    src="https://www.maths.nottingham.ac.uk/plp/pmadw/LaTeXMathML.js">
+</script>
+<link rel="stylesheet" href="mystyle.css">
+</head>
+<body class="introcontent">
+
+
+<div class='main' >
+    <div>
+        <h1 class="container">
+        <p> 程式設計：函數程式語言 </p>
+        </h1>
+    </div>
+    <nav>
+        <ul class="container">
+            <li><a href="Introduction.html"> Introduction </a></li>
+            <li><a href="Basics.html"> Basics </a></li>
+            <li><a href="Induction.html"> Induction </a></li>
+            <li><a href="Semantics.html"> Semantics </a></li>
+            <li><a href="Derivation.html"> Derivation </a></li>
+            <li><a href="Folds.html"> Folds </a></li>
+        </ul>
+    </nav>
+
+
+<div class="book">
+
+<div><pre style='display:none'>
+{-# LANGUAGE TypeOperators #-}
+module Chapters.Folds where
+
+import Prelude ()
+import Control.Arrow ((***))
+import Common.MiniPrelude hiding (exp, gcd)
+
+import Chapters.Basics (square, ETree(..), ITree(..), positions, fork)
+import Chapters.Derivation (steep, steepsum)
+</pre></div>
+ <h1 class='chapter'>摺<id='ch:fold'></h1><p> index fold 摺 </p>
+<p>第 ref ch:induction 章中的許多歸納函數定義都循著同一個固定模式。以 <code class='haskell'>sum</code>, <code class='haskell'>length</code>, 與 <code class='haskell'>map f</code> 為例：</p>
+<div><pre class='spec'>
+sum :: List Int -> Int
+sum []      = {-"{\color{burntorange}"-}0{-"}"-}
+sum (x:xs)  = {-"{\color{burntorange}"-}x{-"\,"-} +{-"}\,"-} sum xs {-"~~,"-}
+
+length :: List a -> Nat
+length []      = {-"{\color{burntorange}"-}Zero{-"}"-}
+length (x:xs)  = {-"{\color{burntorange}"-}Suc{-"}"-} (length xs) {-"~~,"-}
+
+map :: (a -> b) -> List a -> List b
+map f []      = {-"{\color{burntorange}"-}[]{-"}"-}
+map f (x:xs)  = {-"{\color{burntorange}"-}f x{-"\,"-} :{-"\,}"-} map f xs {-"~~."-}
+</pre></div>
+它們都在輸入為 <code class='haskell'>[]</code> 時傳回某個基底值，在輸入為 <code class='haskell'>x:xs</code> 時在 <code class='haskell'>xs</code> 上遞迴呼叫，並將呼叫結果稍作加工。三者的不同之處只在橘色的部分，即基底值以及用於加工的函數：<code class='haskell'>sum</code> 使用 <code class='haskell'>0</code> 與 <code class='haskell'>(+)</code>, <code class='haskell'>length</code> 使用 <code class='haskell'>Zero</code> 與 <code class='haskell'>Suc</code>, <code class='haskell'>map f</code> 則使用 <code class='haskell'>[]</code> 與 <code class='haskell'>(f x :)</code>.如果說「抽象化」是一個高階程式語言給我們的最重要能力，我們能否將這個模式抽象出來呢？<br>
+<p>我們把上述三個定義中橘色的部分抽出變成參數，將餘下的函數稱為 <code class='haskell'>foldr</code>:</p>
+<div><pre class='spec'>
+foldr :: (a -> b -> b) -> b -> List a -> b
+foldr f e []      = e
+foldr f e (x:xs)  = f x (foldr f e xs) {-"~~."-}
+</pre></div>
+如此一來，<code class='haskell'>sum</code>, <code class='haskell'>length</code>, 與 <code class='haskell'>map f</code> 都是 <code class='haskell'>foldr</code> 的特例：<br>
+<div><pre class='spec'>
+sum     = foldr (+) 0 {-"~~,"-}
+length  = foldr (\x n -> Suc n) Zero {-"~~,"-}
+map f   = foldr (\x ys -> f x : ys) [] {-"~~."-}
+</pre></div>
+函數 <code class='haskell'>foldr</code> 是串列上的「摺(fold)」 --- <code class='haskell'>foldr</code> 一詞是 fold 與「右邊(right)」的縮寫，意謂該函數是一個往右結合的摺。我們將在下一節解釋。<br>
+<h2 class='section' >串列的摺</h2><p>「摺」有許多方式可理解。我們可說 <code class='haskell'>foldr</code> 捕捉了最常見的一種歸納定義模式，並將它形式化地表達出來。在第 ref ch:induction 章中，許多函數定義都遵循這樣的模式：</p>
+<div><pre class='spec'>
+h :: List a -> b
+h []      = e
+h (x:xs)  = ... x ... h xs ...
+</pre></div>
+在 <code class='haskell'>h []</code> 的情況傳回某個基底值；在 <code class='haskell'>h (x:xs)</code> 的情況中可使用 <code class='haskell'>x</code> 與 <code class='haskell'>h xs</code> 的值。如果上述定義中 <code class='haskell'>...</code> 之處<em>沒有出現 <code class='haskell'>xs</code></em>, 則 <code class='haskell'>h</code> 的定義就能寫成一個 <code class='haskell'>foldr</code>.<br>
+<p>我們也可將 <code class='haskell'>foldr</code> 視為組件(combinator)函數之一。 index combinator 組件 第 ref sec:list-combinators 節之中介紹了組件函數的觀念：如同 <code class='haskell'>map</code>, <code class='haskell'>take</code>, <code class='haskell'>drop</code>, <code class='haskell'>zip</code> 等等的組件函數捕捉了常見的程式設計模式。每個組件負責一項單一、通用、易重用的功能。函數 <code class='haskell'>foldr</code> 也可視為一個組件，只是它比一些其他組件更抽象、更通用 --- 我們稍後將發現許多我們見過的組件函數都是 <code class='haskell'>foldr</code> 的特例。</p>
+<p>還有一個理解 <code class='haskell'>foldr</code> 的方式：<code class='haskell'>foldr</code> 替換了串列中的建構元。回顧：任何有限長度的串列都是由 <code class='haskell'>[]</code> 開始，有限次地套用 <code class='haskell'>(:)</code> 而來。例如 <code class='haskell'>[x0,x1,x2]</code> 是 <code class='haskell'>x0 : (x1 : (x2 : []))</code> 的簡寫。考慮 <code class='haskell'>foldr oplus e [x0,x1,x2]</code>:</p>
+<div><pre class='spec'>
+     foldr oplus e (x0 : (x1 : (x2 : [])))
+===  x0 `oplus` foldr oplus e (x1 : (x2 : []))
+===  x0 `oplus` (x1 `oplus` foldr oplus e (x2 : []))
+===  x0 `oplus` (x1 `oplus` (x2 `oplus` foldr oplus e []))
+===  x0 `oplus` (x1 `oplus` (x2 `oplus` e)) {-"~~."-}
+</pre></div>
+我們可看到 <code class='haskell'>foldr</code> 將串列走訪一次，將每個 <code class='haskell'>(:)</code> 替換成 <code class='haskell'>oplus</code>, 將 <code class='haskell'>[]</code> 替換成 <code class='haskell'>e</code>.式子中的括號往右邊結合，這是 <code class='haskell'>foldr</code> 的名字中字母 <code class='haskell'>r</code> 的由來。這種理解也便於解釋 <code class='haskell'>foldr</code> 的型別。回想串列的兩個建構元，<br>
+<ul>
+<li>
+<p><code class='haskell'>[]</code> 的型別是 <code class='haskell'>List a</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>(:)</code> 的型別是 <code class='haskell'>a -> List a -> List a</code>.</p>
+</li>
+</ul>
+函數 <code class='haskell'>foldr oplus e</code> 接收一個 <code class='haskell'>List a</code>，把其中的建構元分別替換為 <code class='haskell'>e</code> 與 <code class='haskell'>oplus</code>，藉此算出一個型別為 <code class='haskell'>b</code> 的值。因此，<br>
+<ul>
+<li>
+<p><code class='haskell'>e</code> 是輸入為 <code class='haskell'>[]</code> 時立刻傳回的值，其型別必須是 <code class='haskell'>b</code>.</p>
+</li>
+<li>
+<p>至於 <code class='haskell'>oplus</code> 的型別，考慮 <code class='haskell'>x0 `oplus` (x1 `oplus` (x2 `oplus` e))</code> 這個式子。其中 <code class='haskell'>x0</code> 的型別為 <code class='haskell'>a</code>, <code class='haskell'>x1 `oplus` (x2 `oplus` e)</code> 是建構元已被替換過的串列，型別應該為 <code class='haskell'>b</code>.而 <code class='haskell'>oplus</code> 拿到這兩個輸入後，得算出一個型別為 <code class='haskell'>b</code> 的值.因此 <code class='haskell'>oplus</code> 的型別為 <code class='haskell'>a -> b -> b</code>.</p>
+</li>
+</ul>
+注意：<code class='haskell'>e</code> 與 <code class='haskell'>oplus</code> 的型別分別是將 <code class='haskell'>[]</code> 與 <code class='haskell'>(:)</code> 的型別中的 <code class='haskell'>List a</code> 代換成 <code class='haskell'>b</code> 而來。綜合言之，<code class='haskell'>foldr</code> 的型別是 <code class='haskell'>(a -> b -> b) -> b -> List a -> b</code>.<br>
+<p>為方便說明，此後我們將 <code class='haskell'>foldr oplus e</code> 之中的 <code class='haskell'>e</code> 稱作<em>基底值</em>(<em>base value</em>) index fold 摺!base value 基底值 ，將 <code class='haskell'>oplus</code> 稱作<em>步驟函數</em>(<em>step function</em>) index fold 摺!step function 步驟函數 .函數 <code class='haskell'>foldr</code> 的型別可以理解為：給一個型別為 <code class='haskell'>a -> b -> b</code> 的步驟函數，和一個型別為 <code class='haskell'>b</code> 的基底值，<code class='haskell'>foldr</code> 就能將一個 <code class='haskell'>List a</code> 轉換為 <code class='haskell'>b</code>.</p>
+<p>串列的摺(<code class='haskell'>foldr</code>)只是一個常用的特例 ---「將資料結構中的建構元代換掉」的動作也可推廣到其他資料結構上。我們在之後的章節中將看到一些其他資料結構上的摺。</p>
+<p>下一節將舉更多使用 <code class='haskell'>foldr</code> 的例子。在那之前我們再次提醒讀者：在 <code class='haskell'>foldr oplus e (x:xs)</code> 的狀況中，<code class='haskell'>oplus</code> 可以使用 <code class='haskell'>x</code> 與 <code class='haskell'>foldr oplus e xs</code> 的結果，但不能直接使用 <code class='haskell'>xs</code>.</p>
+<h3 class='subsection' >更多串列上的摺</h3><p>回顧起來，我們可發現第 ref ch:induction 章介紹的許多函數都是 <code class='haskell'>foldr</code>.</p>
+<div>example<br>
+<p>以下函數都可寫成 <code class='haskell'>foldr</code>:</p>
+<ul>
+<li>
+<p><code class='haskell'>concat = foldr (++) []</code>.</p>
+</li>
+<li>
+<p><code class='haskell'>filter p = foldr (\ x xs -> if p x then x:xs else xs) []</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>takeWhile p = foldr (\x xs -> if p x then x:xs else []) []</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>elem x = foldr (\y b -> x == y |||| b) False</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>all p = foldr (\x b -> p x && b) True</code>.</p>
+</li>
+</ul>
+example</div>
+<p>串列連接 <code class='haskell'>(++) :: List a -> List a -> List a</code> 雖是個二元運算，若將 <code class='haskell'>(++ ys) :: List a -> List a</code> 視為一個函數，它可寫成一個 <code class='haskell'>foldr</code>:</p>
+<div><pre class='spec'>
+ (++ ys) = foldr (:) ys {-"~~."-}
+</pre></div>
+一個重要的特例是當 <code class='haskell'>ys = []</code> 時。對任何 <code class='haskell'>xs</code>, <code class='haskell'>xs ++ [] = xs</code>. 因此 <code class='haskell'>(++[])</code> 是串列上的 <code class='haskell'>id</code>:<br>
+<div><pre class='spec'>
+id :: List a -> List a
+id = foldr (:) [] {-"~~."-}
+</pre></div>
+確實，將一個串列中的 <code class='haskell'>(:)</code> 代換成 <code class='haskell'>(:)</code>, <code class='haskell'>[]</code> 代換成 <code class='haskell'>[]</code>, 我們還是得到原來的串列。我們日後還會用到「串列上的 <code class='haskell'>id</code> 是一個 <code class='haskell'>foldr</code>」的性質。<br>
+<p>計算所有前段的函數 <code class='haskell'>inits :: List a -> List (List a)</code> 可寫成 <code class='haskell'>foldr</code>: index list 串列!prefix 前段 </p>
+<div><pre style='display:none'>
+inits = foldr (\x xss -> [] : map (x:) xss) [[]] {-"~~."-}
+</pre></div>
+計算所有後段的 <code class='haskell'>tails :: List a -> List (List a)</code> 也可以寫成 <code class='haskell'>foldr</code>，但需要用一個小性質。回顧其定義： index list 串列!suffix 後段 <br>
+<div><pre class='spec'>
+tails []      = [[]]
+tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
+</pre></div>
+乍看之下這不符合 <code class='haskell'>foldr</code> 的模式：參數 <code class='haskell'>xs</code> 出現在 <code class='haskell'>... : tails xs</code> 的左邊，但在 <code class='haskell'>foldr</code> 的模式中，<code class='haskell'>xs</code> 不能出現在遞迴呼叫之外。幸好 <code class='haskell'>tails</code> 有一個剛好在此有用的小特性：<code class='haskell'>tails xs</code> 傳回的所有後段中，第一個就是 <code class='haskell'>xs</code> 本身：<code class='haskell'>head (tails xs) = xs</code>.因此我們可將 <code class='haskell'>tails</code> 寫成：<br>
+<div><pre style='display:none'>
+tails = foldr (\x xss -> (x : head xss) : xss) [[]] {-"~~."-}
+</pre></div>
+由於 <code class='haskell'>tails</code> 永遠傳回非空串列，使用 <code class='haskell'>head xss</code> 是安全的。<br>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b><id='ex:perms-sublists-splits-foldr'>
+<p>請將以下函數寫成 <code class='haskell'>foldr</code>:</p>
+<ol>
+<li>
+<p><code class='haskell'>perms :: List a -> List (List a)</code> (見第 ref sec:fan-perm 節),</p>
+</li>
+<li>
+<p><code class='haskell'>sublists :: List a -> List (List a)</code> (見第 ref sec:fan-perm 節),</p>
+</li>
+<li>
+<p><code class='haskell'>splits :: List a -> List (List a :* List a)</code> （見習題 ref ex:splits ）。</p>
+</li>
+</ol>
+</div>
+<div class = 'Answer'>
+<b>答:</b> 
+<ol>
+<li>
+<p><code class='haskell'>perms = foldr (\x xss -> concat (map (fan x) xss)) [[]]</code></p>
+</li>
+<li>
+<p><code class='haskell'>sublists = foldr (\x xss -> xss ++ map (x:) xss) [[]]</code></p>
+</li>
+<li>
+<p><code class='haskell'>splits</code> 可定義如下：</p>
+</li>
+</ol>
+<div><pre style='display:none'>
+splits = foldr spl [([],[])] {-"~~,"-}
+  where  spl x ((xs,ys):zss) =
+           ([],x:xs++ys) : map ((x:) *** id) ((xs,ys):zss) {-"~~."-}
+</pre></div>
+</div>
+</div>
+<h3 class='subsection' >不是 <code class='haskell'>foldr</code> 的函數</h3><p>並非所有輸入為串列的函數都是 <code class='haskell'>foldr</code>.最明顯的例子是 <code class='haskell'>tail</code>: 我們無法由 <code class='haskell'>x</code> 和 <code class='haskell'>tail xs</code> 算出 <code class='haskell'>tail (x:xs)</code>。例如，<code class='haskell'>tail [1,2,3] = [2,3]</code>，但 <code class='haskell'>tail [2,3] = [3]</code>, 而 <code class='haskell'>[2,3]</code> 無法由 <code class='haskell'>1</code> 和 <code class='haskell'>[3]</code> 組出來。</p>
+<p>另一個例子是 <code class='haskell'>dropWhile p</code>. 回顧其定義：</p>
+<div><pre class='spec'>
+dropWhile p []      = []
+dropWhile p (x:xs)  = if p x then dropWhile p xs else x:xs {-"~~,"-}
+</pre></div>
+在歸納情況中，<code class='haskell'>else</code> 的分支需傳回 <code class='haskell'>x:xs</code> --- <code class='haskell'>xs</code> 出現在遞迴呼叫以外的地方。這樣的程式不是 <code class='haskell'>foldr</code>。當然，這只表示 <code class='haskell'>dropWhile p</code> 的<em>這個</em>定義不符合 <code class='haskell'>foldr</code> 的模式.是否有其他的方式能將 <code class='haskell'>dropWhile p</code> 寫成 <code class='haskell'>foldr</code> 呢？不論 <code class='haskell'>dropWhile p</code> 是怎麼定義的，考慮<code class='haskell'>dropWhile even [4,3,6,2] = [3,6,2]</code>, 但 <code class='haskell'>dropWhile even [3,6,2] = []</code> ---看來，<code class='haskell'>dropWhile p</code> 丟掉了太多資訊，使得我們無法保證能從 <code class='haskell'>dropWhile p xs</code> 重組出 <code class='haskell'>dropWhile p (x:xs)</code>。因此，<code class='haskell'>dropWhile p</code> 和 <code class='haskell'>tail</code> 一樣，是先天上無法寫成 <code class='haskell'>foldr</code> 的。<br>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b><id='ex:fan-foldr'>
+<p>考慮第 ref sec:fan-perm 節的函數 <code class='haskell'>fan</code>:</p>
+<div><pre class='spec'>
+fan :: a -> List a -> List (List a)
+fan y []      = [[y]]
+fan y (x:xs)  = (y:x:xs) : map (x:) (fan y xs) {-"~~."-}
+</pre></div>
+為何這個定義不是一個 <code class='haskell'>foldr</code>?有沒有可能將 <code class='haskell'>fan y</code> 寫成一個 <code class='haskell'>foldr</code> 呢？<br>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>由於 <code class='haskell'>xs</code> 出現在遞迴呼叫以外的地方 --- <code class='haskell'>((y:x:xs) :)</code>, 此處的 <code class='haskell'>fan</code> 定義並不是一個 <code class='haskell'>foldr</code>.但由於 <code class='haskell'>tail (head (fan y xs)) = xs</code>（例如，<code class='haskell'>fan 5 [1,2,3] = [[5,1,2,3],[1,5,2,3],[1,2,5,3],[1,2,3,5]]</code>,因此 <code class='haskell'>tail (head (fan 5 [1,2,3])) = [1,2,3]</code>），我們可將 <code class='haskell'>fan</code>寫成：</p>
+%{
+%format fan' = "\Varid{fan}"<br>22
+<div><pre style='display:none'>
+fan' y = foldr (\x xss -> (y:x: tail (head xss)) : map (x:) xss) [[y]] {-"~~."-}
+</pre></div>
+%} %fan'<br>22
+</div>
+</div>
+<h2 class='section' >摺融合定理<id='sec:foldr-fusion'></h2><p>第 ref ch:intro 章中提及，「抽象化」意指抽取出我們認為重要的概念、成分，給予一個名字或符號。如此一來，這個概念正式地「存在」了，我們可以談論它、研究其性質，並將研究結果應用在所有符合這個抽象概念的事物上。一個程式語言最重要的功能之一是提供良好的抽象化機制。由於高階函數等等性質，函數語言讓我們能較容易地對程式結構作抽象。</p>
+<p>「摺」是我們找到的一個抽象，許多程式可以表達為摺。而一旦辨識出了摺這個結構，我們可開始討論所有摺都滿足的性質，這些性質則將可適用於所有是摺的程式上。</p>
+<p>關於摺的性質中，最重要的也許是本節的<em>摺融合定理</em>(<em>fold-fusion theorem</em>)。</p>
+<p>摺融合定理告訴我們一個摺如何能與串接於其後的函數融合起來，成為單獨的一個摺：</p>
+<div>theorem[摺融合定理(串列版)]<id='thm:foldr-fusion'><br>
+<p> index fold 摺!fold fusion 摺融合 給定 <code class='haskell'>f :: a -> b -> b</code>, <code class='haskell'>e :: b</code>, <code class='haskell'>h :: b -> c</code>.如果 <code class='haskell'>h (f x y) = g x (h y)</code> 對所有 <code class='haskell'>x :: a</code> 與<em>在 <code class='haskell'>foldr f e</code> 的值域中的</em> <code class='haskell'>y :: b</code> 成立，則</p>
+<div><pre class='spec'>
+h . foldr f e = foldr g (h e) {-"~~."-}
+</pre></div>
+theorem</div>
+<p>性質 <code class='haskell'>h (f x y) = g x (h y)</code> 是該融合能成立的充分條件，我們日後將稱之為「<em>融合條件</em>(<em>fusion condition</em>)」。 index fold 摺!fusion condition 融合條件 如果定理本身看來太抽象，下述例子也許可給讀者一些直覺。考慮 <code class='haskell'>[x0,x1,x2]</code>:</p>
+
+<div><pre style='display:none'>
+foldrFusionEx :: (a -> b) -> (c -> a -> a) -> a -> (c -> b -> b) -> c -> c -> c -> b
+foldrFusionEx h f e g x0 x1 x2 =
+</pre></div>
+ <div><pre style='display:none'>
+      {-"{\color{burntorange}"-}h{-"}"-} (foldr f e [x0,x1,x2])
+ ===    {- |foldr| 之定義 -}
+      {-"{\color{burntorange}"-}h{-"}"-} (f x0 (f x1 (f x2 e)))
+ ===    {- 融合條件: |{-"{\color{burntorange}"-}h{-"}"-} (f x y) = g x ({-"{\color{burntorange}"-}h{-"}"-} y)| -}
+      g x0 ({-"{\color{burntorange}"-}h{-"}"-} (f x1 (f x2 e)))
+ ===    {- 融合條件: |{-"{\color{burntorange}"-}h{-"}"-} (f x y) = g x ({-"{\color{burntorange}"-}h{-"}"-} y)| -}
+      g x0 (g x1 ({-"{\color{burntorange}"-}h{-"}"-} (f x2 e)))
+ ===    {- 融合條件: |{-"{\color{burntorange}"-}h{-"}"-} (f x y) = g x ({-"{\color{burntorange}"-}h{-"}"-} y)| -}
+      g x0 (g x1 (g x2 ({-"{\color{burntorange}"-}h{-"}"-} e)))
+ ===    {- |foldr| 之定義 -}
+      foldr g ({-"{\color{burntorange}"-}h{-"}"-} e) [x0,x1,x2] {-"~~."-}
+</pre></div>
+由此例可看出融合條件 <code class='haskell'>h (f x y) = g x (h y)</code> 的作用 --- 將 <code class='haskell'>h</code> 往右推，並將途中經過的 <code class='haskell'>f</code> 都變成 <code class='haskell'>g</code>, 直到碰到 <code class='haskell'>e</code> 為止。<br>
+<p>定理 ref thm:foldr-fusion 可用例行的歸納證明證成：</p>
+<div>proof
+<p>假設融合條件成立，我們需證明對所有 <code class='haskell'>xs</code>, <code class='haskell'>h (foldr f e xs) = foldr g (h e) xs</code>.</p>
+<b>情況</b> <code class='haskell'>xs := []</code>:<br>
+<div><pre class='spec'>
+      h (foldr f e [])
+ ===  h e
+ ===  foldr g (h e) [] {-"~~."-}
+</pre></div>
+<b>情況</b> <code class='haskell'>xs := x:xs</code>:<br>
+<div><pre class='spec'>
+      h (foldr f e (x:xs))
+ ===    {- |foldr| 之定義 -}
+      h (f x (foldr f e xs))
+ ===    {- 融合條件: |h (f x y) = g x (h y)| -}
+      g x (h (foldr f e xs))
+ ===    {- 歸納假設 -}
+      g x (foldr g (h e) xs)
+ ===    {- |foldr| 之定義 -}
+      foldr g (h e) (x:xs) {-"~~."-}
+</pre></div>
+proof</div>
+註記 <id='para:bring-in-context-prelim'>我們在歸納情況的第二步使用了融合條件 <code class='haskell'>h (f x y) = g x (h y)</code>. 欲使該步成立，融合條件不須對所有 <code class='haskell'>y</code> 都成立 --- 我們只需要它在 <em><code class='haskell'>y</code> 是 <code class='haskell'>foldr f e</code> 的可能結果</em>時成立即可。這是定理 ref thm:foldr-fusion 中「在 <code class='haskell'>foldr f e</code> 的值域中的 <code class='haskell'>y</code>」這句話的由來。 index fold 摺!bringing in the context 引入脈絡 <br>
+<p>在本章接下來大部分的例子中，我們其實可以證明融合條件對<em>所有 <code class='haskell'>y</code></em> 均成立。但只要我們處理的演算法問題稍微複雜些，我們便會常遇到融合條件只對 <code class='haskell'>foldr f e</code> 的值域中的 <code class='haskell'>y</code> 成立的情況。我們將在第 ref sec:bring-in-context 節中看到一些例子。</p>
+<h3 class='subsection' >將摺融合用於定理證明</h3><p>定理 ref thm:foldr-fusion 有幾種用法：</p>
+<ul>
+<li>
+<p>一種可能是用於證明性質：我們希望證明 <code class='haskell'>h . foldr f e</code> 與 <code class='haskell'>foldr g (h e)</code> 相等，此時我們已知 <code class='haskell'>h</code>, <code class='haskell'>f</code>, <code class='haskell'>g</code>, 與 <code class='haskell'>e</code>.</p>
+</li>
+<li>
+<p>另一種可能是用於生成程式。此時我們通常已知 <code class='haskell'>h</code>, <code class='haskell'>f</code>, 與 <code class='haskell'>e</code>, 但不知道 <code class='haskell'>g</code>. 我們希望找到一個讓融合條件成立的 <code class='haskell'>g</code>, 使得 <code class='haskell'>h . foldr f e</code> 能在一個 <code class='haskell'>foldr</code> 之中完成。</p>
+</li>
+</ul>
+<p>我們先討論第一種情況。</p>
+<div>example<id='ex:map-fusion-foldr-fusion'><br>
+<p>回顧 <code class='haskell'>map</code> 融合定理( ref thm:map-fusion ): <code class='haskell'>map f . map g = map (f.g)</code>.第  pageref thm:map-fusion  頁提供了一個歸納證明。由於 <code class='haskell'>map g</code> 是一個摺，我們也可用摺融合定理證明如下。</p>
+
+<div><pre style='display:none'>
+mapFusionFuse0 :: (a -> b) -> (c -> a) -> List c -> List b
+mapFusionFuse0 f g =
+</pre></div>
+ <div><pre style='display:none'>
+      map f . map g
+ ===   {- |map| 的摺定義 -}
+      map f . foldr (\x ys -> g x : ys) []
+ ===   {- 摺融合 -}
+      foldr (\x ys -> f (g x) : ys) []
+ ===   {- |map| 的摺定義 -}
+      map (f . g) {-"~~."-}
+</pre></div>
+第二步需要的融合條件只需簡單展開定義即可滿足：<br>
+
+<div><pre style='display:none'>
+mapFusionFuse1 :: (a -> b) -> (c -> a) -> c -> List a -> List b
+mapFusionFuse1 f g x ys =
+</pre></div>
+ <div><pre style='display:none'>
+      map f (g x : ys)
+ ===    {- |map| 之定義 -}
+      f (g x) : map f ys {-"~~."-}
+</pre></div>
+example</div>
+<p>將上述例子與第 ref sec:induction-lists 節的歸納證明比較。歸納證明中，最關鍵的是「使用歸納步驟」的一步，而使用摺融合定理的證明卻沒有這步 --- 歸納步驟的使用被包裝、隱藏在摺融合定理中了。而上述例子中關於融合條件的證明，恰巧是原歸納證明中和問題本身最相關的部分。</p>
+<p>我們可說：摺融合定理之於證明，就如同摺之於程式。摺是抽象出的常見程式骨架，將拆解輸入串列、做遞迴呼叫等動作包裝起來。有了摺，我們不需自己做遞迴呼叫，只需填入針對特定問題的 <code class='haskell'>f</code>, <code class='haskell'>e</code> 等參數的值。摺融合定理則是抽象出的常見證明骨架，將狀況分析、使用歸納假設等動作包裝起來。有了摺融合定理，我們不需自己做狀況分析、引用歸納假設，只需填入針對這個問題的融合條件的證明。</p>
+<p>事實上，<code class='haskell'>map</code> 融合定理是下述定理的特例：</p>
+<div>theorem[|foldr|-|map| 融合定理]<id='thm:foldr-map-fusion'><br>
+<p><code class='haskell'>foldr f e . map g = foldr (f . g) e</code>.</p>
+theorem</div>
+<p>我們時常看到 <code class='haskell'>foldr</code> 與 <code class='haskell'>map</code> 一起出現，此時定理 ref thm:foldr-map-fusion  相當好用。</p>
+<div>example<br>
+<p>我們嘗試證明 <code class='haskell'>sum . map (2*) = (2*) . sum</code>.首先考慮等號左手邊的 <code class='haskell'>sum . map (2*)</code>. 由於 <code class='haskell'>sum</code> 是一個 <code class='haskell'>foldr</code>, 我們可用定理 ref thm:foldr-map-fusion 將該式合併為一個 <code class='haskell'>foldr</code>:</p>
+
+<div><pre style='display:none'>
+sumMapTwoTimesPf :: List Int -> Int
+sumMapTwoTimesPf =
+</pre></div>
+ <div><pre style='display:none'>
+       sum . map (2*)
+  ===    {- |sum| 之摺定義 -}
+       foldr (+) 0 . map (2*)
+  ===    {- 定理\ref{thm:foldr-map-fusion}: |foldr|-|map| 融合 -}
+       foldr ((+).(2*)) 0 {-"~~."-}
+</pre></div>
+另一方面，<code class='haskell'>(2*) . sum</code> 可以融合成同一個 <code class='haskell'>foldr</code>:<br>
+<div><pre class='spec'>
+       (2*) . sum
+  ===  (2*) . foldr (+) 0
+  ===    {- 摺融合 -}
+       foldr ((+).(2*)) 0 {-"~~."-}
+</pre></div>
+其中的融合條件證明如下：<br>
+
+<div><pre style='display:none'>
+sumMapTwoTimesFusion :: Int -> Int -> Int
+sumMapTwoTimesFusion x y =
+</pre></div>
+ <div><pre style='display:none'>
+      2*(x+y)
+ ===   {- 乘法與加法之分配率 -}
+      2*x + 2*y
+ ===   {- |(.)| 之定義 -}
+      ((+) . (2*)) x (2*y) {-"~~."-}
+</pre></div>
+由此我們證明了 <code class='haskell'>sum . map (2*) = (2*) . sum</code>.<br>
+example</div>
+<p>許多等式可用類似的模式證明：為證明 <code class='haskell'>e1 = e2</code>, 我們對兩邊都做融合，看是否能製造出同一個 <code class='haskell'>foldr</code>.</p>
+<div>example<br>
+<p>回顧練習 ref ex:map-append ：證明對所有 <code class='haskell'>f</code>, <code class='haskell'>xs</code>, 與 <code class='haskell'>ys</code>, <code class='haskell'>map f (xs ++ ys) = map f xs ++ map f ys</code>. 若把 <code class='haskell'>xs</code> 提出，這相當於證明：</p>
+<div><pre class='spec'>
+  map f . (++ys) = (++ map f ys) . map f  {-"~~."-}
+</pre></div>
+其中 <code class='haskell'>(++ys)</code> 是 <code class='haskell'>foldr</code>. 因此我們可使用摺融合與 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合：<br>
+
+<div><pre style='display:none'>
+-- mapAppendFusion :: Int -> List Int -> Int
+mapAppendFusion f ys =
+</pre></div>
+ <div><pre style='display:none'>
+      (++ map f ys) . map f
+ ===    {- |foldr|-|map| 融合 -}
+      foldr ((:) . f) (map f ys)
+ ===    {- 摺融合 -}
+      map f . (++ ys) {-"~~."-}
+</pre></div>
+其中，最後一步的融合條件為<br>
+<div><pre class='spec'>
+     map f (x : zs)
+===    {- |map| 之定義 -}
+     f x : map f zs
+===    {- |(.)| 之定義 -}
+     ((:) . f) x (map f zs) {-"~~."-}
+</pre></div>
+雖然看來複雜，其實是運用符號、展開定義即可證成的性質。<br>
+example</div>
+<p>在本節的許多例子中，使用摺融合定理大大簡化了證明 --- 幾乎到了只要把式子寫下就快要證完了，「沒什麼可說」的地步。我們再看最後一個例子。</p>
+<div>example<br>
+<p>考慮證明第 ref sec:data-prog-proof 節中提及的性質: <code class='haskell'>sum . concat = sum . map sum</code>.我們可使用 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合定理與摺融合定理：</p>
+
+<div><pre style='display:none'>
+sumConcatMapSum :: List (List Int) -> Int
+sumConcatMapSum =
+</pre></div>
+ <div><pre style='display:none'>
+      sum . map sum
+ ===  foldr (+) 0 . map sum
+ ===    {- |foldr|-|map| 融合 -}
+      foldr (\xs n -> sum xs + n) 0
+ ===    {- 摺融合 -}
+      sum . foldr (++) []
+ ===  sum . concat {-"~~."-}
+</pre></div>
+第二步的 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合能成立的原因是 <code class='haskell'>(+) . sum</code> 展開之後確實成為 <code class='haskell'>(\xs n -> sum xs + n)</code>.這一步也可改用摺融合定理證明，其融合條件為 <code class='haskell'>sum (sum xs : ys) = sum xs + sum ys</code>, 只需展開定義即可證成。<br>
+<p>倒數第二步的摺融合的條件為：<code class='haskell'>sum (xs ++ ys) = sum xs + sum ys</code>.這是第 ref sec:data-prog-proof 節的證明中必須發明的關鍵性質。我們再一次看到：使用摺融合定理讓我們只需提供一個證明中最與問題相關的關鍵部分。</p>
+example</div>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>請用摺融合證明 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合定理( ref thm:foldr-map-fusion ).</p>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>使用 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合和摺融合證明 <code class='haskell'>sum . map length = length . concat</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b> 
+
+<div><pre style='display:none'>
+lengthConcatMapLength :: List (List a) -> Int
+lengthConcatMapLength =
+</pre></div>
+ <div><pre style='display:none'>
+      sum . map length
+ ===    {- |sum = foldr (+) 0|, |foldr|-|map| 融合 -}
+      foldr ((+) . length) 0
+ ===    {- 摺融合 -}
+      length . foldr (++) []
+ ===  length . concat {-"~~."-}
+</pre></div>
+其融合條件證明如下：<br>
+
+<div><pre style='display:none'>
+lengthConcatMapLengthFusion :: List a -> List a -> Int
+lengthConcatMapLengthFusion xs ys =
+</pre></div>
+ <div><pre style='display:none'>
+       length (xs ++ ys)
+  ===    {- |length| 與 |(++)| 的同態性 -}
+       length xs + length ys
+  ===    {- |(.)| 之定義 -}
+       ((+) . length) xs (length ys) {-"~~."-}
+</pre></div>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>使用摺融合定理證明對所有 <code class='haskell'>f</code>, <code class='haskell'>map f . concat = concat . map (map f)</code>.</p>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b><id='ex:map-filter-split'>
+<p>給定 <code class='haskell'>f, g :: a -> List a</code> 與 <code class='haskell'>p :: a -> Bool</code>, 試證明：如果 <code class='haskell'>filter p (f x) = if p x then g x else []</code>, 則 <code class='haskell'>concat . map (filter p . f) = concat . map g . filter p</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>回顧：<code class='haskell'>filter p = foldr (\x xs -> if p x then x:xs else xs) []</code>,<code class='haskell'>concat = foldr (++) []</code>.我們演算如下：</p>
+
+<div><pre style='display:none'>
+mapFilterSplit :: (a -> List a) -> (a -> List a) -> (a -> Bool) -> List a -> List a
+mapFilterSplit f g p =
+</pre></div>
+ <div><pre style='display:none'>
+      concat . map g . filter p
+ ===    {- 摺融合，如下述 -}
+      foldr (\x ys -> filter p (f x) ++ ys) []
+ ===    {- |foldr|-|map| 融合，如下述 -}
+      concat . map (filter p . f) {-"~~."-}
+</pre></div>
+摺融合的條件為：<br>
+
+<div><pre style='display:none'>
+mapFilterSplitFuse :: (a -> List a) -> (a -> List a) -> (a -> Bool) ->
+                         a -> List a -> List a
+mapFilterSplitFuse f g p x xs =
+</pre></div>
+ <div><pre style='display:none'>
+      concat (map g (if p x then x:xs else xs))
+ ===    {- |concat . map g| 分配進 |if| 之中 -}
+      if p x then g x ++ concat (map g xs) else concat (map g xs)
+ ===    {- 提出 |concat (map g xs)| -}
+      (if p x then g x else []) ++ concat (map g xs)
+ ===    {- 假設 -}
+      filter p (f x) ++ concat (map g xs) {-"~~."-}
+</pre></div>
+至於 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合, 只需驗證 <code class='haskell'>((++) . filter p . f) x ys</code> 確實等於 <code class='haskell'>filter p (f x) ++ ys</code>.<br>
+</div>
+</div>
+<h3 class='subsection' >以摺融合生成程式</h3><p>如前所述，另一種使用摺融合的理由是生成程式：我們希望 <code class='haskell'>h . foldr f e</code> 能在一個 <code class='haskell'>foldr</code> 之中完成。此時我們已知 <code class='haskell'>h</code>, <code class='haskell'>f</code>, 與 <code class='haskell'>e</code>, 希望用融合條件找出適合的步驟函數。</p>
+<div>example<id='ex:sum-map-square-fusion'><br>
+<p>回顧第 ref sec:fold-unfold-transform 節的例子：給定 <code class='haskell'>sumsq = sum . map square</code>，我們希望找出一個不產生中間串列的版本。由於 <code class='haskell'>map square</code> 是一個 <code class='haskell'>foldr</code>, 我們嘗試將 <code class='haskell'>sum</code> 融合進 <code class='haskell'>map square</code> 中，希望找出能滿足 <code class='haskell'>sumsq = foldr g e</code> 的 <code class='haskell'>g</code> 與 <code class='haskell'>e</code> .顯然 <code class='haskell'>e = sumsq [] = 0</code>.為了找出滿足融合條件的步驟函數 <code class='haskell'>g</code>, 我們推算：</p>
+
+<div><pre style='display:none'>
+sumsqFusionCond :: Int -> List Int -> Int
+sumsqFusionCond x xs =
+</pre></div>
+ <div><pre style='display:none'>
+      sum (square x : xs)
+ ===    {- |sum| 之定義 -}
+      square x + sum xs
+ ===    {- 提出 |x| 與 |sum xs| -}
+      (\x y -> square x + y) x (sum xs) {-"~~."-}
+</pre></div>
+因此，根據定理 ref thm:foldr-fusion , <code class='haskell'>sumsq = foldr (\x y -> square x + y) 0</code>.<br>
+example</div>
+<div>example<id='ex:minimumMapSumInits'><br>
+<p>給定一個整數串列，其中由左到右的數字表示對一個帳戶存款或提款的金額：正數為存款、負數為提款。我們想確定在任何一個時刻帳戶金額不至於變成負數。一個可能做法是：對該串列的每一個前段算總和，我們可得到每個時刻的帳戶金額。接著看看其中最小值是否為負數即可：</p>
+<div><pre class='spec'>
+   (>= 0) . minimum . map sum . inits {-"~~."-}
+</pre></div>
+%{
+%format step1
+%format step2
+%format step3<br>22
+<p>為增進效率，我們試試看能否把 <code class='haskell'>minimum . map sum . inits</code> 合併為一個 <code class='haskell'>foldr</code>.回顧：<code class='haskell'>inits = foldr (\x xss -> [] : map (x:) xss) []</code>.我們可以一口氣把 <code class='haskell'>minimum . map sum</code> 融合進 <code class='haskell'>inits</code>, 也可分兩次進行，先將 <code class='haskell'>map sum . inits</code> 融合成一個 <code class='haskell'>foldr</code>, 再與 <code class='haskell'>minimum</code> 融合。</p>
+<p>此處我們嘗試後者，先將 <code class='haskell'>map sum . inits</code> 融合。基底值為 <code class='haskell'>map sum [[]] = [0]</code>, 而步驟函數 <code class='haskell'>step1</code> 須滿足的融合條件為 <code class='haskell'>map sum ([] : map (x:) xss) = step1 x (map sum xss)</code>. 試計算如下：</p>
+
+<div><pre style='display:none'>
+mapSumInitsFuse :: Int -> List (List Int) -> List Int
+mapSumInitsFuse x xss =
+</pre></div>
+ <div><pre style='display:none'>
+      map sum ([] : map (x:) xss)
+ ===  0 : map sum (map (x:) xss)
+ ===   {- |map| 融合 -}
+      0 : map (sum . (x:)) xss
+ ===   {- |sum (x:xs) = x + sum xs|, |map| 融合 -}
+      0 : map (x+) (map sum xss) {-"~~."-}
+</pre></div>
+因此我們得到<br>
+
+<div><pre style='display:none'>
+mapSumInits :: List Int -> List Int
+mapSumInits =
+</pre></div>
+ <div><pre style='display:none'>
+  map sum . inits === foldr (\x ys -> 0 : map (x+) ys) [0] {-"~~."-}
+</pre></div>
+<p>下一步是將 <code class='haskell'>minimum</code> 融合進 <code class='haskell'>map sum . inits</code>. 基底值為 <code class='haskell'>minimum [0] = 0</code>, 而步驟函數 <code class='haskell'>step2</code> 須滿足 <code class='haskell'>minimum (0 : map (x+) ys) = step2 x (minimum ys)</code>. 計算如下：</p>
+
+<div><pre style='display:none'>
+minimumSumInitsFuse :: Int -> List Int -> Int
+minimumSumInitsFuse x ys =
+</pre></div>
+ <div><pre style='display:none'>
+      minimum (0 : map (x+) ys)
+ ===  0 `min` minimum (map (x+) ys)
+ ===    {- |minimum (x+) ys = x + minimum ys|，後述 -}
+      0 `min` (x + minimum ys) {-"~~."-}
+</pre></div>
+最後一步使用的性質 <code class='haskell'>minimum (x+) ys = x + minimum ys</code> 尚待證明，其關鍵性質是 <code class='haskell'>(x+)</code> 可分配進 <code class='haskell'>(`min`)</code> 之中：<code class='haskell'>x + (y `min` z) = (x + y) `min` (x + z)</code>. 總之，我們得到<br>
+
+<div><pre style='display:none'>
+geqMinimumSumInits :: List Int -> Bool
+geqMinimumSumInits =
+</pre></div>
+ <div><pre style='display:none'>
+  (>= 0) . minimum . map sum . inits ===
+    (>= 0) . foldr (\x y -> 0 `min` (x + y)) 0 {-"~~."-}
+</pre></div>
+這是一個只需線性時間的演算法。<br>
+<p>我們能否把 <code class='haskell'>(>=0)</code> 也融入 <code class='haskell'>foldr</code> 之中呢？要使這個融合成立，我們得找到滿足<code class='haskell'>0 `min` (x+y) >= 0 <=> step3 x (y >= 0)</code> 的 <code class='haskell'>step3</code>. 演算如下：</p>
+<div><pre class='spec'>
+     0 `min` (x+y) >= 0
+<=>    {- |a `min` b >= c <=> a >= c && b >= c| -}
+     0 >= 0 && x+y >= 0
+<=>  x + y >= 0
+<=>    {- 希望找到這樣的 |step3| -}
+     step3 x (y>=0) {-"~~."-}
+</pre></div>
+然而我們無法找到這樣的 <code class='haskell'>step3</code> --- 僅由 <code class='haskell'>y>=0</code> 我們無法得知 <code class='haskell'>x+y >= 0</code> 是否成立。我們可說 <code class='haskell'>(>=0)</code> 丟失了太多資訊，使得融合無法成立。<br>
+<p>也由於同樣的理由，如果我們最初把問題定義為：</p>
+<div><pre class='spec'>
+  and . map (>=0) . map sum . inits {-"~~,"-}
+</pre></div>
+函數 <code class='haskell'>map (>= 0)</code> 將無法融合進 <code class='haskell'>map sum . inits</code> 之中。<br>
+%} %format<br>22
+example</div>
+% 我們將在第\@ref{sec:scan-lemma}節討論使用摺融合生成程式的一個重要範例：關於「掃描」。<br>22
+<p>使用摺融合論證兩個式子相等的證明常有如下的形式：</p>
+<div><pre class='spec'>
+     h1 . foldr f1 e1
+===    {- 摺融合定理 -}
+     foldr g (h1 e1)
+===    {- 摺融合定理 -}
+     h2 . foldr f2 e2 {-"~~."-}
+</pre></div>
+此時，我們也常需要藉由兩個融合條件之一來發現步驟函數 <code class='haskell'>g</code> 是什麼。<br>
+<div>example<br>
+<p>習題  ref ex:length-sublists  曾證明 <code class='haskell'>length . sublists = exp 2 . length</code>.此處我們用摺融合定理試試看。</p>
+<p>考慮等式的左手邊，我們嘗試將 <code class='haskell'>length . sublists</code> 融合為一個 <code class='haskell'>foldr</code>.由於 <code class='haskell'>sublists = foldr (\x xss -> xss ++ map (x:) xss) [[]]</code>（習題  ref ex:perms-sublists-splits-foldr (2)），融合後的 <code class='haskell'>foldr</code> 之基底值為 <code class='haskell'>length [[]] = 1</code>.為找出步驟函數，我們推算：</p>
+
+<div><pre style='display:none'>
+lengthSublistFuse :: a -> List (List a) -> Int
+lengthSublistFuse x xss =
+</pre></div>
+ <div><pre style='display:none'>
+      length (xss ++ map (x:) xss)
+ ===  length xss + length (map (x:) xss)
+ ===    {- |length (map f) = length| -}
+      2 * length xss {-"~~,"-}
+</pre></div>
+由此得到步驟函數 <code class='haskell'>(\x n -> 2 * n)</code>.<br>
+<p>因此該等式可證明如下：</p>
+<div><pre class='spec'>
+     length . sublists
+===  length . foldr (\x xss -> xss ++ map (x:) xss) [[]]
+===    {- 摺融合定理，如上 -}
+     foldr (\x n -> 2 * n) 1
+===    {- 摺融合定理，如下 -}
+     exp 2 . foldr Suc Zero
+===  exp 2 . length {-"~~."-}
+</pre></div>
+在第二次摺融合中，基底值 <code class='haskell'>exp 2 Zero</code> 確實是 <code class='haskell'>1</code>.融合條件為 <code class='haskell'>exp 2 (Suc n) = 2 * exp 2 n</code>.<br>
+example</div>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>回顧例 ref ex:minimumMapSumInits . 試著將 <code class='haskell'>map (>=0)</code> 融入 <code class='haskell'>map sum . inits</code> 中，說說看為何該融合會失敗。</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b> 
+<p>我們需要滿足融合條件 <code class='haskell'>map (>=0) (0 : map (x+) ys) = step x (map >=0 ys)</code> 的 <code class='haskell'>step</code>.演算如下：</p>
+<div><pre class='spec'>
+     map (>=0) (0 : map (x+) ys)
+===  True : map ((>=0) . (x+)) ys
+===  step x (map (>=0) ys) {-"~~."-}
+</pre></div>
+然而我們無法由 <code class='haskell'>map (>=0) ys</code> 算出 <code class='haskell'>map ((>=0) . (x+)) ys</code>.<br>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>使用摺融合定理證明 <code class='haskell'>sum (xs ++ ys) = sum xs + sum ys</code>.<b>提示</b>：這相當於證明 <code class='haskell'>sum . (++ys) = (+ (sum ys)) . sum</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b> 
+
+<div><pre style='display:none'>
+sumAppendPlus ys =
+</pre></div>
+ <div><pre style='display:none'>
+      sum . (++ys)
+ ===  sum . foldr (:) ys
+ ===    {- 摺融合 -}
+      foldr (+) (sum ys)
+ ===    {- 摺融合 -}
+      (+ (sum ys)) . foldr (+) 0
+ ===  (+ (sum ys)) . sum {-"~~."-}
+</pre></div>
+其中第一個摺融合的條件為 <code class='haskell'>sum (x:xs) = x + sum xs</code> ---我們由此發現融合後的步驟函數為 <code class='haskell'>(+)</code>.第二個摺融合的條件證明如下：<br>
+
+<div><pre style='display:none'>
+sumAppendPlusFusionCond x y ys =
+</pre></div>
+ <div><pre style='display:none'>
+      (+ (sum ys)) (x + y)
+ ===  (x + y) + sum ys
+ ===  x + (y + sum ys)
+ ===  x + ((+ (sum ys)) y) {-"~~."-}
+</pre></div>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>參考習題  ref ex:fan-foldr , 使用摺融合定理證明 <code class='haskell'>length (fan y xs) = Suc (length xs)</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>相當於證明 <code class='haskell'>length . fan y = Suc . length</code>. 推論如下：</p>
+<div><pre class='spec'>
+     length . fan y
+===  length . foldr (\x xss -> (y:x: tail (head xss)) : map (x:) xss) [[y]] {-"~~."-}
+===    {- 摺融合定理 -}
+     foldr Suc 1
+===    {- 摺融合定理 -}
+     Suc . foldr Suc Zero
+===  Suc . length {-"~~."-}
+</pre></div>
+其中第一次融合的融合條件可證明如下：<br>
+<div><pre class='spec'>
+     length ((y:x: tail (head xss)) : map (x:) xss)
+===    {- |length| 之定義 -}
+     Suc (length (map (x:) xss))
+===    {- |length . map f = length| -}
+     Suc (length xss) {-"~~."-}
+</pre></div>
+由此發現步驟函數為 <code class='haskell'>Suc</code>.第二次融合的融合條件則只需展開定義即可證成。<br>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>回顧第 ref sec:exp-binary-roll 節中將反轉表示的二進位數字轉為自然數的函數 <code class='haskell'>decimal :: List Bool -> Nat</code>.該函數可寫成一個摺：</p>
+<div><pre class='spec'>
+decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
+</pre></div>
+請使用摺融合將 <code class='haskell'>exp b . decimal</code> 表示成單一的摺。<br>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>基底值為 <code class='haskell'>base = exp b 0 = 1</code>.為找出步驟函數，我們推論：</p>
+<div><pre class='spec'>
+     exp b (if c then 1 + 2 * n else 2 * n)
+===    {- 函數分配進 |if| -}
+     if c then exp b (1 + 2 * n) else exp b (2 * n)
+===    {- 因 $m^{x+y} = m^x \times m^y$ -}
+     if c then b * exp b (2 * n) else exp b (2 * n)
+===    {- 因 $m^{2n} = (m^n)^2$, 回顧：|square x = x * x| -}
+     if c then b * square (exp b n) else square (exp b n) {-"~~."-}
+</pre></div>
+因此可得<br>
+<div><pre class='spec'>
+  exp b . decimal = foldr (\d x -> if c  then b * square x
+                                         else square x) 1 {-"~~."-}
+</pre></div>
+</div>
+</div>
+摺融合與尋找歸納定義 回顧：<code class='haskell'>id :: List a -> List a</code> 可以寫成一個 <code class='haskell'>foldr</code> --- <code class='haskell'>id = foldr (:) []</code>.而任何函數 <code class='haskell'>f :: List a -> b</code> 都等於 <code class='haskell'>f . id</code>.如果我們將 <code class='haskell'>f</code> 與 <code class='haskell'>id</code> 融合，會發生什麼事呢？首先我們需要找出基底值 <code class='haskell'>f []</code> 是什麼。接著我們要找到滿足 <code class='haskell'>f (x:xs) = step x (f xs)</code> 的步驟函數 <code class='haskell'>step</code>.但這其實就是使用展開-收回轉換尋找 <code class='haskell'>f</code> 的歸納定義！只是此處要求的歸納定義比較嚴格：在 <code class='haskell'>f xs</code> 之外不能使用 <code class='haskell'>xs</code>.<br>
+<p>確實，第 ref sec:fold-unfold-transform 與 ref sec:fold-unfold-transform-efficiency 節中許多尋找歸納定義的演算都可以視為使用摺融合生成程式的例子。以第 ref sec:poly-horner 節的 <code class='haskell'>poly</code> 為例。找出其歸納定義的過程可以視為摺融合：</p>
+<div><pre class='spec'>
+   poly x
+=  poly x . id
+=   {- |id = foldr (:) []| -}
+   poly x . foldr (:) []
+=   {- 摺融合定理 -}
+   foldr step (poly x []) {-"~~."-}
+</pre></div>
+其中基底值 <code class='haskell'>poly x [] = 0</code>.而函數 <code class='haskell'>step</code> 須滿足融合條件 <code class='haskell'>poly x (a:as) = step a (poly x as)</code>。尋找 <code class='haskell'>step</code> 的過程和第 pageref ex:polyDer1 頁的計算完全相同。我們會得到<br>
+<div><pre class='spec'>
+  poly x (a : as) = a + (poly x as) * x {-"~~."-}
+</pre></div>
+到此為止我們便找到了 <code class='haskell'>poly x</code> 的歸納定義。也可以說，我們已得知 <code class='haskell'>poly x = foldr (\a b -> a + b * x) 0</code>.<br>
+<h3 class='subsection' >掃描<id='sec:scan-lemma'></h3><p>第 ref sec:sum-scan-lemma 節介紹了掃描定理，並提及 eqref eq:f-fold-scan 就是一個摺。其實，掃描定理通常是在定義了摺之後才討論的。本節將做一個更正式的介紹。 index scan 掃描 定義函數 <code class='haskell'>scanr</code> 如下：</p>
+<div><pre class='spec'>
+scanr :: (a -> b -> b) -> b -> List a -> List b
+scanr f e = map (foldr f e) . tails {-"~~."-}
+</pre></div>
+給定一個串列 <code class='haskell'>xs</code>, <code class='haskell'>scanr f e</code> 先算出 <code class='haskell'>xs</code> 的所有後段，然後對每一個後段都做 <code class='haskell'>foldr f e</code>. index list 串列!suffix 後段 例如，<code class='haskell'>scanr (+) 0 [3,7,2,4]</code> 計算串列 <code class='haskell'>[3,7,2,4]</code> 由右到左的累計和：先用 <code class='haskell'>tails [3,7,2,4]</code> 算出所有後段 <code class='haskell'>[[3,7,2,4],</code> <code class='haskell'>[7,2,4],</code> <code class='haskell'>[2,4],</code> <code class='haskell'>[4],</code> <code class='haskell'>[]]</code>,然後對每一個後段都計算 <code class='haskell'>foldr (+) 0 = sum</code>,可得到累計和 <code class='haskell'>[16,13,6,4,0]</code>.<br>
+<p>如果把上述的 <code class='haskell'>scanr</code> 定義當作演算法，處理長度為 <code class='haskell'>n</code> 的串列時呼叫 <code class='haskell'>f</code> 的次數為 $O(n^2)$.掃描定理則告訴我們：其實只需 $O(n)$ 個呼叫就可以了！由於 <code class='haskell'>tails</code> 是一個 <code class='haskell'>foldr</code>:</p>
+<div><pre class='spec'>
+tails = foldr (\x xss -> (x : head xss) : xss) [[]] {-"~~,"-}
+</pre></div>
+我們試著把 <code class='haskell'>map (foldr f e)</code> 融合入 <code class='haskell'>tails</code> 中，看看是否能找出一個較有效率的 <code class='haskell'>scanr</code> 定義。其融合條件如下：<br>
+
+<div><pre style='display:none'>
+scanrFusionCond :: (a -> b -> b) -> b -> a -> List (List a) -> List b
+scanrFusionCond f e x xss =
+</pre></div>
+ <div><pre style='display:none'>
+      map (foldr f e) ((x : head xss) : xss)
+ ===    {- |map| 之定義 -}
+      foldr f e (x : head xss) : map (foldr f e) xss
+ ===    {- |foldr| 之定義 -}
+      f x (foldr f e (head xss)) : map (foldr f e) xss
+ ===    {- |foldr f e (head xss) = head (map (foldr f e) xss)| -}
+      let ys = map (foldr f e) xss
+      in f x (head ys) : ys {-"~~."-}
+</pre></div>
+於是我們推導出了 <code class='haskell'>scanr</code> 的另一個定義。<br>
+<div>lemma[掃描引理]<id='lma:scan-lemma'><br>
+<p>對所有 <code class='haskell'>f</code>, <code class='haskell'>e</code>,</p>
+<div><pre class='spec'>
+scanr f e = foldr (\x ys -> f x (head ys) : ys) [e] {-"~~."-}
+</pre></div>
+lemma</div>
+<p>若將 <code class='haskell'>foldr</code> 的定義展開，函數 <code class='haskell'>scanr</code> 可寫成下列的歸納形式，也許比較容易理解：</p>
+<div><pre class='spec'>
+scanr f e []      = [e]
+scanr f e (x:xs)  = f x (head ys) : ys {-"~~,"-}
+    where ys = scanr f e xs {-"~~."-}
+</pre></div>
+<h3 class='subsection' >再看最大區段和問題<id='sec:maximum-segment-sum-foldr'></h3><p>第 ref sec:maximum-segment-sum 節中的最大區段和問題其實常被當作摺融合的應用例。 index maximum segment sum 最大區段和 回顧：給定一個串列，我們希望計算它的所有區段中，總和最大的和。寫成規格如下：</p>
+<div><pre class='spec'>
+mss = maximum . map sum . segments {-"~~."-}
+</pre></div>
+
+<div><pre style='display:none'>
+segments = concat . map inits . tails
+</pre></div>
+ 要解此問題，我們和第 ref sec:maximum-segment-sum 節中一樣先做前段-後段分解，<br>
+
+<div><pre style='display:none'>
+mssDer00 :: List Int -> Int
+mssDer00 =
+</pre></div>
+ <div><pre style='display:none'>
+      maximum . map sum . segments
+ ===  maximum . map sum . concat . map inits . tails
+ ===   {- |map f . concat = concat . map (map f)| (習題 \ref{ex:map-concat}) -}
+      maximum . concat . map (map sum) . map inits . tails
+ ===   {- |maximum . concat = maximum . map maximum| -}
+      maximum . map maximum . map (map sum) . map inits . tails
+ ===   {- |map| 融合 （定理\ref{thm:map-fusion}） -}
+      maximum . map (maximum . map sum . inits) . tails
+ ===   {- 令 |mps = maximum . map sum . inits| -}
+      maximum . map mps . tails {-"~~."-}
+</pre></div>
+
+<div><pre style='display:none'>
+ where mps = maximum . map sum . inits
+</pre></div>
+ 也就是說：要找出最大區段和，我們可以對<em>每一個後段，找出其最大前段和</em>。<br>
+<p>剛讀過掃描引理 ref lma:scan-lemma 的讀者可能立刻注意到<code class='haskell'>map mps . tails</code> 這個子算式：如果我們能把 <code class='haskell'>mps</code> 變成一個摺，<code class='haskell'>map mps . tails</code> 可改寫為 <code class='haskell'>scanr</code>.如果該摺的步驟函數只花常數時間，我們就有了一個線性時間的演算法了！</p>
+<p>如何把 <code class='haskell'>mps</code> 變成摺呢？由於 <code class='haskell'>inits</code> 是摺，我們可使用摺融合。此處的計算和例 ref ex:minimumMapSumInits 很類似，我們可以把 <code class='haskell'>map sum</code> 與 <code class='haskell'>maximum</code> 分兩次融合進 <code class='haskell'>inits</code>, 也可以一次把 <code class='haskell'>maximum . map sum</code> 融合進 <code class='haskell'>inits</code>.這次我們試試看後者。基底值 <code class='haskell'>maximum (map sum [[]]) = 0</code>.我們想要尋找滿足融合條件<code class='haskell'>maxmium (map sum ([] : map (x:) xss)) = step x (maximum (map sum xss))</code>的函數 <code class='haskell'>step</code>.計算如下：</p>
+
+<div><pre style='display:none'>
+maxMapSumFuse :: Int -> List [Int] -> Int
+maxMapSumFuse x xss =
+</pre></div>
+ <div><pre style='display:none'>
+      maximum (map sum ([] : map (x:) xss))
+ ===    {- |map| 與 |sum| 之定義  -}
+      maximum (0 : map sum (map (x:) xss))
+ ===    {- |map| 融合  -}
+      maximum (0 : map (sum . (x:)) xss)
+ ===    {- |sum| 之定義 -}
+      maximum (0 : map ((x+). sum) xss)
+ ===    {- |maximum| 之定義 -}
+      0 `max` maximum (map ((x+). sum) xss)
+ ===    {- |maximum . map (x+) = (x+) . maximum| -}
+      0 `max` (x + maximum (map sum xss)) {-"~~."-}
+</pre></div>
+因此我們推導出了：<br>
+
+<div><pre style='display:none'>
+mpsDer00 :: List Int -> Int
+mpsDer00 =
+</pre></div>
+ <div><pre style='display:none'>
+      maximum . map sum . inits
+ ===  maximum . map sum . foldr (\x xss -> [] : map (x:) xss) [[]]
+ ===   {- 摺融合定理，融合條件如上 -}
+      foldr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
+</pre></div>
+<p>既然 <code class='haskell'>mps</code> 已經是一個摺，我們可以使用掃描引理：</p>
+
+<div><pre style='display:none'>
+mssDer01 :: List Int -> Int
+mssDer01 =
+</pre></div>
+ <div><pre style='display:none'>
+      maximum . map sum . segments
+ ===    {- 上述計算 -}
+      maximum . map (foldr (\x s -> 0 `max` (x + s)) 0) . tails
+ ===    {- 掃描引理\ref{lma:scan-lemma} -}
+      maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
+</pre></div>
+我們得到 <code class='haskell'>mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0</code>.這是一個使用線性時間、線性空間的演算法。<br>
+<p>由於 <code class='haskell'>scanr</code> 也是一個摺，我們可再嘗試把 <code class='haskell'>maximum</code> 融合進去，試圖消除 <code class='haskell'>scanr</code> 產生的中間串列，以便得到一個使用線性時間、常數空間的演算法。但我們將會發現融合條件無法達成，因此得做組對轉換。剩下的計算便和第 ref sec:maximum-segment-sum 節相同了。</p>
+<h3 class='subsection' >香蕉船定理</h3><p>第 ref sec:tupling-conclude 節簡短地提到一個例子：令 <code class='haskell'>sumlen = fork sum length</code>,<p class='footer'>分裂運算元 <code class='haskell'>fork</code> 的定義請參照第 ref sec:pairs 節， pageref par:split-product 頁。</p>直接執行的話，<code class='haskell'>sum</code> 與 <code class='haskell'>length</code> 將各自走訪輸入串列一次，但我們可推導出 <code class='haskell'>sumlen</code> 的歸納定義，得到一個只走訪串列一次的版本。</p>
+<p>上述例子還可以更通用一些。考慮 <code class='haskell'>fork (foldr f1 e1) (foldr f2 e2)</code> --- 這個算式拿一個串列當輸入，兩個 <code class='haskell'>foldr</code> 分別將串列走訪一次，兩個結果分別存放在序對中。我們有可能將它變成一個摺（因此只走訪串列一次）嗎？下述的「香蕉船定理(banana-split theorem)」告訴我們：<em>含兩個摺的分裂，可以寫成一個摺</em>。 index banana-split 香蕉船定理 </p>
+<div>theorem[香蕉船定理]<id='thm:banana-split'><br>
+<p>給定 <code class='haskell'>f1 :: a -> b -> b</code>, <code class='haskell'>e1 :: b</code> , <code class='haskell'>f2 :: a -> c -> c</code>, <code class='haskell'>e2 :: c</code>, 下述等式成立：</p>
+
+<div><pre style='display:none'>
+bananaSplit :: (a -> b -> b) -> b -> (a -> c -> c) -> c -> List a -> (b :* c)
+bananaSplit f1 e1 f2 e2 =
+</pre></div>
+ <div><pre style='display:none'>
+ fork (foldr f1 e1) (foldr f2 e2) === foldr g (e1,e2) {-"~~,"-}
+</pre></div>
+
+<div><pre style='display:none'>
+ where g x (y,z) = (f1 x y, f2 x z)
+</pre></div>
+ 其中 <code class='haskell'>g x (y,z) = (f1 x y, f2 x z)</code>.<br>
+theorem</div>
+<p>分裂運算元 <code class='haskell'>fork</code> 的英文稱呼是 <code>split'', 在程式推導圈內有時會用一套稱作「香蕉括號(banana brackets)」的符號表示摺，兩者合起來便是<code>banana-split'' --- 甜點「香蕉船」的英文名稱。</p>
+<p>定理 ref thm:banana-split 相當於把兩個處理同一份資料的迴圈合併成一個。但如同第 ref sec:tupling-conclude 節提及，這並不保證效率會比較好。我們會使用定理 ref thm:banana-split 的原因可能是如果確定某函數是摺，我們能做更多後續處理（例如，使用掃描定理或其他只對摺成立的性質）。</p>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>證明香蕉船定理。你可以在輸入串列上做歸納證明，也可以利用<code class='haskell'>fork (foldr f1 e1) (foldr f2 e2) = fork (foldr f1 e1) (foldr f2 e2) . id
+= fork (foldr f1 e1) (foldr f2 e2) . foldr (:) []</code> 的特性，使用摺融合定理。</p>
+</div>
+</div>
+<p>「組對」常可視為分裂與 <code class='haskell'>id</code> 的融合。例如，在第 ref sec:steep 節的陡串列問題中，我們定義<code class='haskell'>steepsum xs = (steep xs, sum xs)</code>，並試著推導其歸納定義。該過程也可視為將 <code class='haskell'>fork steep sum</code> 與 <code class='haskell'>id</code> 融合：</p>
+
+<div><pre style='display:none'>
+steepSumId :: List Int -> (Bool :* Int)
+steepSumId =
+</pre></div>
+ <div><pre style='display:none'>
+     fork steep sum
+ ===   {- |f . id = f| -}
+     fork steep sum . id
+ ===   {- |id = foldr (:) id| -}
+     fork steep sum . foldr (:) []
+ ===   {- 摺融合 -}
+     foldr (\x (b, s) -> (x > s && b, x + s)) (True, 0) {-"~~."-}
+</pre></div>
+其融合條件的證明與第 ref sec:steep 節中幾乎相同。<br>
+<h3 class='subsection' >累積參數與摺融合</h3><p>第 ref sec:accumulating-param 節介紹的「累積參數」技巧也常可視為高階函數與摺的融合。以第 ref sec:reversal-append 節的經典例子 --- 串列反轉為例。函數 <code class='haskell'>reverse :: List a -> List a</code> 是一個 <code class='haskell'>foldr</code>:</p>
+<div><pre class='spec'>
+reverse = foldr (\x xs -> xs ++ [x]) [] {-"~~."-}
+</pre></div>
+為增進其效率，我們創造了函數 <code class='haskell'>revcat</code>，其定義為：<br>
+<div><pre class='spec'>
+revcat :: List a -> List a -> List a
+revcat xs ys = reverse xs ++ ys {-"~~."-}
+</pre></div>
+但如果把參數都移除，上述定義其實等同於：<br>
+<div><pre class='spec'>
+revcat = (++) . reverse {-"~~."-}
+</pre></div>
+推導 <code class='haskell'>revcat</code> 的歸納定義就是計算 <code class='haskell'>(++)</code> 與 <code class='haskell'>reverse</code> 的融合！<br>
+<p>為了導出一個較快的 <code class='haskell'>revcat</code> 實作，我們嘗試把 <code class='haskell'>(++) . reverse</code> 融合為一個 <code class='haskell'>foldr</code>.其推導大綱如下：</p>
+
+<div><pre style='display:none'>
+appendReverseDer00 :: List a -> List a -> List a
+appendReverseDer00 =
+</pre></div>
+ <div><pre style='display:none'>
+      (++) . reverse
+ ===  (++) . foldr (\x xs -> xs ++ [x]) []
+ ===    {- 摺融合，試著計算出 |base| 與 |step| -}
+      foldr step base {-"~~."-}
+</pre></div>
+
+<div><pre style='display:none'>
+ where step :: a -> (List a -> List a) -> List a -> List a
+       step = undefined
+       base :: List a -> List a
+       base = undefined
+</pre></div>
+ 我們可暫停一下，看看這個式子的型別。函數 <code class='haskell'>(++)</code> 的型別為 <code class='haskell'>List a -> (List a -> List a)</code>, <code class='haskell'>(++) . reverse</code> 與 <code class='haskell'>foldr step base</code> 的型別也相同。如果摺融合成功，我們會得到的是一個<em>傳回函數的 <code class='haskell'>foldr</code></em> --- 輸入為 <code class='haskell'>List a</code>, 輸出為 <code class='haskell'>List a -> List a</code>.其中 <code class='haskell'>base</code> 的型別為 <code class='haskell'>List a -> List a</code>, 而 <code class='haskell'>step</code> 的型別將是 <code class='haskell'>a -> (List a -> List a) -> (List a -> List a)</code> --- <code class='haskell'>step x</code> 將一個函數轉成另一個函數。<br>
+<p>根據摺融合定理，基底值 <code class='haskell'>base</code> 是</p>
+<div><pre class='spec'>
+  (++) []  = (\xs -> (++) [] xs)
+           = (\xs -> [] ++ xs)
+           = (\xs -> xs)
+           = id {-"~~."-}
+</pre></div>
+步驟函數 <code class='haskell'>step</code> 須滿足的融合條件如下<br>
+
+<div><pre style='display:none'>
+appendReverseFuse00 :: a -> List a -> List a -> List a
+appendReverseFuse00 x xs =
+</pre></div>
+ <div><pre style='display:none'>
+     (++) ((\x xs -> xs ++ [x]) x xs) === step x ((++) xs) {-"~~."-}
+</pre></div>
+
+<div><pre style='display:none'>
+ where step :: a -> (List a -> List a) -> List a -> List a
+       step = undefined
+</pre></div>
+ 簡單地化簡等號左手邊，我們得到：<br>
+<div><pre class='spec'>
+     (++) (xs ++ [x]) === step x ((++) xs) {-"~~."-}
+</pre></div>
+這個式子無法再規約，因為 <code class='haskell'>(++)</code> 還需要一個參數。因此我們根據外延相等（定義 ref def:extensional-eq ），在等號兩邊各補一個參數 <code class='haskell'>ys</code>:<br>
+<div><pre class='spec'>
+     (++) (xs ++ [x]) ys === step x ((++) xs) ys{-"~~."-}
+</pre></div>
+為找出 <code class='haskell'>step</code>, 演算如下：<br>
+
+<div><pre style='display:none'>
+appendReverseFuse01 :: a -> List a -> List a -> List a
+appendReverseFuse01 x xs ys =
+</pre></div>
+ <div><pre style='display:none'>
+      (++) (xs ++ [x]) ys
+ ===  (xs ++ [x]) ++ ys
+ ===    {- |(++)| 之結合律 -}
+      xs ++ ([x] ++ ys)
+ ===   {- |(.)| 之定義 -}
+     (((++) xs) . (x:)) ys
+ ===   {- 將 |x|, |((++) xs)|, 與 |ys| 提出 -}
+     (\x f -> f . (x:)) x ((++) xs) ys {-"~~."-}
+</pre></div>
+根據外延相等，我們已證明<br>
+<div><pre class='spec'>
+  (++) (xs ++ [x]) = (\x f -> f . (x:)) x ((++) xs) {-"~~."-}
+</pre></div>
+因此 <code class='haskell'>step = (\x f -> f . (x:))</code>, 而 <code class='haskell'>revcat</code> 可寫成如下的摺：<br>
+<div><pre style='display:none'>
+revcat = foldr (\x f -> f . (x:)) id {-"~~."-}
+</pre></div>
+例如 <code class='haskell'>revcat "abc" = id . ('c':) . ('b':) . ('a':)</code>,而 <code class='haskell'>revcat "abc" ys = 'c' : ('b' : ('a' : ys))</code>.<br>
+<h3 class='subsection' >引入脈絡<id='sec:bring-in-context'></h3><p> index fold 摺!bringing in the context 引入脈絡 </p>
+<p>第 ref sec:foldr-fusion 節開頭（第 pageref para:bring-in-context-prelim 頁）曾提及：使用摺融合定理將 <code class='haskell'>h . foldr f e</code> 融合成 <code class='haskell'>foldr g (h e)</code> 時，融合條件 <code class='haskell'>h (f x y) = g x (h y)</code> 並不需對所有 <code class='haskell'>y</code> 都成立，而只需對在 <code class='haskell'>foldr f e</code> 的值域內的 <code class='haskell'>y</code> 成立即可。截至目前為止我們看了不少摺融合的例子，但我們所證明的融合條件，均是較寬鬆、對所有 <code class='haskell'>y</code> 都成立的。我們還沒看過只對特定 <code class='haskell'>y</code> 成立（因此可能較難證明的）融合條件。</p>
+<p>知道「<code class='haskell'>y</code> 在 <code class='haskell'>foldr f e</code> 的值域內」，意味著證明融合條件時，我們可以假設 <code class='haskell'>y</code> 滿足所有 <code class='haskell'>foldr f e</code> 的傳回值該滿足的性質。習慣上，「使用這些性質」被稱作「<em>引入脈絡</em>」(<em>bringing in the context</em>) --- 意指做證明時知道 <code class='haskell'>y</code> 不是任意的值，而是由 <code class='haskell'>foldr f e</code> 產生（有特定脈絡）的。此處我們看一個引入脈絡的簡單例子。</p>
+<div>example<id='ex:suc-map-square'><br>
+<p>回顧 <code class='haskell'>sumsq = sum . map square</code>.我們在例 ref ex:sum-map-square-fusion 中曾導出 <code class='haskell'>sumsq = foldr (\x y -> square x + y) 0</code>.現在考慮下述函數：</p>
+<div><pre class='spec'>
+psuc n = if n >= 0 then n+1 else 0 {-"~~."-}
+</pre></div>
+如果參數是非負整數，<code class='haskell'>psuc</code> 將它加一，否則傳回 <code class='haskell'>0</code>.我們能將 <code class='haskell'>psuc . sumsq</code> 融合為一個 <code class='haskell'>foldr</code> 嗎？<br>
+<p>直覺看來，由於 <code class='haskell'>sumsq</code> 一定傳回非負整數，<code class='haskell'>psuc</code> 只是將其結果加一。但如果使用摺融合，需要的融合條件是 <code class='haskell'>psuc (square x + y) = step x (psuc y)</code>.我們找不到一個對任意 <code class='haskell'>x</code> 與 <code class='haskell'>y</code> 都能使該條件成立的 <code class='haskell'>step</code>.</p>
+<p>此時我們需要引入脈絡：由於 <code class='haskell'>y</code> 是 <code class='haskell'>sumsq</code> 的結果，必定是個非負整數。我們可證明對於非負整數 <code class='haskell'>m</code> 與 <code class='haskell'>n</code>,</p>
+<div><pre class='spec'>
+     psuc (m + n) = m + psuc n {-"~~."-}
+</pre></div>
+由於 <code class='haskell'>square x</code> 與 <code class='haskell'>y</code> 都是非負整數，我們有<br>
+<div><pre class='spec'>
+     psuc (square x + y) = square x + psuc y {-"~~."-}
+</pre></div>
+因此我們可選 <code class='haskell'>step x y = square x + y</code> --- 與 <code class='haskell'>sumsq</code> 的步驟函數相同。至於基底值則是 <code class='haskell'>psuc 0 = 1</code>.因此，<br>
+<div><pre class='spec'>
+  psuc . sumsq = foldr (\x y -> square x + y) 1 {-"~~."-}
+</pre></div>
+example</div>
+<p>例 ref ex:suc-map-square 是個刻意設計的、簡單的例子。在第TODO節中，我們會看到其他需要引入脈絡的演算法。</p>
+<h2 class='section' >左摺、串列同構、與 Paramorphism</h2><p>為了完整性，本節介紹與串列的摺相關的另外幾個組件函數。初次閱讀時可跳過本節。</p>
+<h3 class='subsection' >左摺</h3><p>除了 <code class='haskell'>foldr</code>, Haskell 的標準函式庫有另一個函數 <code class='haskell'>foldl</code>, 名字中的字母 <code class='haskell'>l</code> 為「左」之意：<code class='haskell'>foldr</code> 將串列中的元素往右括，<code class='haskell'>foldl</code> 則往左括，例如，</p>
+<div><pre class='spec'>
+ foldl rhd e [x0,x1,x2,x3] = (((e `rhd` x0) `rhd` x1) `rhd` x2) `rhd` x3 {-"~~."-}
+</pre></div>
+有了 <code class='haskell'>foldl</code>, 串列反轉可直接定義為 <code class='haskell'>reverse = foldl (\xs x -> x:xs) []</code>.<br>
+<p>函數 <code class='haskell'>foldl</code> 可在輸入串列的長度上歸納定義如下：</p>
+<div><pre class='spec'>
+foldl :: (b -> a -> b) -> b -> List a -> b
+foldl rhd e []         = e
+foldl rhd e (xs++[z])  = foldl rhd e xs `rhd` z{-"~~."-}
+</pre></div>
+由於運算元 <code class='haskell'>rhd</code> 右邊的參數才是目前的元素，其型別為 <code class='haskell'>b -> a -> b</code>.由此出發，我們不難導出下述將串列從左邊開始拆解的定義：<br>
+<div><pre class='spec'>
+foldl rhd e []      = e
+foldl rhd e (x:xs)  = foldl rhd (e `rhd` x) xs {-"~~."-}
+</pre></div>
+我們可注意到這是一個尾遞迴定義， index tail recursion 尾遞迴 因此，如果將 <code class='haskell'>sum</code>, <code class='haskell'>prod</code> 等函數定義為 <code class='haskell'>foldl (+) 0</code>, <code class='haskell'>foldl (*) 1</code> 等等，執行時可不佔用堆疊的空間。由於這個特性，對一些將 Haskell 用於著重效率的應用的人們來說，<code class='haskell'>foldl</code> 才是他們較常使用的「摺」。<p class='footer'>為了效率因素更常被使用的可能是另一個嚴格(strict)版的函數 <code class='haskell'>foldl'</code>, 該函數在遞迴呼叫前會先將 <code class='haskell'>e `rhd` x</code> 規約成正規式，避免尚待計算的算式被累積著。</p><br>
+<p>關於 <code class='haskell'>foldl</code> 與 <code class='haskell'>foldr</code> 的關係， citet Bird:98:Introduction  提及了三個定理。首先，</p>
+<div>theorem[第一對偶定理(The First Duality Theorem)]<id='thm:first-duality'><br>
+<p>如果 <code class='haskell'>oplus :: a -> a -> a</code> 滿足遞移律，以 <code class='haskell'>e :: a</code> 為單位元素，則 <code class='haskell'>foldr oplus e xs = foldl oplus e xs</code>.</p>
+theorem</div>
+<p>提醒一下：該定理及本節的其他定理中，<code class='haskell'>xs</code> 需為歸納定義、有限長度的串列。遞移律意指 <code class='haskell'>x `oplus` (y `oplus` z) = (x `oplus` y) `oplus` z</code> --- 由於此項要求，<code class='haskell'>oplus</code> 的型別得是 <code class='haskell'>a -> a -> a</code>. 由於 <code class='haskell'>(+)</code>, <code class='haskell'>(*)</code>, <code class='haskell'>(`min`)</code>, <code class='haskell'>(`max`)</code> 等運算元都有遞移律，<code class='haskell'>sum</code>, <code class='haskell'>prod</code>, <code class='haskell'>maixmum</code>, <code class='haskell'>minimum</code> 等函數都可用 <code class='haskell'>foldl</code> 定義。事實上，他們在標準 Haskell Report 中的定義便是如此。</p>
+<p>定理 ref thm:first-duality 其實是下述定理的特例。函數 <code class='haskell'>foldl</code> 有個尾遞迴定義，其中參數 <code class='haskell'>e</code> 的角色就像是個累積參數。第 ref sec:tail-recursion 節中曾提及，尾遞迴函數時常和遞移律有關。函數 <code class='haskell'>foldl</code> 是否也牽涉了某種遞移律呢？</p>
+<div>theorem[第二對偶定理(The Second Duality Theorem)]<id='thm:second-duality'><br>
+<p>如果二元運算元 <code class='haskell'>lhd :: a -> b -> b</code> 及 <code class='haskell'>rhd :: b -> a -> b</code> 滿足 <code class='haskell'>x `lhd` (y `rhd` z) = (x `lhd` y) `rhd` z</code> 以及 <code class='haskell'>x `lhd` e = e `rhd` x</code>，則 <code class='haskell'>foldr lhd e xs = foldl rhd e xs</code>.</p>
+theorem</div>
+<p>定理  ref thm:second-duality  中的 <code class='haskell'>x `lhd` (y `rhd` z) = (x `lhd` y) `rhd` z</code> 可視為一種擴充到兩個運算元的遞移律。定理  ref thm:first-duality  則是 <code class='haskell'>lhd = rhd</code> 的特殊情況。</p>
+<p>定理  ref thm:second-duality  的證明頗值得研究：</p>
+<div>proof
+<p>我們在 <code class='haskell'>xs</code> 上做歸納。基底狀況 <code class='haskell'>xs := []</code> 中，等號兩邊都歸約為 <code class='haskell'>e</code>.至於 <code class='haskell'>xs := x : xs</code> 的情況，我們把兩邊都化簡並使用歸納假設，推論如下：</p>
+
+<div><pre style='display:none'>
+sndDualityInd1 :: (a -> b -> b) -> (b -> a -> b) -> b -> a -> List a -> b
+sndDualityInd1 lhd rhd e x xs =
+</pre></div>
+ <div><pre style='display:none'>
+      foldr lhd e (x:xs)
+ ===    {- |foldr| 之定義 -}
+      x `lhd` foldr lhd e xs
+ ===    {- 歸納假設 -}
+      x `lhd` foldl rhd e xs
+ ===    {- 論證如後述 -}
+      foldl rhd (x `lhd` e) xs
+ ===    {- 假設： |x `lhd` e = e `rhd` x| -}
+      foldl rhd (e `rhd` x) xs
+ ===    {- |foldl| 之定義 -}
+      foldl rhd e (x:xs) {-"~~."-}
+</pre></div>
+在等式推論中段，我們希望 <code class='haskell'>x `lhd` foldl rhd e xs = foldl rhd (e `rhd` x) xs</code>.這會需要另一個歸納證明。但我們若直接證明此等式，到中途便會無法進行，且會發現我們需要稍做一下推廣，改證明一個較強的性質：<br>
+<div><code class='haskell'><id='eq:sndDualityGen'>
+  |x `lhd` foldl rhd y xs = foldl rhd (x `lhd` y) xs {-"~~."-}|
+</code></div>
+<p>兩者的差別是後者不針對特定的值 <code class='haskell'>e</code>, 而是任何的 <code class='haskell'>y</code>.這是一個「較強的性質反而比較好證明」的例子。</p>
+<p>等式 eqref eq:sndDualityGen 的證明如此進行：在 <code class='haskell'>xs := []</code> 的情況中，等號兩側都規約為 <code class='haskell'>x `lhd` y</code>.歸納情況 <code class='haskell'>xs := z : xs</code> 證明如下：</p>
+
+<div><pre style='display:none'>
+sndDualityGen :: (a -> b -> b) -> (b -> a -> b) -> a -> b -> a -> List a -> b
+sndDualityGen lhd rhd x y z xs =
+</pre></div>
+ <div><pre style='display:none'>
+      x `lhd` foldl rhd y (z:xs)
+ ===    {- |foldl| 之定義 -}
+      x `lhd` foldl rhd (y `rhd` z) xs
+ ===    {- 歸納假設 -}
+      foldl rhd (x `lhd` (y `rhd` z)) xs
+ ===    {- 假設：|x `lhd` (y `rhd` z) = (x `lhd` y) `rhd` z| -}
+      foldl rhd ((x `lhd` y) `rhd` z) xs
+ ===    {- |foldl| 之定義 -}
+      foldl rhd (x `lhd` y) (z:xs) {-"~~."-}
+</pre></div>
+proof</div>
+<p>最後一個對偶定理則確認了我們的一個直覺理解：將一個串列反轉做 <code class='haskell'>foldl</code>, 便相當於 <code class='haskell'>foldr</code>:</p>
+<div>theorem[第三對偶定理(The Third Duality Theorem)]<id='thm:third-duality'><br>
+<p>對所有 <code class='haskell'>f :: a -> b -> b</code>, <code class='haskell'>e :: b</code>, 以及 <code class='haskell'>xs :: List a</code>,<code class='haskell'>foldr f e xs = foldl (flip f) e (reverse xs)</code>.其中 <code class='haskell'>flip f x y = f y x</code>.</p>
+theorem</div>
+<h3 class='subsection' >串列同構</h3><p>考慮函數 <code class='haskell'>h :: List a -> b</code>. 如果存在 <code class='haskell'>e :: b</code>, <code class='haskell'>f :: a -> b</code>, 和 <code class='haskell'>odot :: b -> b -> b</code> 使得 <code class='haskell'>h</code> 滿足下列等式：</p>
+<div><pre class='spec'>
+h []          = e
+h [x]         = f x
+h (xs ++ ys)  = h xs `odot` h ys {-"~~,"-}
+</pre></div>
+
+<div><pre style='display:none'>
+hom :: (b -> b -> b) -> (a -> b) -> b -> List a -> b
+hom odot f e []  = e
+hom odot f e [x] = f x
+hom odot f e xs  = hom odot f e ys `odot` hom odot f e zs
+    where n = length xs `div` 2
+          (ys,zs) = (take n xs, drop n xs)
+</pre></div>
+ 我們便說 <code class='haskell'>h</code> 是一個<em>串列同構</em>(<em>list homomorphism</em>), 記為 <code class='haskell'>h = hom odot f e</code>. index list homomorphism 串列同構 注意第三個等式蘊含 <code class='haskell'>odot</code>（至少在 <code class='haskell'>h</code> 的值域內）須滿足結合律：<code class='haskell'>h xs `odot` (h ys `odot` h zs) = h (xs++(ys++zs)) = h ((xs++ys)++zs) = (h xs `odot` h ys) `odot` h zs</code>.<br>
+<p>串列同構有平行計算的可能性：計算 <code class='haskell'>hom odot f e xs</code> 時，如果 <code class='haskell'>xs</code> 有不只一個元素，我們可將 <code class='haskell'>xs</code> 由中間任意截成兩段，分別給不同的處理器計算，再將結果用 <code class='haskell'>odot</code> 結合。</p>
+<p>顯然，<code class='haskell'>hom dot f e</code> 可以寫成 <code class='haskell'>foldr</code>, 也能寫成 <code class='haskell'>foldl</code>:</p>
+
+<div><pre style='display:none'>
+homFoldlFoldr :: (b -> b -> b) -> (a -> b) -> b -> List a -> b
+homFoldlFoldr odot f e =
+</pre></div>
+ <div><pre style='display:none'>
+  hom odot f e  === foldr (\x y -> f x `odot` y) e
+                === foldl (\y x -> y `odot` f x) e {-"~~."-}
+</pre></div>
+下述定理則告訴我們反過來也成立：如果 <code class='haskell'>h</code> 同時可寫成 <code class='haskell'>foldr</code> 及 <code class='haskell'>foldl</code>, 則 <code class='haskell'>h</code> 是一個串列同構：<br>
+<div>theorem[第三同構定理(The Third Homomorphism Theorem)]<br>
+<p>考慮 <code class='haskell'>h :: List a -> b</code>。如果存在 <code class='haskell'>e :: b</code>, <code class='haskell'>lhd :: a -> b -> b</code>, 及 <code class='haskell'>rhd :: b -> a -> b</code> 使得 <code class='haskell'>h = foldr lhd e = foldl rhd e</code>,則存在 <code class='haskell'>odot :: b -> b -> b</code> 使得 <code class='haskell'>h = hom odot f e</code> （其中 <code class='haskell'>f x = x `lhd` e = e `rhd` x</code>）.</p>
+theorem</div>
+<h3 class='subsection' >Paramorphism 與本原遞迴</h3><p>如果我們把 <code class='haskell'>foldr</code> 的限制放寬，允許 <code class='haskell'>xs</code> 出現在遞迴呼叫之外，得到的模式稱為 <em>paramorphism</em>.串列版的 paramorphism 可定義如下：</p>
+<div><pre style='display:none'>
+para :: (a -> List a -> b -> b) -> b -> List a -> b
+para f e []      = e
+para f e (x:xs)  = f x xs (para f e xs) {-"~~."-}
+</pre></div>
+<div><pre class='spec'>
+para f e = fst . foldr (\x (y, xs) -> (f x xs y, x:xs)) (e, []) {-"~~."-}
+</pre></div>
+<h2 class='section' >自然數的摺</h2><p>自然數可以視為有兩個建構元 <code class='haskell'>Zero</code> 和 <code class='haskell'>Suc</code> 的歸納資料結構。我們也可為自然數定義一個摺：</p>
+<div><pre style='display:none'>
+foldN :: (a -> a) -> a -> Nat -> a
+foldN f e Zero     = e
+foldN f e (Suc n)  = f (foldN f e n) {-"~~."-}
+</pre></div>
+和串列的情況類似，函數 <code class='haskell'>foldN f e</code> 拿一個自然數，將其中的 <code class='haskell'>Zero</code> 代換成 <code class='haskell'>e</code>, <code class='haskell'>Suc</code> 代換成 <code class='haskell'>f</code>.留意型別：<code class='haskell'>Zero</code> 與 <code class='haskell'>Suc</code> 的型別分別是 <code class='haskell'>Nat</code> 與 <code class='haskell'>Nat -> Nat</code>,<code class='haskell'>foldN</code> 要將一個型別為 <code class='haskell'>Nat</code> 的值轉變為型別為 <code class='haskell'>a</code> 的值,因此 <code class='haskell'>e</code> 的型別為 <code class='haskell'>a</code>, 而 <code class='haskell'>f</code> 的型別為 <code class='haskell'>a -> a</code>.為方便稱呼，我們也將 <code class='haskell'>e</code> 與 <code class='haskell'>f</code> 分別稱為基底值與步驟函數。<br>
+<p>許多我們定義過的、自然數上的函數都可寫成自然數的摺：</p>
+<ul>
+<li>
+<p><code class='haskell'>exp b = foldN (b*) 1</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>(+n) = foldN (Suc) n</code>,</p>
+</li>
+<li>
+<p><code class='haskell'>(*n) = foldN (n+) 0</code>.</p>
+</li>
+</ul>
+自然數上的 <code class='haskell'>id :: Nat -> Nat</code> 也可寫成摺：<code class='haskell'>id = foldN (Suc) 0</code>.<br>
+<p>自然數的摺也有一個融合定理：</p>
+<div>theorem[摺融合定理(自然數版)]<id='thm:foldN-fusion'><br>
+<p> index fold 摺!fold fusion 摺融合 給定 <code class='haskell'>f :: a -> a</code>, <code class='haskell'>e :: a</code>, <code class='haskell'>h :: a -> b</code>.如果對所有在 <code class='haskell'>foldN f e</code> 值域中的 <code class='haskell'>x :: a</code>, 融合條件<code class='haskell'>h (f x) = g (h x)</code> 成立, 則</p>
+<div><pre class='spec'>
+h . foldN f e = foldN g (h e) {-"~~."-}
+</pre></div>
+theorem</div>
+<div>example<br>
+<p>判斷一個自然數是否為偶數的述語 <code class='haskell'>even :: Nat -> Bool</code> 可寫成一個摺:</p>
+<div><pre class='spec'>
+  even = foldN not True {-"~~."-}
+</pre></div>
+函數 <code class='haskell'>even . (+n)</code> 判斷一個數值加上 <code class='haskell'>n</code> 之後是否為偶數。由於 <code class='haskell'>(+ n) = foldN (Suc) n</code>, 我們可以嘗試把 <code class='haskell'>even</code> 融入 <code class='haskell'>(+n)</code>, 變成一個摺。根據定理 ref thm:foldN-fusion , 基底值為 <code class='haskell'>even n</code>;而由於 <code class='haskell'>even (Suc n) = not (even n)</code>, 步驟函數為 <code class='haskell'>not</code>.因此：<br>
+<div><pre class='spec'>
+even . (+n) = foldN not (even n) {-"~~."-}
+</pre></div>
+example</div>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>回顧第 ref sec:complete-induction 節中提到的費氏數定義：</p>
+<div><pre class='spec'>
+fib 0      = 0
+fib 1      = 1
+fib (2+n)  = fib (1+n) + fib n {-"~~."-}
+</pre></div>
+若直接將上述定義當作演算法，我們得做許多重複的計算。定義 <code class='haskell'>fib2 n = (fib (1+n), fib n)</code>.請將 <code class='haskell'>fib2</code> 融合進 <code class='haskell'>id :: Nat -> Nat</code>, 以便得到一個遞迴呼叫次數為 $O(n)$ 的演算法。<br>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>回顧 <code class='haskell'>id = foldN (Suc) 0</code>.欲將 <code class='haskell'>fib2</code> 融入 <code class='haskell'>id</code>, 基底值為 <code class='haskell'>fib2 0 = (fib 1, fib 0) = (1,0)</code>.為得到步驟函數，我們演算如下：</p>
+<div><pre class='spec'>
+   fib2 (Suc n)
+=  (fib (Suc (Suc n)), fib (Suc n))
+=    {- |fib| 之定義 -}
+   (fib (Suc n) + fib n, fib (Suc n))
+=  (\(x,y) -> (x+y,x)) (fib2 n) {-"~~."-}
+</pre></div>
+因此我們得到<br>
+<div><pre class='spec'>
+fib2 = foldN (\(x,y) -> (x+y,x)) (1,0) {-"~~."-}
+</pre></div>
+</div>
+</div>
+% \Exercise WRONG. Needing a different representation of |Nat|.
+% 回顧：|exp b n| 計算 $b^n$;
+% 在第\@ref{sec:tail-recursion-more}節中我們使用累積參數的技巧，定義下述函數
+% Recall that |exp b n| computes $b^n$.
+% ```spec
+% expAcc :: Nat -> Nat -> Nat -> Nat
+% expAcc b n x = x * exp b n {-"~~,"-}
+% ```
+% 由此得到了一個使用 $O(\log n)$ 個乘法計算 $b^n$ 的程式。
+%
+% 這次請試著把這也當作摺融合的特例：把 |exp b| 寫成 |foldN|,
+% 然後試著把 |(x *) . exp b| 融合成單一的 |foldN|.
+% :::{.exans}
+% |exp b = foldN (b*) 1|.
+%
+% 嘗試將 |(x *)| 融合入 |foldN (b*) 1| 中。基底值為 |x * 1 = x|.
+% 對步驟函數的要求是 |x * (b * m) = step (x * m)|.
+% 由於乘法的遞移律，我們可以直接選 |step = (b *)|.
+% 但為導出較快的演算法，我們分別討論 |n| 為 |Zero|, 非零偶數, 和奇數的情況。
+% 當 |n := Zero|:
+% ```spec
+%    x * (b * Zero)
+% =  x * Zero
+% ```<br>22
+<h2 class='section' >其他資料結構</h2><p>既然串列與自然數都有摺，其他的資料結構也可以有。</p>
+二元樹  回顧我們提及的兩種常見二元樹：<br>
+<div><pre class='spec'>
+data ITree a  = Null   | Node a (ITree a) (ITree a) {-"~~,"-}
+data ETree a  = Tip a  | Bin (ETree a) (ETree a) {-"~~."-}
+</pre></div>
+其中 <code class='haskell'>ITree</code> 的摺可定義如下：<br>
+<div><pre style='display:none'>
+foldIT :: (a -> b -> b -> b) -> b -> ITree a -> b
+foldIT f e Null          = e
+foldIT f e (Node x t u)  = f x (foldIT f e t) (foldIT f e u) {-"~~."-}
+</pre></div>
+內標記二元樹 <code class='haskell'>ITree</code> 的兩個建構元之型別分別為 <code class='haskell'>Null :: ITree a</code> 與 <code class='haskell'>Node :: a -> ITree a -> ITree a -> ITree a</code>. 和串列的摺一樣，內標記二元樹的摺將一個 <code class='haskell'>ITree a</code> 轉成一個型別為 <code class='haskell'>b</code> 的值 --- 藉由將 <code class='haskell'>Null</code> 代換為基底值 <code class='haskell'>e :: b</code>, 以及將 <code class='haskell'>Node</code> 代換為步驟函數 <code class='haskell'>f :: a -> b -> b -> b</code>.<br>
+<p>外標記二元樹的摺則可定義如下：</p>
+<div><pre style='display:none'>
+foldET :: (b -> b -> b) -> (a -> b) -> ETree a -> b
+foldET f k (Tip x)    = k x
+foldET f k (Bin t u)  = f (foldET f k t) (foldET f k u) {-"~~."-}
+</pre></div>
+型別 <code class='haskell'>ETree</code> 的建構元分別為 <code class='haskell'>Tip :: a -> ETree a</code> 和 <code class='haskell'>Bin :: ETree a -> ETree a -> ETree a</code>.由於 <code class='haskell'>Tip</code> 是一個由 <code class='haskell'>a</code> 到 <code class='haskell'>ETree a</code> 的函數，取代它的得是一個型別為 <code class='haskell'>a -> b</code> 的<em>基底函數</em>.取代 <code class='haskell'>Bin</code> 的步驟函數之型別則為 <code class='haskell'>b -> b -> b</code>. 有了這兩者，我們便可將 <code class='haskell'>ETree a</code> 轉換為 <code class='haskell'>b</code>.<br>
+<p>例如，第 ref sec:other-inductive-datatypes 節中曾提到幾個定義在樹之上的函數：<code class='haskell'>tags</code> 傳回一個 <code class='haskell'>ITree</code> 的所有標記；<code class='haskell'>size</code> 傳回其大小；<code class='haskell'>minE</code> 傳回一個 <code class='haskell'>ETree</code> 的最小元素，<code class='haskell'>mapE f</code> 對樹中的每個標記做 <code class='haskell'>f</code>. 它們都可用摺定義：</p>
+<div><pre class='spec'>
+tags    = foldIT (\x xs ys -> xs ++ [x] ++ ys) [] {-"~~,"-}
+size    = foldIT (\x m n -> 1 + m + n) 0 {-"~~,"-}
+minE    = foldET min id {-"~~,"-}
+mapE f  = foldET Bin f {-"~~."-}
+</pre></div>
+
+<div><pre style='display:none'>
+tags    = foldIT (\x xs ys -> xs ++ [x] ++ ys) [] {-"~~,"-}
+size    = foldIT (\x m n -> 1 + m + n) 0 {-"~~,"-}
+minE :: Ord a => ETree a -> a
+minE    = foldET min id {-"~~,"-}
+mapE f  = foldET Bin f {-"~~."-}
+</pre></div>
+ <p>兩個二元樹的摺也有它們的融合定理：</p>
+<div>theorem[摺融合定理(|ITree|版)]<br>
+<p> index fold 摺!fold fusion 摺融合 給定 <code class='haskell'>f :: a -> b -> b -> b</code>, <code class='haskell'>e :: b</code>, <code class='haskell'>h :: b -> c</code>, 與 <code class='haskell'>g :: a -> c -> c -> c</code>.如果融合條件 <code class='haskell'>h (f x y z) = g x (h y) (h z)</code> 對任何 <code class='haskell'>x :: a</code> 與在 <code class='haskell'>foldIT f e</code> 值域中的 <code class='haskell'>y, z :: b</code> 成立，我們有 <code class='haskell'>h . foldIT f e = foldIT g (h e)</code>.</p>
+
+<div><pre style='display:none'>
+foldITFusion :: (a -> b -> b -> b) -> b -> (b -> c) -> (a -> c -> c -> c) ->
+                (ITree a -> c)
+foldITFusion f e h g = h . foldIT f e === foldIT g (h e)
+   where cond x y z = h (f x y z) === g x (h y) (h z)
+</pre></div>
+ theorem</div>
+<div>theorem[摺融合定理(|ETree|版)]<br>
+<p>給定 <code class='haskell'>f :: b -> b -> b</code>, <code class='haskell'>k :: a -> b</code>, <code class='haskell'>h :: b -> c</code>, 與 <code class='haskell'>g :: c -> c -> c</code>.如果融合條件 <code class='haskell'>h (f x y) = g (h x) (h y)</code> 對任何在 <code class='haskell'>foldET f k</code> 值域中的 <code class='haskell'>x, y :: b</code> 成立，我們有<code class='haskell'>h . foldET f k = foldET g (h . k)</code>.</p>
+
+<div><pre style='display:none'>
+foldETFusion :: (b -> b -> b) -> (a -> b) -> (b -> c) -> (c -> c -> c) ->
+                (ETree a -> c)
+foldETFusion f k h g = h . foldET f k === foldET g (h . k)
+   where cond x y = h (f x y) === g (h x) (h y)
+</pre></div>
+ theorem</div>
+兩個定理的融合條件都依循著與串列版相同的原則：當 <code class='haskell'>h</code> 與步驟函數碰在一起，融合條件讓我們將 <code class='haskell'>h</code> 往裡推。兩個定理都可用單純的歸納法證明。<br>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>以摺融合定理證明 <code class='haskell'>length (tags t) = size t</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>即證明 <code class='haskell'>length . tags = size</code>.回顧 <code class='haskell'>tags = foldIT (\x xs ys -> xs ++ [x] ++ ys) []</code>使用摺融合，由於 <code class='haskell'>length [] = 0</code> 以及<code class='haskell'>length (xs ++ [x] ++ ys) = 1 + length xs + length ys</code>,我們得到 <code class='haskell'>length . tags = foldIT (\x m n -> 1 + m + n) 0 = size</code>.</p>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b><id='ex:foldET-mapE-fusion'>
+<p>串列有 <code class='haskell'>foldr</code>-<code class='haskell'>map</code> 融合定理( ref thm:foldr-map-fusion )，<code class='haskell'>ETree</code> 也有類似的 <code class='haskell'>foldET</code>-<code class='haskell'>mapE</code> 融合定理。請寫出該定理並證明之。</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p><code class='haskell'>ETree</code> 上的 <code class='haskell'>foldET</code>-<code class='haskell'>mapE</code> 融合定理為：</p>
+<div><pre class='spec'>
+  foldET f k . mapE g = foldET f (k . g) {-"~~."-}
+</pre></div>
+由於 <code class='haskell'>mapE g = foldET Bin f</code>, 欲證明上式可用摺融合定理。其融合條件 <code class='haskell'>foldET f k (Bin t u) = f (foldET f k t) (foldET f k u)</code> 恰巧是 <code class='haskell'>foldET</code> 之定義。<br>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>函數 <code class='haskell'>mapI :: (a -> b) -> ITree a -> ITree b</code> 將一個 <code class='haskell'>a -> b</code> 的函數作用在 <code class='haskell'>ITree</code> 的每一個標記上。請用 <code class='haskell'>foldIT</code> 定義 <code class='haskell'>mapI</code>, 並寫下 <code class='haskell'>foldIT</code> 與 <code class='haskell'>mapI</code> 的融合定理並證明之。</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>函數 <code class='haskell'>mapI</code> 可定義如下：</p>
+<div><pre class='spec'>
+  mapI f = foldIT (\x t u -> Node (f x) t u) Null {-"~~."-}
+</pre></div>
+考慮 <code class='haskell'>foldIT f e . mapI g</code> 之融合。其基底值為 <code class='haskell'>foldIT f e Null = e</code>.步驟函數的推導如下：<br>
+<div><pre class='spec'>
+      foldIT f e (Node (g x) t u)
+ ===    {- |foldIT| 之定義 -}
+      f (g x) (foldIT f e t) (foldIT f e u)  {-"~~."-}
+</pre></div>
+因此 <code class='haskell'>foldIT f e . mapI g = foldIT (\x y z -> f (g x) y z) e</code>.<br>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>以摺融合定理證明 <code class='haskell'>minE (mapE (x +) t) = x + minE t</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>即證明 <code class='haskell'>minE . mapE (x+) = (x+) . minE</code>.推論如下：</p>
+<div><pre class='spec'>
+      minE . mapE (x+)
+ ===    {- |foldET|-|mapE| 融合，見習題 \ref{ex:foldET-mapE-fusion} -}
+      foldET min (id . (x+))
+ ===    {- |foldET| 融合，如下述 -}
+      (x+) . minE {-"~~."-}
+</pre></div>
+融合的基底函數為 <code class='haskell'>id . (x+) = (x+) . id</code>,融合條件則為 <code class='haskell'>x + (y `min` z) = (x + y) `min` (x + z)</code>。<br>
+</div>
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>將 <code class='haskell'>(++) . tags</code> 融合，以便推導出一個在線性時間內收集 <code class='haskell'>ITree</code> 內所有標籤的演算法。</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>回想 <code class='haskell'>tags = foldIT (\x xs ys -> xs ++ [x] ++ ys) []</code>.融合後之基底值為 <code class='haskell'>(++) [] = id</code>.融合後之步驟函數 <code class='haskell'>step</code> 須滿足<code class='haskell'>(++) (xs ++ [x] ++ ys) = step x (xs++) (ys++)</code>.但由於左手邊的 <code class='haskell'>(++)</code> 還需一個參數才能化簡，我們在左右兩邊各補上一個參數 <code class='haskell'>zs</code>.演算如下：</p>
+<div><pre class='spec'>
+      (++) (xs ++ [x] ++ ys) zs
+ ===  (xs ++ [x] ++ ys) ++ zs
+ ===    {- |(++)| 之遞移律 -}
+      xs ++ (x : (ys ++ zs))
+ ===    {- |(.)| 之定義 -}
+      ((xs++) . (x:) . (ys++)) zs {-"~~."-}
+</pre></div>
+因此我們得到 <code class='haskell'>(++) . tags = foldIT (\x f g -> f . (x:) . g) id</code>.<br>
+</div>
+</div>
+非空串列 第 ref sec:induction-variations 節中曾提及我們可把至少有一個元素的串列想像成一個資料結構：<code class='haskell'>data ListP a = [a] || a : ListP a</code>. 此種串列的摺可定義為：<br>
+<div><pre style='display:none'>
+foldrn :: (a -> b -> b) -> (a -> b) -> ListP a -> b
+foldrn f k [x]     = k x
+foldrn f k (x:xs)  = f x (foldrn f k xs) {-"~~."-}
+</pre></div>
+<div>example<br>
+<p>例 ref ex:partsP 中的 <code class='haskell'>partsP</code> 可以寫成</p>
+<div><pre style='display:none'>
+partsP :: ListP a -> List (ListP (ListP a))
+partsP = foldrn (\x -> concat . map (extend x)) wrap3 {-"~~,"-}
+  where  extend x (ys:yss) = [[x]:ys:yss, (x:ys):yss]
+         wrap3 x = [[[x]]] {-"~~."-}
+</pre></div>
+example</div>
+<p>我們考慮一個定義在非空串列上的簡單演算法推導練習。其次，這也將是一個使用 <code class='haskell'>foldrn</code> 與「引入脈絡」的例子， index fold 摺!bringing in the context 引入脈絡 </p>
+<p>下述函數 <code class='haskell'>ascending :: ListP Int -> Bool</code> 判斷一個串列是否為遞增：</p>
+<div><pre style='display:none'>
+ascending [x]       = True
+ascending (x:y:xs)  = x <= y && ascending (y:xs) {-"~~."-}
+</pre></div>
+給定一個整數串列，如何將它切成一個個區段，使得每個區段都是遞增的？如果我們讓每個元素都自己成一段，似乎是滿足需求，但這沒什麼意思。我們希望讓遞增區段盡量連續，也就是說，我們要區段數目最少的分割法。下述函數 <code class='haskell'>upHills</code> 將輸入串列以最精簡的方式切成段：<br>
+<div><pre class='spec'>
+upHills :: List Int -> List (List Int)
+upHills = shortest . filter (all ascending) . partsP {-"~~."-}
+</pre></div>
+其中 <code class='haskell'>partsP</code> 把串列任意切段，<code class='haskell'>filter (all ascending)</code> 挑出每個區段都是遞增的分割法，而 <code class='haskell'>shortest</code> 挑選元素數目最少的串列。我們能由此導出一個比較快的演算法嗎？<br>
+<p>我們先將 <code class='haskell'>filter (all ascending)</code> 融入 <code class='haskell'>partsP</code> 之中。經過一些稍繁瑣但原則上並不困難的計算，我們可得：</p>
+
+<div><pre style='display:none'>
+filtAscParts :: List Int -> List (List (List Int))
+filtAscParts =
+</pre></div>
+ <div><pre style='display:none'>
+ filter (all ascending) . partsP ===
+    foldrn (\x -> concat . map (extendAsc x)) wrap3 {-"~~."-}
+</pre></div>
+這和 <code class='haskell'>partsP</code> 的差別只在 <code class='haskell'>extend</code> 變成了 <code class='haskell'>extendAsc</code>. 後者的定義為：<br>
+<div><pre style='display:none'>
+extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
+                                        else [[x]:ys:yss] {-"~~."-}
+</pre></div>
+函數 <code class='haskell'>extendAsc</code> 比 <code class='haskell'>extend</code> 多做了一個檢查，只在 <code class='haskell'>x >= head ys</code> 時將 <code class='haskell'>(x:ys):yss</code> 列為一個可能選項。注意：由於 <code class='haskell'>ys</code> 的型別是 <code class='haskell'>ListP Int</code>, <code class='haskell'>head</code> 一定可成功。如果我們使用 <code class='haskell'>List Int</code>, 在這裡就得多做些條件判斷。雖然每個非空串列 <code class='haskell'>ListP</code> 都可用 <code class='haskell'>List</code> 表達, 有些問題使用 <code class='haskell'>ListP</code> 描述時會比較便於證明與推論。<br>
+<p>接著我們試圖融合 <code class='haskell'>shortest</code> 與 <code class='haskell'>filter (all ascending) . partsP</code>.基底函數為 <code class='haskell'>(shortest . wrap3) x = shortest [[[x]]] = [[x]]</code>.至於步驟函數，我們希望找到滿足下述融合條件的 <code class='haskell'>step</code>:</p>
+<div><pre class='spec'>
+  shortest (concat (map (extendAsc x) ysss)) === step x (shortest ysss) {-"~~."-}
+</pre></div>
+由左手邊開始，由於 <code class='haskell'>shortest</code> 可分配進 <code class='haskell'>concat</code> （意即 <code class='haskell'>shortest . concat = shortest . map shortest</code>），我們可推論：<br>
+<div><pre class='spec'>
+     shortest (concat (map (extendAsc x) ysss))
+ ===   {- |shortest| 分配進 |concat|; |map| 融合 -}
+     shortest (map (shortest . extendAsc x) ysss) {-"~~."-}
+</pre></div>
+為了有些進展，我們看看 <code class='haskell'>shortest . extendAsc x</code> 能如何化簡。將輸入（非空串列）寫成 <code class='haskell'>ys : yss</code>:<br>
+<div><pre class='spec'>
+      shortest (extendAsc x (ys:yss)) =
+ ===    {- |extend'| 之定義; 提出 |if| -}
+      if x >= head ys  then shortest [[x]:ys:yss, (x:ys):yss]
+                       else shortest [[x]:ys:yss]
+ ===    {- |shortest| 挑選較短之串列 -}
+      if x >= head ys then (x:ys):yss else [x]:ys:yss {-"~~."-}
+</pre></div>
+%
+%      concat (map (filter (all ascending) . extend x) ysss)
+% ===  concat (map (\ (ys:yss) -> if all ascending (ys:yss) then extend' x (ys:yss) else []) ysss)<br>22
+因此，融合條件的左手邊可歸約如下：<br>
+<div><pre class='spec'>
+     shortest (map (shortest . extendAsc x) ysss)
+===    {- 前述推導 -}
+     shortest (map (\(ys:yss) ->  if x >= head ys then (x:ys):yss
+                                       else [x]:ys:yss) ysss) {-"~~."-}
+</pre></div>
+我們希望繼續將 <code class='haskell'>shortest</code> 往裡推，但此時似乎卡住了。<br>
+<div><pre class='spec'>
+     shortest (map (\(ys:yss) ->  if x >= head (head (head ysss)) then (x:ys):yss
+                                       else [x]:ys:yss) ysss) {-"~~."-}
+===  shortest (  if x >= head (head (head ysss))
+                 then map (\(ys:yss) -> (x:ys):yss) ysss
+                 else map (\(ys:yss) -> [x]:ys:yss) ysss)
+===  if x >= head (head (head ysss))
+       then shortest (map (\(ys:yss) -> (x:ys):yss) ysss)
+       else shortest (map (\(ys:yss) -> [x]:ys:yss) ysss)
+===  if x >= head (head (head ysss))
+       then (\(ys:yss) -> (x:ys):yss) (shortest ysss)
+       else (\(ys:yss) -> [x]:ys:yss) (shortest ysss)
+===  let (ys:yss) = shortest ysss
+     in  if x >= head ys
+         then (x:ys):yss else [x]:ys:yss {-"~~."-}
+</pre></div>
+<div><pre class='spec'>
+upHills = foldrn step (\x -> [[x]]) {-"~~,"-}
+  where  step x (ys:yss) = if x >= head ys  then (x:ys):yss
+                                            else [x]:ys:yss {-"~~."-}
+</pre></div>
+<div class = 'exlist'>
+
+<div class = 'Exercise'>
+<b>練習:</b>
+<p>將 <code class='haskell'>filter (all ascending) . partsP</code> 融合為 <code class='haskell'>foldrn (\x -> concat . map (extendAsc x)) wrap3</code>, 並在過程中推導 <code class='haskell'>extendAsc</code> 的定義。您可能用得上習題 ref ex:map-filter-split 提及的性質：如果 <code class='haskell'>filter p (f x) = if p x then g x else []</code>, 則 <code class='haskell'>concat . map (filter p . f) = concat . map g . filter p</code>.</p>
+</div>
+<div class = 'Answer'>
+<b>答:</b>
+<p>基底函數為 <code class='haskell'>filter (all ascending) . wrap3 = wrap3</code>.為求出步驟函數，我們推論：</p>
+
+<div><pre style='display:none'>
+filtAscPExtend x ysss =
+</pre></div>
+ <div><pre style='display:none'>
+      filter (all ascending) (concat (map (extend x) ysss))
+ ===    {- |filter p . concat = concat . map (filter p)|, |map| 融合 -}
+      concat (map (filter (all ascending) . extend x) ysss)
+ ===    {- 推導 |extendAsc|, 如下述 -}
+      concat (map (extendAsc x) (filter (all ascending) ysss)) {-"~~,"-}
+</pre></div>
+
+<div><pre style='display:none'>
+ where extend x (ys:yss) = [[x]:ys:yss, (x:ys):yss]
+       extendAsc = extend
+
+wrap3 x = [[[x]]]
+</pre></div>
+ <p>欲使得最後一步成立，我們使用習題 ref ex:map-filter-split 中的性質，試圖找到滿足下述條件的 <code class='haskell'>extendAsc</code>：</p>
+<div><pre class='spec'>
+  filter (all ascending) (extend x yss) =
+      if all ascending yss then extendAsc x yss else [] {-"~~."-}
+</pre></div>
+我們演算如下：<br>
+
+<div><pre style='display:none'>
+filtAscPExtendFuse :: Int -> List Int -> List (List Int) -> List (List (List Int))
+filtAscPExtendFuse x ys yss =
+</pre></div>
+ <div><pre style='display:none'>
+      filter (all ascending) (extend x (ys:yss))
+ ===  filter (all ascending) [[x]:ys:yss, (x:ys):yss]
+ ===     {- |filter| 之定義; 因 |ascending [x] = True| -}
+      if all ascending (ys:yss) then
+          {-"~"-}([x]:ys:yss) : filter (all ascending) [(x:ys):yss]
+         else filter (all ascending) [(x:ys):yss]
+ ===     {- |filter| 與 |ascending| 之定義；重安排 |if| 的幾個分支 -}
+      if all ascending (ys:yss) then
+           {-"~"-} if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
+                                    else [[x]:ys:yss]
+         else []
+ ===     {- 抽取出 |extendAsc| 如下 -}
+      if all ascending (ys:yss) then extend' x (ys:yss) else []
+</pre></div>
+
+<div><pre style='display:none'>
+ where extend x (ys:yss) = [[x]:ys:yss, (x:ys):yss]
+</pre></div>
+ 其中 <code class='haskell'>extendAsc</code> 的定義如下：<br>
+<div><pre style='display:none'>
+extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
+                                        else [[x]:ys:yss] {-"~~."-}
+</pre></div>
+</div>
+</div>
+<h2 class='section' >參考資料</h2><p> citet GibbonsHutton:01:When </p>
+</div>
+</div>
+</body>
+</html>

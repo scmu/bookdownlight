@@ -22,13 +22,19 @@ main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
 
         -- want [texBase </> "fpbook.pdf"]
+        want [ htmlBase </> "Chapters/Introduction.html"]
         want [ htmlBase </> "Chapters/Basics.html"]
+        want [ htmlBase </> "Chapters/Induction.html"]
+        want [ htmlBase </> "Chapters/Semantics.html"]
+        want [ htmlBase </> "Chapters/Derivation.html"]
+        want [ htmlBase </> "Chapters/Folds.html"]
+
 -- genHtmls
         forM_ chapters (\ch ->
-          (lhsChs </> ch <.> "html") %> \htmlName -> do
+          (htmlChs </> ch <.> "html") %> \htmlName -> do
             let mdName = contents </> ch <.> "md"
             need [mdName]
-            putInfo ("# md->lhs (for " ++ htmlName ++ ")")
+            putInfo ("# md->html (for " ++ htmlName ++ ")")
             liftIO (genHtmls mdName htmlName))
 
         -- forM_ chapters (\ch ->

@@ -1,9 +1,20 @@
+:root{
+  --FloralWite: rgb(255, 250, 240);
+  --HoneyDew: rgb(240, 255, 40);
+  --Levender: rgb(230, 230, 250);
+  --LemonChiffoon: #FFDACD;
+  --AliceBlue: #F0F8FF;
+  --GhostWhite: #F8F8FF;
+  /* aliceblue */
+}
+
 body {
     font-family: 'Helvetica' ;
-    background-color: aliceblue;
+    background-color: #FFFFFF;
     display: flex;
     flex-direction: row;
-    margin: 0 10%;
+    margin: 0 20%;
+
   }
   .main{
     display: flex;
@@ -17,15 +28,18 @@ body {
     /* flex-direction: column; */
   }
   .menu-item{
+
     display: flex;
     flex-direction: column;
   }
 
 nav > ul {
+
   background-color: rgb(230, 230, 230);
   list-style: none;   /* 移除項目符號 */
   margin: 0;
   padding: 0;
+  border-radius: 10px;
 }
 
 nav a {
@@ -45,6 +59,12 @@ nav li:hover {
 .flex-nav {
   display: flex;
   /* justify-content: center; */
+}
+
+.container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
   /* .leftside {
@@ -72,6 +92,7 @@ nav li:hover {
     border-radius: 5px;
   }
   p {
+    /* line-height: 30px; */
     /* text-indent:2em; */
   }
   pre {
@@ -84,18 +105,40 @@ nav li:hover {
     /* background-color: aquamarine; */
   }
   .infobox {
-    background-color:Pink;
+    background-color:rgb(252, 221, 227);
+    margin: 20px ;
+    padding: 10px;
+    border-radius: 5px;
   }
   .exlist {
-    background-color:Yellow;
+    /* background-color:Yellow; */
   }
   .Exercise{
-    background-color:DodgerBlue;
+    background-color:var(--AliceBlue);
     margin: 20px ;
+    padding: 10px;
+    /* border-style: solid; */
+    border-radius: 5px;
+    /* border-color:rgb(33, 123, 197); */
   }
   .Answer{
-    background-color:Tomato;
+    background-color:rgb(255, 236, 239);
     margin: 20px ;
+    padding: 10px;
+
+    /* border-style: solid; */
+    border-radius: 5px;
+    /* border-color:red; */
+  }
+
+  footer {
+    margin-top: 50px;
+    border-top: 1px solid silver;
+    font-size: 0.8em;
+  }
+
+  footer ol {
+    padding-left: 20px;
   }
 
 

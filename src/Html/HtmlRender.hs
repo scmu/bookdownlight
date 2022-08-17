@@ -118,20 +118,20 @@ renderDIV h "mcol" _ _ avs bs = do
     Nothing -> renderBlocks h bs
 
 renderDIV h "exlist" _ _ _ bs = do
-  T.hPutStr h "<div class = 'exlist'>\n<b>Exlist:</b>"
+  T.hPutStr h "<div class = 'exlist'>\n"
   hPutStr h "\n"
   renderBlocks h bs
   T.hPutStr h "</div>\n"
 
 renderDIV h "exer" _ ids _ bs = do
-  T.hPutStr h "<div class = 'Exercise'>\n<b>Exercise:</b>"
+  T.hPutStr h "<div class = 'Exercise'>\n<b>練習:</b>"
   mapM_ (renderLabel h) ids
   hPutStr h "\n"
   renderBlocks h bs
   hPutStr h "</div>\n"
 
 renderDIV h "exans" cs _ _ bs = do
-  T.hPutStr h "<div class = 'Answer'>\n<b>Answer:</b>"
+  T.hPutStr h "<div class = 'Answer'>\n<b>答:</b>"
   printCompact
   hPutStr h "\n"
   renderBlocks h bs
@@ -172,14 +172,14 @@ renderCode h cls ids _ txt | "spec" `elem` cls =
      hPutStr h "\n"
      envEnd h "</pre>"
 renderCode h ("haskell" : cs) ids _ txt  =
-  do when invisible (T.hPutStr h "%if False<br>\n")
-     envBegin h "<pre>"
+  do when invisible (T.hPutStr h "\n")
+     envBegin h "<pre style='display:none'>"
      mapM_ (renderLabel h) ids
      hPutStr h "\n"
      T.hPutStr h txt
      hPutStr h "\n"
      envEnd h "</pre>"
-     when invisible (T.hPutStr h "%endif")
+     when invisible (T.hPutStr h " ")
  where invisible = "invisible" `elem` cs
 renderCode h ("texonly" : _) _ _ txt =
   T.hPutStr h txt >> hPutStr h "<br>22\n"
@@ -248,9 +248,9 @@ renderInline h (Entity txt) = T.hPutStr h txt
 renderInline h (RawHtml txt) = T.hPutStr h txt
 renderInline h (Attrs attrs) = mapM_ (renderLabel h) (attrsId attrs)
 renderInline h (Footnote is) =
-  do hPutStr h "\\footnote{"
+  do hPutStr h "<p class='footer'>"
      renderInlines h is
-     hPutChar h '}'
+     hPutStr h "</p>"
 renderInline h (Ref txt)   = latexCmd h "ref" txt
 renderInline h (EqRef txt) = latexCmd h "eqref" txt
 renderInline h (PageRef txt) = latexCmd h "pageref" txt

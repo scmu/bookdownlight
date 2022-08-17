@@ -10,26 +10,28 @@
 </head>
 <body class="introcontent">
 
-<aside class="leftside">
-    <h3>函數式程式語言</h3>
-</aside>
 
 <div class='main' >
-<nav>
-    <ul class="flex-nav">
-        <!-- <li><a>函數式程式語言</a></li> -->
-        <li><a href="#">Ch1</a></li>
-        <li><a href="#">Ch2</a></li>
-        <li><a href="#">Ch3</a></li>
-        <li><a href="#">Ch4</a></li>
-        <li><a href="#">Ch5</a></li>
-        <li><a href="#">Ch6</a></li>
-    </ul>
-</nav>
+    <div>
+        <h1 class="container">
+        <p> 程式設計：函數程式語言 </p>
+        </h1>
+    </div>
+    <nav>
+        <ul class="container">
+            <li><a href="Introduction.html"> Introduction </a></li>
+            <li><a href="Basics.html"> Basics </a></li>
+            <li><a href="Induction.html"> Induction </a></li>
+            <li><a href="Semantics.html"> Semantics </a></li>
+            <li><a href="Derivation.html"> Derivation </a></li>
+            <li><a href="Folds.html"> Folds </a></li>
+        </ul>
+    </nav>
+
 
 <div class="book">
-%if False<br>
-<div><pre>
+
+<div><pre style='display:none'>
 {-# LANGUAGE TypeOperators, StandaloneDeriving #-}
 module Chapters.Basics where
 
@@ -38,7 +40,7 @@ import Data.Char (ord, chr)
 import Prelude ()
 import Common.MiniPrelude hiding (until, gcd)
 </pre></div>
-%endif<h1 class='chapter'>值、函數、與定義<id='ch:basics'></h1><p>語言是概念的載體。如第 ref ch:intro 章所述，程式語言不僅用來表達概念，也用於演算，分擔我們思考的負擔。在本書中，為便於精確說明，我們也不得不選一個語言。</p>
+ <h1 class='chapter'>值、函數、與定義<id='ch:basics'></h1><p>語言是概念的載體。如第 ref ch:intro 章所述，程式語言不僅用來表達概念，也用於演算，分擔我們思考的負擔。在本書中，為便於精確說明，我們也不得不選一個語言。</p>
 <p>本書中使用的語言大致上基於 Haskell, 但為適合本書使用而經過簡化、修改。我們將在本章初步介紹 Haskell 語言的一小部分，包括在 Haskell 中何謂「計算」、值與函數的定義、常見的資料結構，以及串列上的常用函數。目的是讓讀者具備足夠的基本概念，以便進入之後的章節。也因此，本書中所介紹的語言並非完整的 Haskell, 本書也不應視作 Haskell 語言的教材。對於有此需求的讀者，我將在本章結尾推薦一些適合的教科書。</p>
 <h2 class='section' >值與求值<id='sec:evaluation'></h2><p>Haskell 是個可被編譯(compile)、也可被直譯(interpret)的語言。Haskell 直譯器延續了 LISP 系列語言的傳統，是個「讀、算、印 (read, evaluate, pring)」的迴圈 --- 電腦從使用者端讀取一個算式，算出結果，把結果印出，然後再等使用者輸入下一個算式。一段與 Haskell 直譯器的對話可能是這樣：</p>
 <div><pre class='spec'>
@@ -48,13 +50,13 @@ Main> sum [1..100]
 5050
 Main>
 </pre></div>
-在此例中，<code class='haskell'>Main></code> 是 Haskell 直譯器的提示符號。\footnote{此處的人機互動紀錄擷取自 GHCi (Glasgow Haskell Compiler Interactive). GHC 為目前最被廣泛使用的 Haskell 實作。}使用者輸入 <code class='haskell'>3+4</code>, Haskell 算出其值 <code class='haskell'>7</code> 並印出.接著，使用者想得知 <code class='haskell'>1</code> 到 <code class='haskell'>100</code> 的和，Haskell 算出 <code class='haskell'>5050</code>.<br>
+在此例中，<code class='haskell'>Main></code> 是 Haskell 直譯器的提示符號。<p class='footer'>此處的人機互動紀錄擷取自 GHCi (Glasgow Haskell Compiler Interactive). GHC 為目前最被廣泛使用的 Haskell 實作。</p>使用者輸入 <code class='haskell'>3+4</code>, Haskell 算出其值 <code class='haskell'>7</code> 並印出.接著，使用者想得知 <code class='haskell'>1</code> 到 <code class='haskell'>100</code> 的和，Haskell 算出 <code class='haskell'>5050</code>.<br>
 <p>上例中的算式只用到 Haskell 已知的函數（如<code class='haskell'>(+)</code>, <code class='haskell'>sum</code>等）。使用者若要自己定義新函數，通常得寫在另一個檔案中，命令 Haskell 直譯器去讀取。例如，我們可把如下的定義寫在一個檔案中：</p>
 <div><pre class='spec'>
 double :: Int -> Int
 double x = x + x {-"~~."-}
 </pre></div>
-上述定義的第一行是個型別宣告。當我們寫 <code class='haskell'>e :: t</code>, 代表 <code class='haskell'>e</code> 具有型別 <code class='haskell'>t</code>. index ::@@{|(::)|} <code class='haskell'>Int</code> 是整數的型別，而箭號 <code class='haskell'>(->)</code> 為函數型別的建構元。第一行 <code class='haskell'>double :: Int -> Int</code> 便是告知電腦我們將定義一個新識別字 <code class='haskell'>double</code>, 其型別為「從整數(<code class='haskell'>Int</code>)到整數的函數」。\footnote{Haskell 標準中有多種整數，其中 <code class='haskell'>Int</code> 為有限大小（通常為該電腦中一個<em>字組</em>(word)）的整數，<code class='haskell'>Integer</code> 則是所謂的<em>大整數</em>或<em>任意精度整數</em>，無大小限制。本書中只使用 <code class='haskell'>Int</code>.}至於該函數的定義本體則在第二行 <code class='haskell'>double x = x + x</code>, 告知電腦「凡看到 <code class='haskell'>double x</code>, 均可代換成 <code class='haskell'>x + x</code>.」<br>
+上述定義的第一行是個型別宣告。當我們寫 <code class='haskell'>e :: t</code>, 代表 <code class='haskell'>e</code> 具有型別 <code class='haskell'>t</code>. index ::@@{|(::)|} <code class='haskell'>Int</code> 是整數的型別，而箭號 <code class='haskell'>(->)</code> 為函數型別的建構元。第一行 <code class='haskell'>double :: Int -> Int</code> 便是告知電腦我們將定義一個新識別字 <code class='haskell'>double</code>, 其型別為「從整數(<code class='haskell'>Int</code>)到整數的函數」。<p class='footer'>Haskell 標準中有多種整數，其中 <code class='haskell'>Int</code> 為有限大小（通常為該電腦中一個<em>字組</em>(word)）的整數，<code class='haskell'>Integer</code> 則是所謂的<em>大整數</em>或<em>任意精度整數</em>，無大小限制。本書中只使用 <code class='haskell'>Int</code>.</p>至於該函數的定義本體則在第二行 <code class='haskell'>double x = x + x</code>, 告知電腦「凡看到 <code class='haskell'>double x</code>, 均可代換成 <code class='haskell'>x + x</code>.」<br>
 求值 第 ref ch:intro 章曾提及：一套程式語言是設計者看待世界的抽象觀點。程式通常用來表達計算，因此程式語言也得告訴我們：在其假想的世界中，「計算」是怎麼一回事。指令式語言的世界由許多容器般的變數組成，計算是將值在變數之間搬來搬去。邏輯編程 index logic programming 邏輯編程 中，描述一個問題便是寫下事物間的邏輯關係，計算是邏輯規則「歸結(resolution)」 index logic programming 邏輯編程!resolution 歸結 的附帶效果。共時(concurrent) index concurrency 共時 程式語言著眼於描述多個同時執行的程式如何透過通道傳遞訊息，計算也靠此達成。<br>
 <div class = 'infobox'>
 {演算格式}<br>11
@@ -92,7 +94,7 @@ Main> double (9 * 3)
 =   {- |(+)| 的定義 -}
   54 {-"~~."-}
 </pre></div>
-上述演算的第一步將 <code class='haskell'>9*3</code> 歸約成 <code class='haskell'>27</code> --- 我們尚未定義 <code class='haskell'>(*)</code> 與 <code class='haskell'>(+)</code>, 但目前只需知道它們與大家所熟悉的整數乘法、加法相同。第二步將 <code class='haskell'>double 27</code> 變成 <code class='haskell'>27 + 27</code>, 根據的是 <code class='haskell'>double</code> 的定義：<code class='haskell'>double x = x + x</code>.最後，<code class='haskell'>27 + 27</code> 理所當然地歸約成 <code class='haskell'>54</code>.「歸約」 index reduction 歸約 一詞由 $\beta$-reduction 而來，在此處指將函數本體中的形式參數代換為實際參數。%\footnote{Reduction 的另一個常見譯名是「化簡」，然而，許多情況下，一個式子被 reduce 後變得更長而不「簡」，因此本書譯為「歸約」。}在上述例子中，我們遇到如 <code class='haskell'>double (9*3)</code> 的函數呼叫，先將參數 (<code class='haskell'>9*3</code>)化簡，再展開函數定義，可說是<em>由內到外</em>的歸約方式。大部分程式語言都依這樣的順序求值，讀者可能也對這種順序較熟悉。<br>
+上述演算的第一步將 <code class='haskell'>9*3</code> 歸約成 <code class='haskell'>27</code> --- 我們尚未定義 <code class='haskell'>(*)</code> 與 <code class='haskell'>(+)</code>, 但目前只需知道它們與大家所熟悉的整數乘法、加法相同。第二步將 <code class='haskell'>double 27</code> 變成 <code class='haskell'>27 + 27</code>, 根據的是 <code class='haskell'>double</code> 的定義：<code class='haskell'>double x = x + x</code>.最後，<code class='haskell'>27 + 27</code> 理所當然地歸約成 <code class='haskell'>54</code>.「歸約」 index reduction 歸約 一詞由 $\beta$-reduction 而來，在此處指將函數本體中的形式參數代換為實際參數。%<p class='footer'>Reduction 的另一個常見譯名是「化簡」，然而，許多情況下，一個式子被 reduce 後變得更長而不「簡」，因此本書譯為「歸約」。</p>在上述例子中，我們遇到如 <code class='haskell'>double (9*3)</code> 的函數呼叫，先將參數 (<code class='haskell'>9*3</code>)化簡，再展開函數定義，可說是<em>由內到外</em>的歸約方式。大部分程式語言都依這樣的順序求值，讀者可能也對這種順序較熟悉。<br>
 <p>但這並不是唯一的求值順序。我們能否由外到內，先把 <code class='haskell'>double</code> 展開呢？</p>
 <div><pre class='spec'>
   double (9 * 3)
@@ -144,7 +146,7 @@ inf = 1 + inf {-"~~."-}
 </ul>
 給一個式子，我們很自然地希望知道它有沒有值，並算出其值。如果一個式子有很多個範式，我們便難說哪一個才是該式子的「值」。如此一來，立刻衍生出幾個問題。給定一個式子，我們是否能得知它有沒有範式呢？如果有，用哪個求值順序才能得到那個範式？以及，有沒有可能用一個求值順序會得到某範式，換另一個求值順序卻得到另一個範式？<br>
 <p>很不幸地，第一個問題的答案是否定的：沒有一套固定的演算法可判定任意一個式子是否有範式。這相當於計算理論中常說到的<em>停機問題(halting problem)</em> --- 沒有一個演算法能準確判斷任意一個演算法（對某個輸入）是否能正常終止。</p>
-<p>但對於另兩個問題，計算科學中有個重要的<em>Church-Rosser 定理</em> index Church-Rosser Theorem 。非常粗略地說，該定理告訴我們：在我們目前討論的這類語言中%\footnote{此處討論的可粗略說是以 $\lambda$-calculus 為基礎的函數語言。基於其他概念設計的程式語言當然可能不遵守 Church-Rosser 定理。}</p>
+<p>但對於另兩個問題，計算科學中有個重要的<em>Church-Rosser 定理</em> index Church-Rosser Theorem 。非常粗略地說，該定理告訴我們：在我們目前討論的這類語言中%<p class='footer'>此處討論的可粗略說是以 $\lambda$-calculus 為基礎的函數語言。基於其他概念設計的程式語言當然可能不遵守 Church-Rosser 定理。</p></p>
 <ul>
 <li>
 <p>一個式子<em>最多只有一個</em>範式。</p>
@@ -172,10 +174,10 @@ not True   = False {-"~~."-}
 </pre></div>
 <p>求值過程中若必須得知某子算式的值才能決定如何進行，只好先算那個子算式。在 Haskell 中有不少（有清楚定義的）場合得如此，包括遇上<code class='haskell'>(<=)</code>、<code class='haskell'>(>=)</code> 等運算子、樣式配對、<code class='haskell'>case</code> 算式（將於第 ref sec:boolean 節中介紹）...等等。</p>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
-<p>定義一個函數 <code class='haskell'>myeven :: Int -> Bool</code>，判斷其輸入是否為偶數。你可能用得到以下函數：\footnote{此處所給的並非這些函數最一般的型別。}</p>
+<b>練習:</b>
+<p>定義一個函數 <code class='haskell'>myeven :: Int -> Bool</code>，判斷其輸入是否為偶數。你可能用得到以下函數：<p class='footer'>此處所給的並非這些函數最一般的型別。</p></p>
 <div><pre class='spec'>
 mod   :: Int -> Int -> Int {-"~~,"-}
 (==)  :: Int -> Int -> Bool {-"~~."-}
@@ -183,18 +185,18 @@ mod   :: Int -> Int -> Int {-"~~,"-}
 <p>其中 <code class='haskell'>mod x y</code> 為 <code class='haskell'>x</code> 除以 <code class='haskell'>y</code> 之餘數，<code class='haskell'>(==)</code> 則用於判斷兩數是否相等。</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b> 
+<b>答:</b> 
 <div><pre class='spec'>
 myeven   :: Int -> Bool
 myeven x = x `mod` 2 == 0  {-"~~."-}
 </pre></div>
 </div>
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>定義一個函數 <code class='haskell'>area :: Float -> Float</code>, 給定一個圓的半徑，計算其面積。（可粗略地將 <code class='haskell'>22/7</code> 當作圓周率。）</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b> 
+<b>答:</b> 
 <div><pre class='spec'>
 area    :: Float -> Float
 area r  = (22/7) * r * r {-"~~."-}
@@ -211,9 +213,9 @@ smaller x y = if x <= y then x else y {-"~~."-}
 </pre></div>
 <p>我們可粗略地理解為：<code class='haskell'>smaller</code> 是一個函數，拿兩個參數 <code class='haskell'>x</code> 與 <code class='haskell'>y</code>，傳回其中較小的那個。如 <code class='haskell'>smaller (double 6) (3+4)</code> 的值為 <code class='haskell'>7</code>.</p>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>用前一節介紹的求值順序，將<code class='haskell'>smaller (double 6) (3+4)</code>化簡為範式。</p>
 </div>
 </div>
@@ -320,7 +322,7 @@ recursive =  let x = 3
 </tr>
 </table>
 <div>answer
-<p><code class='haskell'>nested</code> 的值是 <code class='haskell'>13</code>，因為 <code class='haskell'>x+x</code> 之中的 <code class='haskell'>x</code> 在 <code class='haskell'>let x = 5</code> 的範圍中,而 <code class='haskell'>.. + x</code> 中的 <code class='haskell'>x</code> 則在 <code class='haskell'>let x = 3</code> 的範圍中。\footnote{在各種語言中，範圍的設計都是為了給程式員方便：在寫子算式時，可不用擔心是否與外層的識別字撞名。在教學時，我們難免舉各種撞名的例子作為說明。若把這些刁鑽例子當作考題，就是違反設計者本意的發展了。}至於 <code class='haskell'>recursive</code> 的值，關鍵在於 <code class='haskell'>x = x + 1</code> 中右手邊的 <code class='haskell'>x</code> 指的是哪個。若是 <code class='haskell'>x = 3</code> 的那個 <code class='haskell'>x</code>, 整個算式的值將是 <code class='haskell'>4</code>. 若 <code class='haskell'>x = x + 1</code> 中，等號右手邊的 <code class='haskell'>x</code> 也是左手邊的 <code class='haskell'>x</code>, <code class='haskell'>recursive</code> 就是 <code class='haskell'>((..)+1)+1</code> , 沒有範式。這兩種設計都有其道理。Haskell 選了後者：在 <code class='haskell'>let x = e in ...</code> 之中，<code class='haskell'>x</code> 的有效範圍包括 <code class='haskell'>e</code>.因此 <code class='haskell'>recursive</code> 在 Haskell 中會無窮地求值下去。但也有些函數語言中的 <code class='haskell'>let</code> 採用前者的設計。通常這類語言中會另有一個 $\Keyword{letrec}$結構，和 Haskell 的 <code class='haskell'>let</code> 功能相同。</p>
+<p><code class='haskell'>nested</code> 的值是 <code class='haskell'>13</code>，因為 <code class='haskell'>x+x</code> 之中的 <code class='haskell'>x</code> 在 <code class='haskell'>let x = 5</code> 的範圍中,而 <code class='haskell'>.. + x</code> 中的 <code class='haskell'>x</code> 則在 <code class='haskell'>let x = 3</code> 的範圍中。<p class='footer'>在各種語言中，範圍的設計都是為了給程式員方便：在寫子算式時，可不用擔心是否與外層的識別字撞名。在教學時，我們難免舉各種撞名的例子作為說明。若把這些刁鑽例子當作考題，就是違反設計者本意的發展了。</p>至於 <code class='haskell'>recursive</code> 的值，關鍵在於 <code class='haskell'>x = x + 1</code> 中右手邊的 <code class='haskell'>x</code> 指的是哪個。若是 <code class='haskell'>x = 3</code> 的那個 <code class='haskell'>x</code>, 整個算式的值將是 <code class='haskell'>4</code>. 若 <code class='haskell'>x = x + 1</code> 中，等號右手邊的 <code class='haskell'>x</code> 也是左手邊的 <code class='haskell'>x</code>, <code class='haskell'>recursive</code> 就是 <code class='haskell'>((..)+1)+1</code> , 沒有範式。這兩種設計都有其道理。Haskell 選了後者：在 <code class='haskell'>let x = e in ...</code> 之中，<code class='haskell'>x</code> 的有效範圍包括 <code class='haskell'>e</code>.因此 <code class='haskell'>recursive</code> 在 Haskell 中會無窮地求值下去。但也有些函數語言中的 <code class='haskell'>let</code> 採用前者的設計。通常這類語言中會另有一個 $\Keyword{letrec}$結構，和 Haskell 的 <code class='haskell'>let</code> 功能相同。</p>
 answer</div>
 example</div>
 <h2 class='section' >高階函數</h2><p>目前為止，我們看過由整數到整數的函數、由整數到真假值的函數...那麼，可以有由函數到函數的函數嗎？函數語言將函數視為重要的構成元件，因此函數也被視為<em>一級公民</em>。如果整數、真假值... 可以當作參數、可以被函數傳回，函數當然也可以。一個「輸入或輸出也是函數」的函數被稱為<em>高階函數</em>(<em>higher order function</em>) index higher-order function 高階函數 。Haskell 甚至設計了許多鼓勵我們使用高階函數的機制。本書中我們將見到許多高階函數。其實，我們已經看過一個例子了。</p>
@@ -347,9 +349,9 @@ smaller x y = if x <= y then x else y {-"~~."-}
 </li>
 </ul>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>將 <code class='haskell'>smaller</code> 的定義鍵入一個檔案，載入 Haskell 直譯器中。</p>
 <ol>
 <li>
@@ -367,7 +369,7 @@ smaller x y = if x <= y then x else y {-"~~."-}
 </ol>
 </div>
 </div>
-<p>「用『傳回函數的函數』模擬『接收多個參數的函數』」這種做法稱作 <em>currying</em>. index currying \footnote{Currying 為動名詞，形容詞則為 <em>curried</em>。此詞來自於邏輯學家 Haskell B. Curry 的姓氏。詳見第  ref sec:refs-basics  節。}Haskell 鼓勵大家使用 currying --- 它的內建函數大多依此配合設計，語法設計上也很給 currying 方便。當型別中出現連續的 <code class='haskell'>(->)</code> 時，預設為往右邊結合，例如<code class='haskell'>Int -> Int -> Int</code> 應看成 <code class='haskell'>Int -> (Int -> Int)</code>.這使得「傳回函數的函數」容易寫。而在值的層次，連續的函數應用往左結合。例如，<code class='haskell'>(smaller 3) 4</code> 可寫成 <code class='haskell'>smaller 3 4</code>。這讓我們能很方便地將參數一個個餵給 curried 函數。</p>
+<p>「用『傳回函數的函數』模擬『接收多個參數的函數』」這種做法稱作 <em>currying</em>. index currying <p class='footer'>Currying 為動名詞，形容詞則為 <em>curried</em>。此詞來自於邏輯學家 Haskell B. Curry 的姓氏。詳見第  ref sec:refs-basics  節。</p>Haskell 鼓勵大家使用 currying --- 它的內建函數大多依此配合設計，語法設計上也很給 currying 方便。當型別中出現連續的 <code class='haskell'>(->)</code> 時，預設為往右邊結合，例如<code class='haskell'>Int -> Int -> Int</code> 應看成 <code class='haskell'>Int -> (Int -> Int)</code>.這使得「傳回函數的函數」容易寫。而在值的層次，連續的函數應用往左結合。例如，<code class='haskell'>(smaller 3) 4</code> 可寫成 <code class='haskell'>smaller 3 4</code>。這讓我們能很方便地將參數一個個餵給 curried 函數。</p>
 <p>另一方面，如果我們想使用 <code class='haskell'>double</code> 兩次，計算 <code class='haskell'>x</code> 的四倍，應寫成 <code class='haskell'>double (double x)</code>.若寫 <code class='haskell'>double double x</code> ，會被視為 <code class='haskell'>(double double) x</code> --- <code class='haskell'>double</code> 作用在自身之上，而這顯然是個型別錯誤。</p>
 %format poly1
 %format poly2
@@ -400,7 +402,7 @@ poly2 a b c = poly a b c 2 {-"~~."-}
 <p>我們可以用一些技巧使 <code class='haskell'>a</code>, <code class='haskell'>b</code>, 和<code class='haskell'>c</code>不出現在定義中，但如此得到的程式並不會更好懂。</p>
 answer</div>
 二元運算子 在進入其他主題前，我們交代一些語法細節。Haskell 鼓勵 currying 的使用，也把二元運算子都設計成 curried 的。例如加法的型別是 <code class='haskell'>Int -> Int -> Int</code>.Haskell 也配套設計了種種關於二元運算子的特殊語法，希望讓它們更好用。但這些語法規則的存在都僅是為了方便我們寫出（主觀上）語法漂亮的程式，而不是非有不可、非學不可的規定。<br>
-<id='par:binary-operator-sectioning'>假設某二元運算子 <code class='haskell'>oplus</code> 的型別是 <code class='haskell'>a -> b -> c</code>,<code class='haskell'>(x `oplus`)</code> 是給定了 <code class='haskell'>oplus</code> 的第一個參數後得到的函數；<code class='haskell'>(`oplus` y)</code> 則是給定了 <code class='haskell'>oplus</code> 的第二個參數後得到的函數：%\footnote{根據 citet Hudak:07:Being ，此種「<em>切片</em>」(<em>sectioning</em>)語法最早見於 David Wile 的博士論文。後來被包括 Richard Bird 在內的 IFIP WG 2.1 成員使用，並由 David A. Turner 實作在他的語言 Miranda 中。}<br>
+<id='par:binary-operator-sectioning'>假設某二元運算子 <code class='haskell'>oplus</code> 的型別是 <code class='haskell'>a -> b -> c</code>,<code class='haskell'>(x `oplus`)</code> 是給定了 <code class='haskell'>oplus</code> 的第一個參數後得到的函數；<code class='haskell'>(`oplus` y)</code> 則是給定了 <code class='haskell'>oplus</code> 的第二個參數後得到的函數：%<p class='footer'>根據 citet Hudak:07:Being ，此種「<em>切片</em>」(<em>sectioning</em>)語法最早見於 David Wile 的博士論文。後來被包括 Richard Bird 在內的 IFIP WG 2.1 成員使用，並由 David A. Turner 實作在他的語言 Miranda 中。</p><br>
 <div><pre class='spec'>
 (x `oplus`) y  = x `oplus` y  {-"\quad"-}  {- |(x `oplus`)| 的型別為 |b -> c|; -}
 (`oplus` y) x  = x `oplus` y               {- |(`oplus` y)| 的型別為 |a -> c|.-}
@@ -420,17 +422,17 @@ answer</div>
 <p>名字以英文字母開頭的函數預設為前序的。例如，計算餘數的函數 <code class='haskell'>mod</code> 使用時得寫成 <code class='haskell'>mod 6 4</code>。若把它放在「倒引號(backquote)」中，表示將其轉為中序 ---如果我們比較喜歡把 <code class='haskell'>mod</code> 放到中間，可以寫成 <code class='haskell'>6 `mod` 4</code>.首字元非英文字母的函數（如 <code class='haskell'>(+)</code>, <code class='haskell'>(/)</code> 等）則會被預設為中序的二元運算子。若把一個中序二元運算子放在括號中，表示將其轉為前序運算子。例如，<code class='haskell'>(+) 1 2</code> 和 <code class='haskell'>1 + 2</code> 的意思相同。</p>
 <p>在 Haskell 的設計中，函數應用的優先順序比中序運算子高。因此 <code class='haskell'>double 3 + 4</code> 會被視作 <code class='haskell'>(double 3) + 4</code>, 而不是 <code class='haskell'>double (3+4)</code>.將中序運算子放在括號中也有「讓它不再是個中序運算子，只是個一般識別字」的意思。例如算式 <code class='haskell'>f + x</code> 中，<code class='haskell'>f</code> 和 <code class='haskell'>x</code> 是中序運算子 <code class='haskell'>(+)</code> 的參數。但在 <code class='haskell'>f (+) x</code> 中，<code class='haskell'>(+)</code> 和 <code class='haskell'>x</code> 都是 <code class='haskell'>f</code> 的參數（這個式子可以讀解為 <code class='haskell'>(f (+)) x</code>）。</p>
 以函數為參數  下述函數 <code class='haskell'>square</code> 計算輸入的平方：<br>
-<div><pre>
+<div><pre style='display:none'>
 square :: Int -> Int
 square x = x * x {-"~~."-}
 </pre></div>
 我們可另定義一個函數 <code class='haskell'>quad :: Int -> Int</code>，把 <code class='haskell'>square</code> 用兩次，使得 <code class='haskell'>quad x</code> 算出 $x^4$.<br>
-<div><pre>
+<div><pre style='display:none'>
 quad :: Int -> Int
 quad x = square (square x)   {-"~~."-}
 </pre></div>
 <p>但，「把某函數用兩次」是個常見的編程模式。我們能不能把 <code class='haskell'>quad</code> 與 <code class='haskell'>square</code> 抽象掉，單獨談「用兩次」這件事呢？下面的函數 <code class='haskell'>twice</code> 把參數 <code class='haskell'>f</code> 在 <code class='haskell'>x</code> 之上用兩次：</p>
-<div><pre>
+<div><pre style='display:none'>
 twice      :: (a -> a) -> (a -> a)
 twice f x  = f (f x) {-"~~."-}
 </pre></div>
@@ -457,14 +459,14 @@ quad = twice square {-"~~."-}
 參數 <code class='haskell'>f</code> 的型別必須是 <code class='haskell'>a -> a</code>: 輸出入型別必須一樣，因為 <code class='haskell'>f</code> 的結果必須可當作 <code class='haskell'>f</code> 自己的輸入。<br>
 <p>在 <code class='haskell'>twice</code> 被使用時，型別參數 <code class='haskell'>a</code> 會依照上下文被<em>特化</em>(<em>instantiate</em>)成別的型別。例如 <code class='haskell'>twice square</code> 中， 因為 <code class='haskell'>square</code> 的型別是 <code class='haskell'>Int -> Int</code>,<em>這一個</em> <code class='haskell'>twice</code> 的型別變成了 <code class='haskell'>(Int -> Int) -> (Int -> Int)</code> --- <code class='haskell'>a</code> 被特化成 <code class='haskell'>Int</code>.若某函數 <code class='haskell'>k</code> 的型別是 <code class='haskell'>Float -> Float</code>, 在 <code class='haskell'>twice k</code> 中，<code class='haskell'>twice</code> 的型別是 <code class='haskell'>(Float -> Float) -> (Float -> Float)</code>。同一個函數 <code class='haskell'>twice</code> 可能依其上下文而有許多不同的型別，但都是 <code class='haskell'>(a -> a) -> (a -> a)</code> 的特例。「一段程式可能有許多不同型別」的現象稱作<em>多型</em>(<em>polymorphism</em>) index polymorphism 多型 。多型又有許多種類，此處為其中一種。詳情見... \todo{}</p>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>為何 <code class='haskell'>twice</code> 的型別不可以是 <code class='haskell'>(a -> b) -> (a -> b)</code>?</p>
 </div>
 </div>
 <div>example<br>
-<div><pre>
+<div><pre style='display:none'>
 forktimes f g x = f x * g x {-"~~."-}
 </pre></div>
 <p>算式 <code class='haskell'>forktimes f g x</code> 把 <code class='haskell'>f x</code> 和 <code class='haskell'>g x</code> 的結果乘起來。</p>
@@ -479,7 +481,7 @@ forktimes f g x = f x * g x {-"~~."-}
 example</div>
 <div>answer
 <p>如同 <code class='haskell'>twice</code>, <code class='haskell'>forktimes</code> 可以有很多型別，但都應該是<code class='haskell'>(a -> Int) -> (a -> Int) -> a -> Int</code> 的特例：在 <code class='haskell'>forktimes f g x</code> 中， <code class='haskell'>f</code> 和 <code class='haskell'>g</code> 的型別可以是 <code class='haskell'>a -> Int</code>,其中 <code class='haskell'>a</code> 可以是任何型別 <code class='haskell'>a</code>，而 <code class='haskell'>x</code> 的型別必須也是同一個 <code class='haskell'>a</code>.函數 <code class='haskell'>compute</code> 可定義如下：</p>
-<div><pre>
+<div><pre style='display:none'>
 compute :: Int -> Int
 compute = forktimes (+1) (+2) {-"~~."-}
 </pre></div>
@@ -503,7 +505,7 @@ answer</div>
 example</div>
 <div>answer
 <p>我們把 <code class='haskell'>lift2</code> 最泛用的型別和其定義重複如下：</p>
-<div><pre>
+<div><pre style='display:none'>
 lift2 :: (a -> b -> c) -> (d -> a) -> (d -> b) -> d -> c {-"~~."-}
 lift2 h f g x = h (f x) (g x) {-"~~."-}
 </pre></div>
@@ -520,7 +522,7 @@ compute = lift2 (*) (+1) (+2) {-"~~."-}
 </pre></div>
 <p>函數 <code class='haskell'>lift2</code> 可以看作一個作用在二元運算子上的運算子，功用是把二元運算子「提升」到函數層次。例如，原本 <code class='haskell'>(*)</code> 只能拿兩個 <code class='haskell'>Int</code> 當作參數，（例：<code class='haskell'>1 * 2</code> 是「把 <code class='haskell'>1</code> 和 <code class='haskell'>2</code> 乘起來」），但現在 <code class='haskell'>lift2 (*)</code> 可將函數 <code class='haskell'>(+1)</code> 和 <code class='haskell'>(+2)</code> 當參數了，意思為「把 <code class='haskell'>(+1)</code> 和 <code class='haskell'>(+2)</code> 的結果乘起來」。</p>
 answer</div>
-<h2 class='section' >函數合成</h2><p>拿到一個函數 <code class='haskell'>f</code>，我們能做的基本操作包括把 <code class='haskell'>f</code> 作用在某個參數上、把 <code class='haskell'>f</code> 傳給別的函數...此外，另一個常用的基本操作是將 <code class='haskell'>f</code> 和別的函數<em>合成</em>(<em>compose</em>) index function composition 函數合成  index .@@{|(.)|} 為一個新函數。\footnote{Robert Gl\"{u}ck 認為函數上應有三個基本操作：函數應用、函數合成、以及求一個函數的反函數。前兩者已經提到，第三者則是大部分語言欠缺的。}「合成」運算子在 Haskell 中寫成<code class='haskell'>(.)</code>.這個運算子的形式定義如下（我們先看定義本體，待會兒再看型別）：</p>
+<h2 class='section' >函數合成</h2><p>拿到一個函數 <code class='haskell'>f</code>，我們能做的基本操作包括把 <code class='haskell'>f</code> 作用在某個參數上、把 <code class='haskell'>f</code> 傳給別的函數...此外，另一個常用的基本操作是將 <code class='haskell'>f</code> 和別的函數<em>合成</em>(<em>compose</em>) index function composition 函數合成  index .@@{|(.)|} 為一個新函數。<p class='footer'>Robert Gl\"{u}ck 認為函數上應有三個基本操作：函數應用、函數合成、以及求一個函數的反函數。前兩者已經提到，第三者則是大部分語言欠缺的。</p>「合成」運算子在 Haskell 中寫成<code class='haskell'>(.)</code>.這個運算子的形式定義如下（我們先看定義本體，待會兒再看型別）：</p>
 <div><pre class='spec'>
 (f . g) x  = f (g x) {-"~~."-}
 </pre></div>
@@ -593,13 +595,13 @@ definition</div>
 </pre></div>
 <p>既然 <code class='haskell'>(f . g) . h = f . (g . h)</code>，我們便可統一寫成 <code class='haskell'>f . g . h</code>, 不用加括號了。</p>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>證明 <code class='haskell'>id . f = f = f . id</code>.</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b>
+<b>答:</b>
 <p>根據外延相等，我們需證明 <code class='haskell'>(forall x . id . f = f = f . id)</code>.推論如下：</p>
 <div><pre class='spec'>
    (id . f) x
@@ -761,7 +763,7 @@ not :: Bool -> Bool
 not False  = True
 not True   = False {-"~~."-}
 </pre></div>
-<p>這和我們的的直覺理解一致：<code class='haskell'>not False</code> 是 <code class='haskell'>True</code>, <code class='haskell'>not True</code> 是<code class='haskell'>False</code>. 我們看到這個定義寫成兩行（正式說來是兩個「子句」），\emph{每一個子句分別對應到 <code class='haskell'>Bool</code> 的一個可能的值}。以下則是邏輯上的「且」和「或」（分別寫作<code class='haskell'>(&&)</code>與<code class='haskell'>(||||)</code>）的定義：%\footnote{邏輯「且」又稱作合取(conjunction) index conjunction 合取、且 ；邏輯「或」又稱作析取(disjunction). index disjunction 析取、或 在 Haskell 中，「且」與「或」需分別寫成 $(\mathtt{\&\&})$ 和 $(\mathtt{||||})$。本書中採用數學與邏輯領域較常使用的 <code class='haskell'>(&&)</code>與<code class='haskell'>(||||)</code>.}</p>
+<p>這和我們的的直覺理解一致：<code class='haskell'>not False</code> 是 <code class='haskell'>True</code>, <code class='haskell'>not True</code> 是<code class='haskell'>False</code>. 我們看到這個定義寫成兩行（正式說來是兩個「子句」），\emph{每一個子句分別對應到 <code class='haskell'>Bool</code> 的一個可能的值}。以下則是邏輯上的「且」和「或」（分別寫作<code class='haskell'>(&&)</code>與<code class='haskell'>(||||)</code>）的定義：%<p class='footer'>邏輯「且」又稱作合取(conjunction) index conjunction 合取、且 ；邏輯「或」又稱作析取(disjunction). index disjunction 析取、或 在 Haskell 中，「且」與「或」需分別寫成 $(\mathtt{\&\&})$ 和 $(\mathtt{||||})$。本書中採用數學與邏輯領域較常使用的 <code class='haskell'>(&&)</code>與<code class='haskell'>(||||)</code>.</p></p>
 <div><pre class='spec'>
 (&&), (||) :: Bool -> Bool -> Bool
 False  && y  = False
@@ -773,7 +775,7 @@ True   || y  = True {-"~~."-}
 <p>運算子<code class='haskell'>(&&)</code>與<code class='haskell'>(||||)</code>的定義同樣是各兩個子句，每個子句分別考慮其第一個參數的值。以 <code class='haskell'>x && y</code> 為例：如果 <code class='haskell'>x</code> 是 <code class='haskell'>False</code>, 不論 <code class='haskell'>y</code> 的值為何，<code class='haskell'>x && y</code> 都是 <code class='haskell'>False</code>；如果 <code class='haskell'>x</code> 是 <code class='haskell'>True</code>, <code class='haskell'>x & y</code> 的值和 <code class='haskell'>y</code> 相同。<code class='haskell'>(||||)</code> 的情況類似。</p>
 <div>example<br>
 <p>以下函數判斷給定年份 <code class='haskell'>y</code> 是否為閏年。</p>
-<div><pre>
+<div><pre style='display:none'>
 leapyear :: Int -> Bool
 leapyear y =  (y `mod` 4 == 0) &&
                (y `mod` 100 /= 0 || y `mod` 400 == 0) {-"~~."-}
@@ -807,13 +809,13 @@ x && y =  case x of
 </pre></div>
 <p>由於 <code class='haskell'>case</code> 是算式，如同 <code class='haskell'>let</code> 一樣可出現在其他算式中，也可巢狀出現。</p>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>以 <code class='haskell'>case</code> 算式定義 <code class='haskell'>not</code>, <code class='haskell'>(||||)</code>, 和 <code class='haskell'>(==)</code>.</p>
 </div>
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>另一個定義 <code class='haskell'>(==) :: Bool -> Bool -> Bool</code> 的方式是</p>
 <div><pre class='spec'>
 x == y = (x && y) || (not x && not y) {-"~~."-}
@@ -833,7 +835,7 @@ chr  :: Int -> Char {-"~~."-}
 </pre></div>
 <div>example<br>
 <p>下列函數 <code class='haskell'>isUpper</code> 判斷一個字元是否為大寫英文字母；<code class='haskell'>toLower</code> 則將大寫字母轉成小寫字母，若輸入並非大寫字母則不予以變動。</p>
-<div><pre>
+<div><pre style='display:none'>
 isUpper :: Char -> Bool
 isUpper c = let x = ord c in ord 'A' <= x && x <= ord 'Z' {-"~~,"-}
 
@@ -847,11 +849,11 @@ example</div>
 <div><pre class='spec'>
    A :* B = {(x,y) | x `mem` A, y `mem` B} {-"~~."-}
 </pre></div>
-<p>Haskell 之中也有類似的構造。給定型別 <code class='haskell'>a</code> 與 <code class='haskell'>b</code>, 它們的序對的型別是 <code class='haskell'>(a :* b)</code>.\footnote{然而，由於「程式可能不終止」這個因素作怪，<code class='haskell'>a :* b</code> 的元素並不僅是 <code class='haskell'>a</code> 與 <code class='haskell'>b</code> （如果視做集合）的笛卡兒積。詳見 \todo{where?}}我們可以想像 Haskell 有這麼一個型別定義：</p>
+<p>Haskell 之中也有類似的構造。給定型別 <code class='haskell'>a</code> 與 <code class='haskell'>b</code>, 它們的序對的型別是 <code class='haskell'>(a :* b)</code>.<p class='footer'>然而，由於「程式可能不終止」這個因素作怪，<code class='haskell'>a :* b</code> 的元素並不僅是 <code class='haskell'>a</code> 與 <code class='haskell'>b</code> （如果視做集合）的笛卡兒積。詳見 \todo{where?}</p>我們可以想像 Haskell 有這麼一個型別定義：</p>
 <div><pre class='spec'>
 data (a :* b) = (a,b) {-"~~."-}
 </pre></div>
-以口語說的話，<code class='haskell'>(a :* b)</code> 是一個新型別，而具有此型別的值若有範式，必定是 <code class='haskell'>(x,y)</code> 的形式，其中 <code class='haskell'>x</code> 的型別是 <code class='haskell'>a</code>, <code class='haskell'>y</code> 的型別是 <code class='haskell'>b</code>.\footnote{其實這個定義並不符合 Haskell 的語法，因此只是方便理解的想像。另，型別 <code class='haskell'>(a :* b)</code> 在 Haskell 中寫成 <code class='haskell'>(a,b)</code>. 我的經驗中，讓型別與值的語法太接近，反易造成困惑。}序對的建構元寫成<code class='haskell'>(,)</code>，型別為 <code class='haskell'>a -> b -> (a :* b)</code>.例如 <code class='haskell'>(,) 4 'b' = (4,'b')</code>.<br>
+以口語說的話，<code class='haskell'>(a :* b)</code> 是一個新型別，而具有此型別的值若有範式，必定是 <code class='haskell'>(x,y)</code> 的形式，其中 <code class='haskell'>x</code> 的型別是 <code class='haskell'>a</code>, <code class='haskell'>y</code> 的型別是 <code class='haskell'>b</code>.<p class='footer'>其實這個定義並不符合 Haskell 的語法，因此只是方便理解的想像。另，型別 <code class='haskell'>(a :* b)</code> 在 Haskell 中寫成 <code class='haskell'>(a,b)</code>. 我的經驗中，讓型別與值的語法太接近，反易造成困惑。</p>序對的建構元寫成<code class='haskell'>(,)</code>，型別為 <code class='haskell'>a -> b -> (a :* b)</code>.例如 <code class='haskell'>(,) 4 'b' = (4,'b')</code>.<br>
 <p>兩個常用的函數 <code class='haskell'>fst</code> 與 <code class='haskell'>snd</code> 分別取出序對中的第一個和第二個元素：</p>
 <table>
 <tr>
@@ -892,7 +894,7 @@ swap (x,y) = (y,x) {-"~~."-}
 <p>另一個定義方式是 <code class='haskell'>swap p = (snd p, fst p)</code>.但這兩個定義並不盡然相同。詳見第 ref sec:weak-head-normal-form 節。</p>
 example</div>
 <p>序對也可以巢狀構成。例如 <code class='haskell'>((True,3), 'c')</code> 是一個型別為 <code class='haskell'>((Bool :* Int) :* Char)</code> 的序對，而 <code class='haskell'>snd (fst ((True,3), 'c')) = 3</code>. 在 Haskell 之中，<code class='haskell'>((a :* b) :* c)</code> 與 <code class='haskell'>(a :* (b :* c))</code> 被視為不同的型別，但他們是<em>同構</em>的 --- 我們可定義一對函數在這兩個型別之間作轉換：</p>
-<div><pre>
+<div><pre style='display:none'>
 assocr :: ((a :* b) :* c) -> (a :* (b :* c))
 assocr ((x,y),z) = (x,(y,z)) {-"~~,"-}
 
@@ -901,9 +903,9 @@ assocl (x,(y,z)) = ((x,y),z) {-"~~,"-}
 </pre></div>
 並且滿足 <code class='haskell'>assocr . assocl = id</code>, 和 <code class='haskell'>assocl . assocr = id</code>.<br>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>試試看不用樣式配對，而以 <code class='haskell'>fst</code> 和 <code class='haskell'>snd</code> 定義 <code class='haskell'>assocl</code> 和 <code class='haskell'>assocr</code>:</p>
 <div><pre class='spec'>
 assocl  p = ...
@@ -929,7 +931,7 @@ fst = \(x,y) -> x {-"~~."-}
 </pre></div>
 <p>Haskell 另有提供更多個元素形成的有序組，例如 <code class='haskell'>(True, 3, 'c')</code> 是一個型別為 <code class='haskell'>(Bool :* Int :* Char)</code> 的值。但本書暫時不使用他們。</p>
 分裂與積 <id='par:split-product'>在我們將介紹的程式設計風格中，以下兩個產生序對的運算子相當好用。第一個運算子利用兩個函數產生一個序對：<br>
-<div><pre>
+<div><pre style='display:none'>
 fork :: (a -> b) -> (a -> c) -> a -> (b :* c)
 (fork f g) x = (f x, g x) {-"~~."-}
 </pre></div>
@@ -952,13 +954,13 @@ uncurry f (x,y) = f x y {-"~~."-}
 </pre></div>
 例：如果<code class='haskell'>(==)</code> 的型別為 <code class='haskell'>Int -> Int -> Bool</code>,<code class='haskell'>uncurry (==)</code> 的型別為 <code class='haskell'>(Int :* Int) -> Bool</code>。後者檢查一個序對中的兩個值是否相等（例：<code class='haskell'>uncurry (==) (3,3) = True</code>）。<br>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>事實上，<code class='haskell'>curry</code> 與 <code class='haskell'>uncurry</code> 的存在證明了 <code class='haskell'>(a :* b) -> c</code>與 <code class='haskell'>a -> b -> c</code> 是同構的。試證明<code class='haskell'>curry . uncurry = id</code>, 以及 <code class='haskell'>uncurry . curry = id</code>.</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b>
+<b>答:</b>
 <p>欲證明 <code class='haskell'>curry . uncurry = id</code>：</p>
 <div><pre class='spec'>
      curry . uncurry = id
@@ -978,11 +980,11 @@ uncurry f (x,y) = f x y {-"~~."-}
 <p>與此相似，欲證明 <code class='haskell'>uncurry . curry = id</code> 我們須證明<code class='haskell'>uncurry (curry f) (x,y) = f (x,y)</code>，其證明也與上面的證明類似。</p>
 </div>
 <div class = 'Exercise'>
-<b>Exercise:</b><id='ex:uncurry-apply'>
+<b>練習:</b><id='ex:uncurry-apply'>
 <p>請說明 <code class='haskell'>map (uncurry ($))</code> 的型別與功能。關於 <code class='haskell'>($)</code> 請參考第\pageref{para:fun-apply}頁。</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b>
+<b>答:</b>
 <p><code class='haskell'>map (uncurry ($)) :: List ((a -> b) :* a) -> List b</code>.它拿一個內容均為「(函數 $\times$ 參數)」序對的串列，將每個函數作用在其參數上。例如：</p>
 <div><pre class='spec'>
 map (uncurry ($)) [((1+), 3), (square, 4), (smaller 5, 3)]
@@ -1029,7 +1031,7 @@ example</div>
 第一步中，<code class='haskell'>swap2 undefined</code> 則依照範式順序求值的原則展開為 <code class='haskell'>(snd undefined, fst  undefined)</code> --- 這是一個序對，只是該序對含有兩個沒有範式的元素。該序對可對應到樣式 <code class='haskell'>(x,y)</code>, 因此整個式子歸約為 <code class='haskell'>3</code>.<br>
 <p>附帶一提，<code class='haskell'>three undefined</code> 是一個不停止的計算。</p>
 answer</div>
-<h2 class='section' >串列<id='sec:lists'></h2><p>一個\emph{串列}(list) index list 串列 抽象說來便是<em>將零個或多個值放在一起變成一串</em>。串列是函數語言傳統上的重要資料結構：早期的函數語言 LISP 便是 LISt Processing 的縮寫。Haskell 中的串列多了一個限制：串列中的每個元素必須有同樣的型別。本書中將「元素型別均為 <code class='haskell'>a</code> 的串列」的型別寫成 <code class='haskell'>List a</code>.\footnote{Haskell 中的寫法是 <code class='haskell'>[a]</code>. 同樣地，在我的教學經驗中，將中括號同時使用在值與型別上造成不少誤解。例如學生可能認為 <code class='haskell'>[1,2]</code> 的型別是 <code class='haskell'>[Int,Int]</code> --- 其實應該是 <code class='haskell'>[Int]</code>.}Hasekell 以中括號表示串列，其中的元素以逗號分隔。例如，<code class='haskell'>[1,2,3,4]</code> 是一個型別為 <code class='haskell'>List Int</code> 的串列，其中有四個元素；<code class='haskell'>[True, False, True]</code> 是一個型別為 <code class='haskell'>List Bool</code> 的串列，有三個元素。至於 <code class='haskell'>[]</code> 則是沒有元素的<em>空串列</em>（通常唸做 ``nil''），其最通用的型別為 <code class='haskell'>List a</code>，其中 <code class='haskell'>a</code> 可以是任何型別。</p>
+<h2 class='section' >串列<id='sec:lists'></h2><p>一個\emph{串列}(list) index list 串列 抽象說來便是<em>將零個或多個值放在一起變成一串</em>。串列是函數語言傳統上的重要資料結構：早期的函數語言 LISP 便是 LISt Processing 的縮寫。Haskell 中的串列多了一個限制：串列中的每個元素必須有同樣的型別。本書中將「元素型別均為 <code class='haskell'>a</code> 的串列」的型別寫成 <code class='haskell'>List a</code>.<p class='footer'>Haskell 中的寫法是 <code class='haskell'>[a]</code>. 同樣地，在我的教學經驗中，將中括號同時使用在值與型別上造成不少誤解。例如學生可能認為 <code class='haskell'>[1,2]</code> 的型別是 <code class='haskell'>[Int,Int]</code> --- 其實應該是 <code class='haskell'>[Int]</code>.</p>Hasekell 以中括號表示串列，其中的元素以逗號分隔。例如，<code class='haskell'>[1,2,3,4]</code> 是一個型別為 <code class='haskell'>List Int</code> 的串列，其中有四個元素；<code class='haskell'>[True, False, True]</code> 是一個型別為 <code class='haskell'>List Bool</code> 的串列，有三個元素。至於 <code class='haskell'>[]</code> 則是沒有元素的<em>空串列</em>（通常唸做 ``nil''），其最通用的型別為 <code class='haskell'>List a</code>，其中 <code class='haskell'>a</code> 可以是任何型別。</p>
 <p>串列的元素也可以是串列。例如 <code class='haskell'>[[1,2,3],[],[4,5]]</code> 的型別是 <code class='haskell'>List (List Int)</code>,含有三個元素，分別為 <code class='haskell'>[1,2,3]</code>, <code class='haskell'>[]</code>, 和 <code class='haskell'>[4,5]</code>.</p>
 <p>事實上，上述的寫法只是語法糖。我們可想像 Haskell 有這樣的型別定義：</p>
 <div><pre class='spec'>
@@ -1202,7 +1204,7 @@ answer</div>
 回憶我們之前關於高階函數的討論，另一個理解方式是：<code class='haskell'>map</code> 是一個處理函數的操作。給一個「將 <code class='haskell'>a</code> 變成 <code class='haskell'>b</code>」的函數 <code class='haskell'>f :: a -> b</code>，<code class='haskell'>map</code> 將這個函數<em>提升</em>到串列的層次，得到一個「將 <code class='haskell'>List a</code> 變成 <code class='haskell'>List b</code>」的函數 <code class='haskell'>map f :: List a -> List b</code>.<br>
 <div>example<id='ex:inits'><br>
 <p>如果一個串列 <code class='haskell'>xs</code> 可分解為 <code class='haskell'>ys ++ zs</code>, 我們說 <code class='haskell'>ys</code> 是 <code class='haskell'>xs</code> 的一個<em>前段(prefix)</em>, index list 串列!prefix 前段 <code class='haskell'>zs</code> 則是 <code class='haskell'>xs</code> 的一個<em>後段</em>(<em>suffix</em>).  index list 串列!suffix 後段 例如，串列 <code class='haskell'>[1,2,3]</code> 的前段包括 <code class='haskell'>[]</code>, <code class='haskell'>[1]</code>, <code class='haskell'>[1,2]</code>, 與<code class='haskell'>[1,2,3]</code> （注意：<code class='haskell'>[]</code>是一個前段，<code class='haskell'>[1,2,3]</code> 本身也是）, 後段則包括 <code class='haskell'>[1,2,3]</code>, <code class='haskell'>[2,3]</code>, <code class='haskell'>[3]</code>, 與 <code class='haskell'>[]</code>。</p>
-<p>試定義函數 <code class='haskell'>inits :: List a -> List (List a)</code>, 計算輸入串列的所有前段。\footnote{請注意該函數的名字是 <code class='haskell'>inits</code>, 和之前介紹過的 <code class='haskell'>init</code> 不同。這是 Haskell 函式庫中使用的命名。}{\bf 提示}：目前我們可以用 <code class='haskell'>map</code>, <code class='haskell'>take</code> 和其他函數組出 <code class='haskell'>inits</code>.在第 ref sec:more-inductive-defns 節中將會介紹另一個做法。</p>
+<p>試定義函數 <code class='haskell'>inits :: List a -> List (List a)</code>, 計算輸入串列的所有前段。<p class='footer'>請注意該函數的名字是 <code class='haskell'>inits</code>, 和之前介紹過的 <code class='haskell'>init</code> 不同。這是 Haskell 函式庫中使用的命名。</p>{\bf 提示}：目前我們可以用 <code class='haskell'>map</code>, <code class='haskell'>take</code> 和其他函數組出 <code class='haskell'>inits</code>.在第 ref sec:more-inductive-defns 節中將會介紹另一個做法。</p>
 example</div>
 <div>answer
 <p>一種使用 <code class='haskell'>map</code> 和 <code class='haskell'>take</code> 的可能作法如下：</p>
@@ -1213,13 +1215,13 @@ inits xs = map (\n -> take n xs) [0 .. length xs] {-"~~."-}
 或著也可用串列建構式寫成 <code class='haskell'>[take n xs || n <- [0.. length xs]]</code>.讀者可能已發現：<code class='haskell'>[f x || x <- xs]</code> 就是 <code class='haskell'>map f xs</code>.<br>
 answer</div>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>定義函數 <code class='haskell'>tails :: List a -> List (List a)</code>,計算輸入串列的所有後段。</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b> 
+<b>答:</b> 
 <div><pre class='spec'>
 tails :: List a -> List (List a)
 tails xs = map (\n -> drop n xs) [0 .. length xs] {-"~~."-}
@@ -1277,13 +1279,13 @@ dropWhile  even [6,2,4,1,7,8,2] = [1,7,8,2] {-"~~."-}
 example</div>
 <div>example<br>
 <p>讀者也許覺得 <code class='haskell'>takeWhile</code> 或 <code class='haskell'>dropWhile</code> 似乎和迴圈有密切關係。確實，利用 <code class='haskell'>iterate</code> 與 <code class='haskell'>dropWhile</code>，我們可定義出類似 <code class='haskell'>while</code> 迴圈的操作：</p>
-<div><pre>
+<div><pre style='display:none'>
 until :: (a -> Bool) -> (a -> a) -> a -> a
 until p f = head . dropWhile (not . p) . iterate f
 </pre></div>
 <code class='haskell'>until p f x</code> 由 <code class='haskell'>x</code> 算出 <code class='haskell'>f x</code>, 由 <code class='haskell'>f x</code> 算出 <code class='haskell'>f (f x)</code> ...直到 <code class='haskell'>p (f (f .. x))</code> 成立為止。例：<code class='haskell'>until ((> 50) . square) (1+) 0</code> 得到 <code class='haskell'>8</code>, 因為 $8^2 = 64$,是第一個平方大於 $50$ 的非負整數。由於惰性求值，<code class='haskell'>iterate f</code> 在意義上雖然是個無窮串列，但只會被執行到 <code class='haskell'>dropWhile (not . p)</code> 擷取的長度為止。<br>
 <p>下述函數則實作了用輾轉相減法求最大公因數的古典演算法。函數 <code class='haskell'>minus</code> 不斷將大數減去小數，直到兩數相等為止：</p>
-<div><pre>
+<div><pre style='display:none'>
 gcd :: (Int :* Int) -> Int
 gcd = fst . until (uncurry (==)) minus {-"~~,"-}
   where minus (x,y)  | x > y = (y, x-y)
@@ -1292,14 +1294,14 @@ gcd = fst . until (uncurry (==)) minus {-"~~,"-}
 關於 <code class='haskell'>uncurry</code> 詳見第 pageref par:currying-uncurrying 頁。<br>
 example</div>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>試定義一個函數<code class='haskell'>squaresUpTo :: Int -> List Int</code>, 使得 <code class='haskell'>squaresUpTo n</code> 傳回所有不大於 <code class='haskell'>n</code> 的平方數。例：<code class='haskell'>squaresUpTo 10 = [1,4,9]</code>,<code class='haskell'>squaresUpTo (-1) = []</code>.</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b> 
-<div><pre>
+<b>答:</b> 
+<div><pre style='display:none'>
 squaresUpTo :: Int -> List Int
 squaresUpTo n = takeWhile (<= n) (map square [0..]) {-"~~."-}
 </pre></div>
@@ -1321,13 +1323,13 @@ zipWith :: (a -> b -> c) -> List a -> List b -> List c
 zipWith f = map (uncurry f) . zip {-"~~."-}
 </pre></div>
 <div class = 'exlist'>
-<b>Exlist:</b>
+
 <div class = 'Exercise'>
-<b>Exercise:</b>
+<b>練習:</b>
 <p>用 <code class='haskell'>zipWith</code> 定義 <code class='haskell'>zip</code>.</p>
 </div>
 <div class = 'Answer'>
-<b>Answer:</b>
+<b>答:</b>
 <p>\Answer <code class='haskell'>zip = zipWith (,)</code>, 或 <code class='haskell'>zip = zipWith (\x y -> (x,y))</code>.</p>
 </div>
 </div>
@@ -1336,7 +1338,7 @@ zipWith f = map (uncurry f) . zip {-"~~."-}
 example</div>
 <div>answer
 <p>一種可能寫法如下：</p>
-<div><pre>
+<div><pre style='display:none'>
 positions z = map fst . filter ((==z) . snd) . zip [0..] {-"~~."-}
 </pre></div>
 我們用 <code class='haskell'>zip [0..]</code> 為輸入串列標上位置，用 <code class='haskell'>filter ((==z) . snd)</code>取出第二個元素等於 <code class='haskell'>z</code> 的序對，最後用 <code class='haskell'>map fst</code> 取出所有位置。注意函數合成與 currying 的使用。<br>
@@ -1363,13 +1365,13 @@ example</div>
 <p>全麥編程之所以成為可能，有賴程式語言的支援。例如，高階函數使得我們能將與特定問題相關的部分（如 <code class='haskell'>map f</code> 與 <code class='haskell'>filter p</code> 中的 <code class='haskell'>f</code> 與 <code class='haskell'>p</code>）抽象出來；惰性求值使我們勇於使用大串列或無限串列作為中間值，不用擔心它們被不必要地真正算出。</p>
 <p>此外，全麥編程也需要豐富的組件函式庫。設計良好的組件捕捉了常見的編程模式，有了它們的幫忙，我們的程式可寫得簡潔明暸 ---本章之中大部分的程式都是都是一行搞定的 ``one-liner''.但，這些組件不可能窮舉所有的編程模式。我們仍會需要自行從頭寫些函數。受到全麥編程影響，在自行寫函數時，我們也常會希望將它們寫得更通用些，藉此發現常見的編程模式，設計出可重用的組件。</p>
 <p>全麥編程能寫出多實用的程式？第 ref sec:refs-basics 節中會提及其他學者嘗試過的，包含解密碼、解數獨在內的有趣例子。在本節，我們則想示範一個小練習：由下至上的合併排序(merge sort)。 index merge sort 合併排序!bottom-up 由下至上 </p>
-合併排序  假設我們已有一個函數 <code class='haskell'>merge' :: (List Int :* List Int) -> List Int</code>,如果 <code class='haskell'>xs</code> 與 <code class='haskell'>ys</code> 已經排序好，<code class='haskell'>merge' (xs,ys)</code> 將它們合併為一個排序好的串列。%\footnote{之所以取名為 <code class='haskell'>merge'</code>，因為在第 ref sec:well-founded-induction 節中我們將使用一個類似且相關的函數 <code class='haskell'>merge :: List Int -> List Int -> List Int</code>.}函數 <code class='haskell'>merge'</code> 可用第 ref sec:lexicographic-induction 節的方式歸納寫成，也可使用將在第\todo{where}章提及的組件 <code class='haskell'>unfoldr</code> 做出。我們如何用 <code class='haskell'>merge'</code> 將整個串列排序好呢？<br>
+合併排序  假設我們已有一個函數 <code class='haskell'>merge' :: (List Int :* List Int) -> List Int</code>,如果 <code class='haskell'>xs</code> 與 <code class='haskell'>ys</code> 已經排序好，<code class='haskell'>merge' (xs,ys)</code> 將它們合併為一個排序好的串列。%<p class='footer'>之所以取名為 <code class='haskell'>merge'</code>，因為在第 ref sec:well-founded-induction 節中我們將使用一個類似且相關的函數 <code class='haskell'>merge :: List Int -> List Int -> List Int</code>.</p>函數 <code class='haskell'>merge'</code> 可用第 ref sec:lexicographic-induction 節的方式歸納寫成，也可使用將在第\todo{where}章提及的組件 <code class='haskell'>unfoldr</code> 做出。我們如何用 <code class='haskell'>merge'</code> 將整個串列排序好呢？<br>
 <p>一般書中較常提及由上至下的合併排序：將輸入串列（或陣列）切成長度大致相等的兩半，分別排序，然後合併。本節則以由下至上的方式試試看。如果輸入串列為<code class='haskell'>[4,2,3,5,8,0,1,7]</code>，我們先把每個元素都單獨變成串列，也就是變成<code class='haskell'>[[4],[2],[3],[5],[8],[0],[1],[7]]</code>。然後把相鄰的串列兩兩合併：<code class='haskell'>[[2,4],[3,5],[8,0],[1,7]]</code>，再兩兩合併成為 <code class='haskell'>[[2,3,4,5],[0,1,8,7]]</code>，直到只剩下一個大串列為止。</p>
 <p>如果我們定義兩個輔助函數：<code class='haskell'>wrap</code> 將一個元素包成一個串列，<code class='haskell'>isSingle</code> 判斷一個串列是否只剩下一個元素，</p>
 <table>
 <tr>
 0.4\textwidth<td>
-<div><pre>
+<div><pre style='display:none'>
 wrap :: a -> List a
 wrap x = [x] {-"~~,"-}
 </pre></div>
@@ -1377,7 +1379,7 @@ wrap x = [x] {-"~~,"-}
 </tr>
 <tr>
 0.4\textwidth<td>
-<div><pre>
+<div><pre style='display:none'>
 isSingle :: List a -> Bool
 isSingle [x]  = True
 isSingle xs   = False {-"~~."-}
@@ -1408,36 +1410,36 @@ mergeAdj = map merge' . adjs {-"~~."-}
 </li>
 </ul>
 <p>讀者可試試看當 <code class='haskell'>xs</code> 有偶數個元素時的情況。總之，<code class='haskell'>adjs</code> 可定義成：</p>
-<div><pre>
+<div><pre style='display:none'>
 adjs ::  a -> List a -> List (a :* a)
 adjs z xs = everyother (zip xs (tail xs ++ [z])) {-"~~,"-}
 </pre></div>
 其中 <code class='haskell'>everyother ys</code> 把 <code class='haskell'>ys</code> 中位置為奇數的元素丟棄。<br>
 <p>最後，考慮如何把串列中位置為奇數的元素丟棄。一種做法是：一直從串列中丟掉頭兩個元素，直到串列用完：</p>
-<div><pre>
+<div><pre style='display:none'>
 everyother :: List a -> List a
 everyother = map head . takeWhile (not . null) . iterate (drop 2) {-"~~."-}
 </pre></div>
 <p>總而言之，由下至上的合併排序可寫成：</p>
-<div><pre>
+<div><pre style='display:none'>
 msort :: List Int -> List Int
 msort = head . until isSingle mergeAdj . map wrap {-"~~,"-}
 </pre></div>
 其中 <code class='haskell'>mergeAdj</code> 的定義是：<br>
-<div><pre>
+<div><pre style='display:none'>
 mergeAdj :: List (List Int) -> List (List Int)
 mergeAdj = map merge' . adjs [] {-"~~."-}
 </pre></div>
-%if False<br>
-<div><pre>
+
+<div><pre style='display:none'>
 merge' :: Ord a => (List a :* List a) -> List a
 merge' ([],    ys)    = ys
 merge' (x:xs,  [])    = x:xs
 merge' (x:xs,  y:ys)  | x <= y     = x : merge' (xs, y:ys)
                       | otherwise  = y : merge' (x:xs, ys) {-"~~."-}
 </pre></div>
-%endif<p>如果我們想看到合併排序完成前的每一步驟，可將 <code class='haskell'>msort</code> 中（以 <code class='haskell'>iterate</code> 與 <code class='haskell'>dropWhile</code> 定義出）的 <code class='haskell'>until</code>改為 <code class='haskell'>iterate</code> 與 <code class='haskell'>takeWhile</code>:</p>
-<div><pre>
+ <p>如果我們想看到合併排序完成前的每一步驟，可將 <code class='haskell'>msort</code> 中（以 <code class='haskell'>iterate</code> 與 <code class='haskell'>dropWhile</code> 定義出）的 <code class='haskell'>until</code>改為 <code class='haskell'>iterate</code> 與 <code class='haskell'>takeWhile</code>:</p>
+<div><pre style='display:none'>
 msortSteps :: List Int -> List (List (List Int))
 msortSteps = takeWhile (not . isSingle) . iterate mergeAdj . map wrap {-"~~."-}
 </pre></div>
@@ -1454,29 +1456,29 @@ msortSteps = takeWhile (not . isSingle) . iterate mergeAdj . map wrap {-"~~."-}
 data Direction = North | East | South | West {-"~~,"-}
 </pre></div>
 <p>或著定義一個表示顏色的型別，用三個浮點數表達紅、綠、藍的比例：</p>
-<div><pre>
+<div><pre style='display:none'>
 data RGBColor = RGB Float Float Float {-"~~,"-}
 </pre></div>
-<p>例：土耳其藍(turquoise)可寫成 <code class='haskell'>RGB 0.25 0.875 0.8125</code>.下列函數則降低一個顏色的彩度：\footnote{這是一個簡便的做法：算出該顏色的灰度 <code class='haskell'>gr</code>,然後計算每個原色與該灰度的線性內插。更準確的作法應將 RGB 轉成 HSV，以後者調整飽和度。}</p>
-<div><pre>
+<p>例：土耳其藍(turquoise)可寫成 <code class='haskell'>RGB 0.25 0.875 0.8125</code>.下列函數則降低一個顏色的彩度：<p class='footer'>這是一個簡便的做法：算出該顏色的灰度 <code class='haskell'>gr</code>,然後計算每個原色與該灰度的線性內插。更準確的作法應將 RGB 轉成 HSV，以後者調整飽和度。</p></p>
+<div><pre style='display:none'>
 desaturate :: Float -> RGBColor -> RGBColor
 desaturate p (RGB r g b) =
     RGB  (r +. p *. (gr -. r)) (g +. p *. (gr -. g)) (b +. p *. (gr -. b)) {-"~~,"-}
   where gr = r *. 0.299 +. g *. 0.587 +. b *. 0.144 {-"~~."-}
 </pre></div>
 <p>我們也可定義如 <code class='haskell'>List</code> 一樣的遞迴資料型別。例如，資料結構中可能談到兩種二元樹狀結構，一種僅在內部節點有標示（稱作 internally labelled），另一種僅在葉節點有表示（稱作 externally labelled）。這兩種二元樹可分別表示如下：</p>
-<div><pre>
+<div><pre style='display:none'>
 data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
 data ETree a  = Tip a | Bin (ETree a) (ETree a) {-"~~."-}
 </pre></div>
-%if False<br>
-<div><pre>
+
+<div><pre style='display:none'>
 deriving instance Eq a => Eq (ITree a)
 deriving instance Eq a => Eq (ETree a)
 deriving instance Show a => Show (ITree a)
 deriving instance Show a => Show (ETree a)
 </pre></div>
-%endif<p>怎麼編寫這種資料結構上的程式呢？我們將在下一章中說到。</p>
+ <p>怎麼編寫這種資料結構上的程式呢？我們將在下一章中說到。</p>
 <h2 class='section' >參考資料<id='sec:refs-basics'></h2><p>本章中的許多想法取自  citet Bird:98:Introduction  ，該書是我相當推薦的 Haskell 教材。</p>
 <div class = 'infobox'>
 {Haskell 為何叫 Haskell?}<br>11
@@ -1486,7 +1488,7 @@ deriving instance Show a => Show (ETree a)
 <p> 但當天晚上就有人覺得這名字會招惹太多雙關語笑話。除了咖哩之外，小組成員覺得實在不行的是：TIM (three instruction machine) 是函數語言用的一種抽象機器，但 Tim Curry 則成了電影洛基恐怖秀（Rocky Horror Picture Show, 1975）的男主角。</p>
 <p> 於是新語言的名字就改成 Haskell 了。</p>
 <p> 小組成員 Paul Hudak 和 David Wise 寫信給 Curry 的遺孀 Virginia Curry，徵求她的同意。Hudak 後來親自登門拜訪，Virginia Curry 和他聊了之前的訪客（包含 Church 與 Kleene）的故事；後來她也去聽了 Hudak 關於 Haskell （語言）的演講，表現得十分友善。臨別前，她說：「其實呀，Haskell 一直都不喜歡他的名字。」</p>
-</div>Currying Moses \citep{Schonfinkel:24:Uber} 提出多參數函數可用單參數函數表達。Haskell Curry 在許多著作中（例： citet Curry:80:Some  ）使用 currying，但當時並沒有 currying 一詞。為何此概念最後會以 Curry 命名呢？David A. Turner （Haskell 語言的前身之一 Miranda 的設計人）在一次網路討論 \citep{Sankar:97:Currying} 中表示 currying 一詞由Christopher Strachey 取名，於 1967 年前後使用在其上課資料中。這種說法目前廣被大家接受，但我目前尚未找可佐證的上課資料。相反地， citet Strachey:67:Fundamental  之中明確表示他認為 currying的概念是由 Sch\"{o}nfinkel 發明的，並稱之為「Sch\"{o}nfinkel 的裝置」。\footnote{原文：``There is a device originated by Sch\"{o}nfinkel,for reducing operators with several operands to the successive application of single operand operators.''}但 currying 的想法可追溯得比 Sch\"{o}nfinkel 或 Curry 都早。F. L. Gottlob Frege 1891 年的\"{U}ber Funktion und Begriff (英譯 Function and Concept)\citep{Frege:60:Function} 結尾幾頁的概念即是 currying.<br>
+</div>Currying Moses \citep{Schonfinkel:24:Uber} 提出多參數函數可用單參數函數表達。Haskell Curry 在許多著作中（例： citet Curry:80:Some  ）使用 currying，但當時並沒有 currying 一詞。為何此概念最後會以 Curry 命名呢？David A. Turner （Haskell 語言的前身之一 Miranda 的設計人）在一次網路討論 \citep{Sankar:97:Currying} 中表示 currying 一詞由Christopher Strachey 取名，於 1967 年前後使用在其上課資料中。這種說法目前廣被大家接受，但我目前尚未找可佐證的上課資料。相反地， citet Strachey:67:Fundamental  之中明確表示他認為 currying的概念是由 Sch\"{o}nfinkel 發明的，並稱之為「Sch\"{o}nfinkel 的裝置」。<p class='footer'>原文：``There is a device originated by Sch\"{o}nfinkel,for reducing operators with several operands to the successive application of single operand operators.''</p>但 currying 的想法可追溯得比 Sch\"{o}nfinkel 或 Curry 都早。F. L. Gottlob Frege 1891 年的\"{U}ber Funktion und Begriff (英譯 Function and Concept)\citep{Frege:60:Function} 結尾幾頁的概念即是 currying.<br>
 全麥編程 「全麥編程」一詞由牛津大學 Geraint Jones 取名，由來可能是模仿健康食物的說詞。如 \citet[第19章]<b>Bird:10:Pearls</b> 便寫道，「全麥編程好處多多，可預防『索引症』(indexitis)，鼓勵合法的程式建構。」在該章之中，Richard Bird 以大量使用串列組件函數的全麥編程為起點，推導出能相當迅速地解數獨的程式。 citet Hinze:09:La  以全麥編程為工具，示範了河內塔問題(Tower of Hanoi)的許多性質，以及其與謝爾賓斯基(Sierpi\'{n}ski)三角形的關係。其中寫道「函數語言擅長全麥編程。這個詞彙由 Geraint Jones 命名。全麥編程意謂由大處去想：處理整個串列，而不是一連串的元素；發展出整個解答的空間，而不是個別的解答；想像整個圖，而不是單一的路徑。對於已知的問題，全麥編程常給我們新洞察與新觀點。」\citet[第五章]<b>Hutton:16:Programming</b> 則以編、解密碼為例。<em>凱撒加密</em>(<em>Caesar cipher</em>)為一種簡單的加密方式：將明文中的每個字母都往前或後偏移固定的量，例如當偏移量為 <code class='haskell'>2</code> 時， <code class='haskell'>'a'</code> 變成 <code class='haskell'>'c'</code>，<code class='haskell'>'b'</code> 變成 <code class='haskell'>'d'</code> ... 一種解凱撒密碼的有效方式是計算密文中每個字母的分佈，和一般英文文章中的平均字母分佈做比較，藉以猜出偏移量。Graham Hutton 在書中示範如何用組件函數、完全不用遞迴地寫出編碼與解碼程式。以上都是相當值得一看的例子。<br>
 LISP 的串列 誕生於 1958 年的 LISP  index LISP  是目前仍被使用的高階程式語言中歷史第二悠久的 --- 最早的是 FORTRAN.但 LISP 與 FORTRAN 是風格截然不同的語言。雖然具有含副作用的指令，LISP 仍被認為是函數語言的先驅。<br>
 <p>LISP 為「串列處理(list processing)」的縮寫。但事實上，LISP 中的聚合資料結構「<code class='haskell'>S</code> 算式 (S-expression)」不只可用來表達串列。<code class='haskell'>CONS</code> 函數做出的是一個序對，其中第一個元素被稱作 <code class='haskell'>CAR</code> (contents of the address part of register),第二個稱作 <code class='haskell'>CDR</code> (contents of the decrement part of register).如果 <code class='haskell'>CDR</code> 的部分仍是一個 <code class='haskell'>CONS</code> 做出的序對，或是特殊值 <code class='haskell'>NIL</code>,整個結構表達的就是一個串列。<code class='haskell'>S</code> 算式也可用來做出二元樹、語法樹... 等等。Haskell 串列的建構元 <code class='haskell'>[]</code> 可唸成 <code>nil'', |(:)| 唸成<code>cons'', 這兩個詞彙都從 LISP 而來。</p>
