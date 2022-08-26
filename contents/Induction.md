@@ -1646,7 +1646,7 @@ minEmapEplusPf1 x t u =
     (P Null && (forall x t u . P (Node x t u) <== P t && P u) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:ITree-tags}
 試定義函數 |tags :: ITree a -> List a|, 由左至右傳回給定之 |ITree| 的所有標籤。例如，若
 ```spec
   t = Node 3  (Node 2 (Node 1 Null Null) Null)
@@ -1694,9 +1694,306 @@ lenLeavesPf1 x t u =
 :::
 
 
+## 搜尋樹 {#sec:induction-search-trees}
 
+本節以搜尋樹為例，示範樹狀結構上的歸納證明。本節於初次閱讀時可跳過。
+
+許多應用需要將資料收集在某種表達「集合」的資料結構中。
+我們希望能做的操作包括：尋找並判斷某筆資料是否在集合中、加入某筆新資料、刪除某筆資料，等等。
+許多演算法都仰賴這些操作能有效率地被實作。
+
+我們可以用串列表達一個集合，但在一般的簡單實作中，在串列中尋找與刪除都需要與串列長度成正比的時間。若集合中的資料是能比大小的，使用一個陣列並將元素排序好，可用二元搜尋法在對數時間內尋找某筆資料。但在陣列中加入與刪除元素也都需要與陣列長度成正比的時間挪出或消除空位。
+
+因此，許多針對此類應用的樹狀結構被發展出來。
+
+### 二元搜尋樹 {#sec:induction-binary-search-tree}
+
+*二元搜尋樹*(*binary search tree*)\index{binary search tree 二元搜尋樹}是一類樹狀資料結構的統稱。簡單的二元搜尋樹是一種類似 |ITree| 的結構（為說明方便，我們讓樹中的元素皆為 |Int|）：
+```haskell
+data BTree = Nul | Nod BTree Int BTree {-"~~,"-}
+```
+{.nobreak}另有個附加限制：在所有內部節點 |Nod t x u| 中，|t| 之中的所有元素均小於 |x|, |u| 之中的所有元素均大於 |x|.
+以下我們將此限制簡稱為「有序性」。
+給定一個有序的二元搜尋樹 |t|，下述函數 |search k t| 判斷 |k| 是否出現在 |t| 之中：
+```haskell
+search :: Int -> BTree -> Bool
+search k Nul          = False
+search k (Nod t x u)  | k < x   = search k t
+                      | k == x  = True
+                      | x < k   = search k u {-"~~."-}
+```
+{.nobreak}這是一個歸納定義。由於有序性，每遇到一個 |Nod t x u| 節點，我們可比較 |k| 與 |x| 的大小，藉以決定往哪一個子樹做搜尋。
+
+如果二元樹是*平衡*的 --- 意指在樹中的每個 |Nod t x u| 之中，|t| 和 |u| 的元素數目大致相等，或著至少其比例為某個常數，|search k (Nod t x u)| 每次選擇往 |t| 或 |u| 搜尋時都會排除一定比例的元素。如此一來，搜尋一個含 |n| 個元素的樹可在 $O(\log n)$ 的時間內完成。
+然而，維持「平衡」並不容易，也是各種二元搜尋樹各顯神通之處。
+
+以下我們多給一些定義，以便更形式化地描述有序性。我們假設有個抽象的「集合」型別 |Set a|. 含單一元素 |x| 的集合寫成 |singleton x|; 聯集寫作 |(`union`)|, 並具有結合律、交換律等性質。下述函數 |elems| 傳回一個樹中的所有元素（類似練習 \@ref{ex:ITree-tags} 中的 |tags|）：
+```haskell
+elems :: BTree -> Set Int
+elems Nul          = []
+elems (Nod t x u)  = elems t `union` singleton x `union` elems u {-"~~."-}
+```
+{.nobreak}有序性可表示為下列述語 |sorted|:
+```haskell
+sorted :: BTree -> Bool
+sorted Nul          =  True
+sorted (Nod t x u)  =  all (<x) (elems t) && all (x<) (elems u) &&
+                       sorted t && sorted u {-"~~."-}
+```
+{.nobreak}其中 |all :: (a -> Bool) -> Set a -> Bool| 檢查一個集合中的元素是否均滿足某述語。函數 |all| 滿足以下性質：
+```spec
+all p empty          = True
+all p (singleton x)  = p x
+all p (s `union` t)  = all p s && all p t {-"~~."-}
+```
+
+在二元搜尋樹中插入新元素的函數可定義如下：
+```haskell
+insert :: Int -> BTree -> BTree
+insert k Nul          = Nod Nul k Nul
+insert k (Nod t x u)  | k < x   = Nod (insert k t) x u
+                      | k == x  = Nod t x u
+                      | x < k   = Nod t x (insert k u) {-"~~."-}
+```
+{.nobreak}函數 |insert| 和 |search| 的結構很類似：都藉由比較 |k| 與 |x| 決定該往哪兒插入元素；函數 |search| 只在碰到 |Nul| 時才能傳回 |False|, 函數 |insert k| 也只將 |Nod Nul k Nul| 放在原本 |Nul| 出現之處 --- 新插入的節點永遠是最邊緣的葉節點。
+
+我們自然會希望 |insert| 保持有序性：如果 |t| 是有序的，|insert k t| 也應該是。表示為定理如下：
+:::{.theorem}
+對所有 |t| 與 |k|, |sorted t ==> sorted (insert k t)|.
+:::
+:::{.proof}
+在 |t| 之上做歸納證明。
+基底情況 |t := Nul| 之中，|sorted (Nod Nul k Nul)| 顯然成立。
+歸納情況有 |k < x|, |k == x|, |x < k| 三種。
+以下我們只列出第一種。
+
+{.nobreak}**狀況** |t := Nod t x u|, |k < x|:
+```haskell
+     sorted (insert k (Nod t x u))
+<=>   {- |insert| 之定義, |k < x| -}
+     sorted (Nod (insert k t) x u)
+<=>   {- |sorted| 之定義 -}
+     all (<x) (elems (insert k t)) && all (x<) (elems u) &&
+     sorted (insert k t) && sorted u
+<=>   {- 練習 \ref{ex:elems-insert}: |elems (insert k t) = singleton k `union` elems t| -}
+     all (<x) (singleton k `union` elems t) && all (x<) (elems u) &&
+     sorted (insert k t) && sorted u
+<=>   {- |all| 之性質 -}
+     k < x && all (<x) (elems t) && all (x<) (elems u) &&
+     sorted (insert k t) && sorted u
+<==   {- |k < x|, 歸納假設 -}
+     all (<x) (elems t) && all (x<) (elems u) &&
+     sorted t && sorted u
+<=>   {- |sorted| 之定義 -}
+     sorted (Nod t x u) {-"~~."-}
+```
+:::
+
+函數 |insert| 並不保證做出的樹能平衡 --- 恰恰相反，我們一不小心便會做出偏一邊的樹。例如，
+|insert 5 (insert 4 (insert 3 (insert 2 (insert 1 Nul))))|
+得到的結果會是：
+```spec
+  Nod Nul 1 (Nod Nul 2 (Nod Nul 3 (Nod Nul 4 (Nod Nul 5 Nul)))) {-"~~."-}
+```
+{.nobreak}在這個樹中搜尋 |5|, 和在串列 |[1,2,3,4,5]| 之中尋找 |5| 基本上是一樣的。
+
+許多建立在二元搜尋樹的進階資料結構會在插入元素時多做些操作，想辦法維持樹的平衡。
+我們將在第\@ref{sec:induction-red-black-tree}節介紹的紅黑樹就是一個例子。
+
+:::{.exlist}
+:::{.exer #ex:elems-insert}
+證明對所有 |t| 與 |k|, |elems (insert k t) = singleton k `union` elems t|.
+:::
+:::
+
+### 紅黑樹 {#sec:induction-red-black-tree}
+
+在二元搜尋樹的基礎上，*紅黑樹*(*red-black tree*)\index{red-black tree 紅黑樹}多加了一個屬性：每個節點都有紅或黑之一的顏色。
+表示成 Haskell 資料結構如下：
+```hasekell
+data RBTree = E  | R RBTree Int RBTree
+                 | B RBTree Int RBTree {-"~~,"-}
+```
+{.nobreak}其中 |E| 表示沒有資料的葉節點，|R| 為紅色內部節點，|B| 為黑色內部節點 --- 葉節點 |E| 視為黑色的。
+定義 |data Color = Red || Blk|, 下述函數 |color| 傳回給定之節點的顏色：
+```{.haskell .invisible}
+data Color = Red | Blk {-"~~,"-}
+```
+```haskell
+color :: RBTree -> Color
+color E          = Blk
+color (R _ _ _)  = Red
+color (B _ _ _)  = Blk {-"~~."-}
+```
+{.nobreak}我們要求紅黑樹滿足下列性質：
+
+  1. 紅黑樹也是二元搜尋樹，意即它得是有序的。
+  2. 從根部開始到每個葉節點 |E| 的每條路徑上的黑節點數目均相同。我們說這樣的一棵樹是*平衡*的。
+  3. 紅節點的兩個子代都必須是黑色的。黑節點則無此限制。為方便說明，我們把滿足此條件的樹稱為*準紅黑樹*。
+  4. 根節點為黑色的。
+
+{.nobreak}其中，關於有序性的討論和前一節原則上相同，此節將之省略。我們假設存在某函數 |sorted :: RBTree -> Bool| 判斷一棵紅黑樹是否有序。
+我們看看其他性質如何形式化。
+
+首先，函數 |bheight| 定義一棵樹的「黑高度」 --- 所有路徑上黑色節點的最多數目：
+```haskell
+bheight :: RBTree -> Nat
+bheight E          = 0
+bheight (R t x u)  = bheight t `max` bheight u
+bheight (B t x u)  = 1 + (bheight t `max` bheight u) {-"~~."-}
+```
+{.nobreak}說一棵樹「平衡」意指每個內節點中，兩個子樹的黑高度均相等。
+```haskell
+balanced :: RBTree -> Bool
+balanced E          =  True
+balanced (R t x u)  =  bheight t == bheight u && balanced t && balanced u
+balanced (B t x u)  =  bheight t == bheight u && balanced t && balanced u {-"~~."-}
+```
+
+函數 |semiRB| 檢查一棵樹是否為準紅黑 --- 紅節點的兩棵子樹均為黑色：
+```haskell
+semiRB :: RBTree -> Bool
+semiRB E          =  True
+semiRB (B t x u)  =  semiRB t && semiRB u
+semiRB (R t x u)  =  color t == Blk && color u == Blk && semiRB t && semiRB u
+```
+{.nobreak}最後，如前所述，紅黑樹需滿足 |sorted|, |balanced|, |semiRB|, 並且根節點須為黑色：
+```spec
+redBlack :: RBTree -> Bool
+redBlack t =  sorted t && balanced t && semiRB t && color t == Blk {-"~~."-}
+```
+
+在這樣一棵二元樹中，由於 |balanced| 被滿足，每條路徑上的黑節點數目均相同；由於 |semiRB| 被滿足，紅節點不會連續出現。因此最長路徑之長度不超過最短路徑的兩倍。在這樣的樹中做二元搜尋，總會在 $O(\log n)$ 的時間內找到資料或走到葉節點。
+
+{title="紅黑樹插入"}
+在紅黑樹中插入元素的方式最初和二元搜尋樹相同：一邊搜尋一邊往下走，如果我們碰到 |E|, 便是插入新元素之處。新元素總在邊緣被插入，而樹的有序性仍保持著。我們令新加入的元素為紅色的，如此一來，插入新元素不會改變一棵樹的黑高度，也使得新樹仍是平衡的。
+
+但這麼做可能破壞準紅黑性質：路徑上有可能出現兩個連續的紅節點。
+因此我們在插入後的*回程*途中適時做*旋轉*，如圖\@ref{fig:red-black-rotate}所示。
+每當我們看到一個黑節點之下有兩個連續的紅節點，必定是圖中四個角落的四種情形之一（我們只插入了一個元素，最多只有一個多出的紅節點。圖中 |s|, |t|, |u|, 與 |v| 仍是平衡的準紅黑樹）。
+我們將每個情形都旋轉成圖中央的情況。
+如此一來圖中央以 |x|, |z| 為根部的兩顆子樹都是黑根部的紅黑樹，|y| 是紅節點。
+於是我們再往上檢查，如果又出現四種情況之一就再旋轉，否則往上重建路徑，直到碰到根部。
+如此做出一棵滿足準紅黑性質的樹。
+最後，如果根部節點為紅色，便直接改成黑色。
+
+::: {.figure .top title="在紅黑樹中插入新元素後做的四種旋轉。" #fig:red-black-rotate}
+::: {.center}
+```texonly
+\includegraphics[width=0.6\textwidth]{Pics/red-black-rotate.pdf}
+```
+:::
+:::
+
+我們看看前述的插入演算法可如何表示為 Haskell 程式。
+我們將主要執行插入與旋轉的函數稱為 |ins :: Int -> RBTree -> RBTree|.
+函數 |insert| 則在呼叫 |ins| 之後將樹根改為黑色的：
+```haskell
+insert :: Int -> RBTree -> RBTree
+insert k t = blacken (ins k t) {-"~~,"-}
+  where  blacken (R t x u) = B t x u
+         blacken t = t {-"~~."-}
+```
+
+:::{.infobox title="紅黑樹旋轉只需四種情況"}
+本節的的紅黑樹旋轉方式來自 @Okasaki:99:RedBlack。
+熟悉資料結構的讀者可能發現它們比一般教科書或網路資源中的處理方式簡單許多：
+一般資料中常會分出八種以上的狀況，除了主要路徑上的三個節點，也會考慮其兄弟節點的顏色。
+
+Okasaki 發現只需本節的這四種情況就足夠了。
+讀者也應可發現，採用較簡單的版本，對於證明以及暸解紅黑樹的性質幫助很大。
+
+那麼，為何一般教科書會用上那麼多情況呢？
+Okasaki 認為可能是效率考量。
+一般書中的版本中，有些情況可不需旋轉，只直接改變節點顏色。
+如此一來需要更動的欄位數目較少。
+有些情況中轉出的樹根部已是黑色的。在指令式語言中，此時該程序就可以直接結束。
+
+然而，在函數語言中，我們無論如何都需重建整個路徑上的節點。
+因此上述優點均不明顯。
+另一方面，Okasaki 也認為此種情況較少的版本是比較適合用於教學中的。
+:::
+
+
+函數 |ins| 在遇上紅節點（|R t x u|）時和第\@ref{sec:induction-binary-search-tree}中的 |insert| 很類似：比較 |k| 與 |x| 以決定該往哪邊插入，
+並在歸納呼叫後以 |R| 重做節點。
+但遇到黑節點 |B t x u| 時，我們額外呼叫 |rotate| 函數
+（回顧：圖\@ref{fig:red-black-rotate}的四種旋轉都只在根節點為黑色時啟動）：
+```haskell
+ins :: Int -> RBTree -> RBTree
+ins k E = R E k E
+ins k (R t x u)  | k <  x  = R (ins k t) x u
+                 | k == x  = R t x u
+                 | k >  x  = R t x (ins k u)
+ins k (B t x u)  | k <  x  = rotate (ins k t) x u
+                 | k == x  = B t x u
+                 | k >  x  = rotate t x (ins k u) {-"~~."-}
+```
+函數 |rotate| 只在目前節點為黑色時被呼叫。
+在 |rotate s x t| 之中，|s| 為目前的左子樹，|x| 為目前的（黑色）節點中的標籤，
+|t| 則為目前的右子樹。
+函數 |rotate| 的定義如下：
+```haskell
+rotate :: RBTree a -> a -> RBTree a -> RBTree a
+rotate (R (R s x t) y u) z v  = R (B s x t) y (B u z v)
+rotate (R s x (R t y u)) z v  = R (B s x t) y (B u z v)
+rotate s x (R (R t y u) z v)  = R (B s x t) y (B u z v)
+rotate s x (R t y (R u z v))  = R (B s x t) y (B u z v)
+rotate s x t = B s x t {-"~~."-}
+```
+{.nobreak}其中，前四個情況的右手邊都是一樣的！它們分別對應到圖\@ref{fig:red-black-rotate}的四個情況。
+最後的 |rotate s x t| 則是餘下的、不用旋轉的情況。
+
+{title="紅黑樹之性質"}
+
+
+:::{.lemma}
+對所有 |t|, |u| 與 |z|,
+|bheight (rotate t z u) = 1 + (bheight t `max` bheight u)|.
+:::
+
+:::{.theorem}
+對所有 |k| 與 |t|, |bheight (ins k t) = bheight t|.
+:::
+
+:::{.corollary}
+|bheight (insert k t)| equals either |bheight t| or |1 + bheight t|, depending on the root color of |ins k t|.
+:::
+
+:::{.lemma}
+對所有 |t| 與 |u|,
+```spec
+balanced t && balanced u &&
+ bheight t = bheight u ==> balanced (rotate t x u)
+```
+:::
+
+:::{.theorem}
+For all |k| and |t|, |balanced t ==> balanced (ins k t)|
+:::
+
+:::{.lemma}
+for all |t| and |u|,
+|ifred t && semiRB u ==> semiRB (rotate t x u)|.
+:::
+
+:::{.theorem}
+For all |t|:
+
+  1. |semiRB t && color t = R ==> ifred (ins k t)|,
+  2. |semiRB t && color t = B ==> semiRB (ins k t)|.
+
+
+
+:::
+
+:::{.corollary}
+since |infred t ==> semiRB (blacken t)|, as a corollary we have |semiRB t ==> semiRB (insert k t)|.
+:::
 
 ## 由集合論看歸納法 {#sec:induction-set-theory}
+
+歸納證明為何成立？本節試圖以集合論的角度理解歸納法，試圖建立幾個觀念：當我們說某型別是「歸納定義」的，常常代表它是具有某個結構的最小集合。而歸納證明可以理解為證明某型別是所有滿足某性質的事物的子集。本節於初次閱讀時可跳過。
 
 {title="序理論回顧"} 為了本章的完整性，我們在這兒回顧一些重要定義。
 對學過序理論或抽象代數的讀者來說，以下概念應不陌生。
