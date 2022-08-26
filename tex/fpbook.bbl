@@ -1,4 +1,4 @@
-\begin{thebibliography}{12}
+\begin{thebibliography}{44}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -15,6 +15,63 @@ R.~C. Backhouse.
 \newblock \emph{Program Construction: Calculating Implementations from
   Specifications}.
 \newblock John Wiley {\&} Sons, Ltd., 2003.
+
+\bibitem[Backhouse(2011)]{Backhouse:11:Algorithmic}
+R.~C. Backhouse.
+\newblock \emph{Algorithmic Problem Solving}.
+\newblock Wiley, 2011.
+
+\bibitem[Bentley(1986)]{Bentley:86:Programming}
+J.~L. Bentley.
+\newblock \emph{Programming Pearls}.
+\newblock Addison-Wesley, 1986.
+
+\bibitem[Bird(1984)]{Bird:84:Circular}
+R.~S. Bird.
+\newblock Using circular programs to eliminate multiple traversals of data.
+\newblock \emph{Acta Informatica}, 21\penalty0 (3):\penalty0 239--250, 1984.
+
+\bibitem[Bird(1987)]{Bird:87:Introduction}
+R.~S. Bird.
+\newblock An introduction to the theory of lists.
+\newblock In M.~Broy, editor, \emph{Logic of Programming and Calculi of
+  Discrete Design}, number~36 in NATO ASI Series F, pages 5--42.
+  Springer-Verlag, 1987.
+
+\bibitem[Bird(1998)]{Bird:98:Introduction}
+R.~S. Bird.
+\newblock \emph{Introduction to Functional Programming using Haskell}.
+\newblock Prentice Hall, 1998.
+\newblock ISBN 0-13-484346-0.
+
+\bibitem[Bird(2010)]{Bird:10:Pearls}
+R.~S. Bird.
+\newblock \emph{Pearls of Functional Algorithm Design}.
+\newblock Cambridge University Press, 2010.
+
+\bibitem[Bird et~al.(1996)Bird, de~Moor, and Hoogendijk]{Bird:96:Generic}
+R.~S. Bird, O.~de~Moor, and P.~F. Hoogendijk.
+\newblock Generic functional programming with types and relations.
+\newblock \emph{Journal of Functional Programming}, 6\penalty0 (1):\penalty0
+  1--28, 1996.
+
+\bibitem[Burstall and Darlington(1977)]{BurstallDarlington:77:Transformation}
+R.~M. Burstall and J.~Darlington.
+\newblock A transformation system for developing recursive programs.
+\newblock \emph{Journal of the ACM}, 24\penalty0 (1):\penalty0 44--67, 1977.
+
+\bibitem[Curry(1980)]{Curry:80:Some}
+H.~B. Curry.
+\newblock Some philosophical aspects of combinatory logic.
+\newblock In J.~Barwise, H.~J. Keisler, and K.~Kunen, editors, \emph{The Kleene
+  Symposium}, pages 85--101. North-Holland, 1980.
+
+\bibitem[Dijkstra(1974)]{Dijkstra:74:Programming}
+E.~W. Dijkstra.
+\newblock Programming as a discipline of mathematical nature.
+\newblock \emph{American Mathematical Monthly}, 81\penalty0 (6):\penalty0
+  608--612, May 1974.
+\newblock EWD 361.
 
 \bibitem[Dijkstra(2000)]{Dijkstra:00:Notational}
 E.~W. Dijkstra.
@@ -36,6 +93,27 @@ E.~W. Dijkstra and A.~J.~M. van Gasteren.
 \newblock On naming.
 \newblock AvG 67 / EWD 958, 1986.
 
+\bibitem[Frege(1960)]{Frege:60:Function}
+F.~L.~G. Frege.
+\newblock Function and concept. translated by {P}eter {T}. {G}each.
+\newblock In P.~T. Geach and M.~Black, editors, \emph{Translations from the
+  Philosophical Writings of Gottlob Frege}, pages 21--41. Basil Blackwell,
+  1960.
+
+\bibitem[Gibbons(1997)]{Gibbons:97:Calculating}
+J.~Gibbons.
+\newblock Calculating functional programs.
+\newblock In \emph{Proceedings of ISRG/SERG Research Colloquium}. Oxford
+  Brookes University, November 1997.
+
+\bibitem[Gibbons et~al.(2001)Gibbons, Hutton, and
+  Altenkirch]{GibbonsHutton:01:When}
+J.~Gibbons, G.~Hutton, and T.~Altenkirch.
+\newblock When is a function a fold or an unfold?
+\newblock In A.~Corradini, M.~Lenisa, and U.~Montanari, editors, \emph{Workshop
+  on Coalgebraic Methods in Computer Science}, number 44.1 in Electronic Notes
+  in Theoretical Computer Science. Elsevier Science Publishers, April 2001.
+
 \bibitem[Gries and Schneider(2003)]{GriesSchneider:03:Calculational}
 D.~Gries and F.~B. Schneider.
 \newblock Calculational logic.
@@ -46,12 +124,77 @@ D.~Gries and F.~B. Schneider.
 \newblock \emph{A Logical Approach to Discrete Math}.
 \newblock Springer, October 22, 1993.
 
+\bibitem[Hinze(2009)]{Hinze:09:La}
+R.~Hinze.
+\newblock La tour d'{H}ano{\"{i}}.
+\newblock In A.~Tolmach, editor, \emph{International Conference on Functional
+  Programming}, pages 3--10. ACM Press, 2009.
+
+\bibitem[Hoare(1961{\natexlab{a}})]{Hoare:61:Find}
+C.~A.~R. Hoare.
+\newblock Algorithm 65: Find.
+\newblock \emph{Communications of the ACM}, 4\penalty0 (7):\penalty0 321--322,
+  1961{\natexlab{a}}.
+
+\bibitem[Hoare(1961{\natexlab{b}})]{Hoare:61:Partition}
+C.~A.~R. Hoare.
+\newblock Algorithm 63: Partition.
+\newblock \emph{Communications of the ACM}, 4\penalty0 (7):\penalty0 321,
+  1961{\natexlab{b}}.
+
+\bibitem[Hoare(1961{\natexlab{c}})]{Hoare:61:Quicksort}
+C.~A.~R. Hoare.
+\newblock Algorithm 64: Quicksort.
+\newblock \emph{Communications of the ACM}, 4\penalty0 (7):\penalty0 321,
+  1961{\natexlab{c}}.
+
+\bibitem[Hoare(1962)]{Hoare:62:Quicksort}
+C.~A.~R. Hoare.
+\newblock Quicksort.
+\newblock \emph{The Computer Journal}, 5\penalty0 (1):\penalty0 10--16, January
+  1962.
+
+\bibitem[Hu et~al.(1997)Hu, Iwasaki, Takeichi, and
+  Takano]{HuIwasaki:97:Tupling}
+Z.~Hu, H.~Iwasaki, M.~Takeichi, and A.~Takano.
+\newblock Tupling calculation eliminates multiple data traversals.
+\newblock In S.~L. Peyton~Jones and M.~Tofte, editors, \emph{International
+  Conference on Functional Programming}, volume~32, pages 164--175. ACM Press,
+  1997.
+
 \bibitem[Hudak et~al.(2007)Hudak, Hughes, Peyton~Jones, and
   Wadler]{Hudak:07:Being}
 P.~Hudak, R.~J.~M. Hughes, S.~L. Peyton~Jones, and P.~L. Wadler.
 \newblock A history of {H}askell: being lazy with class.
 \newblock In B.~Ryder and B.~Hailpern, editors, \emph{History of Programming
   Languages III}, pages 1--55. ACM Press, 2007.
+
+\bibitem[Hughes(1986)]{Hughes:86:Novel}
+R.~J.~M. Hughes.
+\newblock A novel representation of lists and its application to the function
+  ``reverse''.
+\newblock \emph{Information Processing Letters}, 22:\penalty0 141--144, 1986.
+
+\bibitem[Hutton(2016)]{Hutton:16:Programming}
+G.~Hutton.
+\newblock \emph{Programming in Haskell, 2nd Edition}.
+\newblock Cambridge University Press, 2016.
+
+\bibitem[Kaldewaij(1990)]{Kaldewaij:90:Programming}
+A.~Kaldewaij.
+\newblock \emph{Programming: the Derivation of Algorithms}.
+\newblock Prentice Hall, 1990.
+
+\bibitem[Manna and McCarthy(1969)]{MannaMcCarthy:69:Properties}
+Z.~Manna and J.~McCarthy.
+\newblock Properties of programs and partial function logic.
+\newblock In B.~Meltzer and D.~Michie, editors, \emph{Machine Intelligence},
+  volume~5, pages 27--37. Edinburgh University Press, 1969.
+
+\bibitem[Manna and Pnueli(1970)]{MannaPnueli:70:Formalization}
+Z.~Manna and A.~Pnueli.
+\newblock Formalization of properties of functional programs.
+\newblock \emph{Journal of the ACM}, 17\penalty0 (3):\penalty0 555--569, 1970.
 
 \bibitem[Mazur(2014)]{Mazur:14:Enlightening}
 J.~Mazur.
@@ -70,9 +213,66 @@ J.~Misra.
   International Summer School directed by F.L. Bauer, M. Broy, E.W. Dijkstra,
   C.A.R. Hoare}, pages 1--3. Springer-Verlag, 1989.
 
+\bibitem[Mu(2008)]{Mu:08:Maximum}
+S.-C. Mu.
+\newblock Maximum segment sum is back: deriving algorithms for two segment
+  problems with bounded lengths.
+\newblock In R.~Gl{\"{u}}ck and O.~de~Moor, editors, \emph{Symposium on Partial
+  Evaluation and Semantics-based Program Manipulation}, pages 31--39, San
+  Francisco, California, USA, jan 2008. ACM Press.
+
+\bibitem[Mu and Bird(2003)]{MuBird:03:Theory}
+S.-C. Mu and R.~S. Bird.
+\newblock Theory and applications of inverting functions as folds.
+\newblock \emph{Science of Computer Programming (Special Issue for Mathematics
+  of Program Construction)}, 51:\penalty0 87--116, 2003.
+
+\bibitem[Okasaki(1999)]{Okasaki:99:RedBlack}
+C.~Okasaki.
+\newblock Red-black trees in a functional setting.
+\newblock \emph{Journal of Functional Programming}, 9\penalty0 (4):\penalty0
+  471--477, 1999.
+
+\bibitem[O'Toole(2017)]{OToole:15:Great}
+G.~O'Toole.
+\newblock \emph{Hemingway Didn't Say That: The Truth Behind Familiar
+  Quotations}, chapter With great power comes great responsibility.
+\newblock Little A, 2017.
+\newblock Published online on Quote Investigator:
+  \url{https://quoteinvestigator.com/2015/07/23/great-power/}.
+
+\bibitem[Sankar et~al.(1997)Sankar, Allis, Seldi, Camp, Kahr, Leave, Botti,
+  Dill, Turner, and Picton-Warlow]{Sankar:97:Currying}
+N.~Sankar, L.~Allis, J.~Seldi, J.~Camp, S.~Kahr, G.~Leave, R.~Botti, A.~Dill,
+  D.~A. Turner, and J.~Picton-Warlow.
+\newblock Currying, or schonfinkeling?
+\newblock
+  \url{http://computer-programming-forum.com/23-functional/976f118bb90d8b15.htm},
+  May 1997.
+
+\bibitem[Sch{\"{o}}nfinkel(1924)]{Schonfinkel:24:Uber}
+M.~Sch{\"{o}}nfinkel.
+\newblock Ub{\"{e}}r die bausteinen der mathematische logik.
+\newblock \emph{Mathematische Annalen}, 92:\penalty0 305--316, 1924.
+\newblock Translated by Stefan Bauer-Mengelberg as ``On the building blocks of
+  mathematical logic'' in Jean van Heijenoort, 1967. {\it A Source Book in
+  Mathematical Logic}, 1879--1931.
+
+\bibitem[Strachey(1967)]{Strachey:67:Fundamental}
+C.~Strachey.
+\newblock Fundamental concepts in programming languages.
+\newblock \emph{Higher-Order and Symbolic Computation}, 13:\penalty0 11--49,
+  1967.
+
 \bibitem[van~de Snepscheut(1993)]{Snepscheut:93:What}
 J.~L. van~de Snepscheut.
 \newblock \emph{What Computing Is All About}.
 \newblock Springer, 1993.
+
+\bibitem[Zantema(1992)]{Zantema:92:Longest}
+H.~Zantema.
+\newblock Longest segment problems.
+\newblock \emph{Science of Computer Programming}, 18\penalty0 (1):\penalty0
+  39--66, 1992.
 
 \end{thebibliography}
