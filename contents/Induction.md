@@ -1808,14 +1808,14 @@ insert k (Nod t x u)  | k < x   = Nod (insert k t) x u
 
 ### 紅黑樹 {#sec:induction-red-black-tree}
 
-在二元搜尋樹的基礎上，*紅黑樹*(*red-black tree*)\index{red-black tree 紅黑樹}多加了一個屬性：每個節點都有紅或黑之一的顏色。
+在二元搜尋樹的基礎上，*紅黑樹*(*red-black tree*)\index{red-black tree 紅黑樹}多加了個屬性：每個節點都是紅色或黑色之一。
 表示成 Haskell 資料結構如下：
 ```hasekell
 data RBTree = E  | R RBTree Int RBTree
                  | B RBTree Int RBTree {-"~~,"-}
 ```
-{.nobreak}其中 |E| 表示沒有資料的葉節點，|R| 為紅色內部節點，|B| 為黑色內部節點 --- 葉節點 |E| 視為黑色的。
-定義 |data Color = Red || Blk|, 下述函數 |color| 傳回給定之節點的顏色：
+{.nobreak}其中 |E| 為沒有資料的葉節點，|R| 為紅色內部節點，|B| 為黑色內部節點 --- 葉節點 |E| 被視為黑色的。
+定義 |data Color = Red || Blk|, 下述定義的 |color t| 傳回 |t| 的根部節點的顏色：
 ```{.haskell .invisible}
 data Color = Red | Blk {-"~~,"-}
 ```
@@ -1828,8 +1828,8 @@ color (B _ _ _)  = Blk {-"~~."-}
 {.nobreak}我們要求紅黑樹滿足下列性質：
 
   1. 紅黑樹也是二元搜尋樹，意即它得是有序的。
-  2. 從根部開始到每個葉節點 |E| 的每條路徑上的黑節點數目均相同。我們說這樣的一棵樹是*平衡*的。
-  3. 紅節點的兩個子代都必須是黑色的。黑節點則無此限制。為方便說明，我們把滿足此條件的樹稱為*準紅黑樹*。
+  2. 從根部開始到每個葉節點 |E| 的路徑上的黑節點數目均相同。我們說這樣的一棵樹是*平衡*的。
+  3. 紅節點的兩個子代都必須是黑色的，黑節點則無此限制。為方便說明，我們把滿足此條件的樹稱為*準紅黑樹*。
   4. 根節點為黑色的。
 
 {.nobreak}其中，關於有序性的討論和前一節原則上相同，此節將之省略。我們假設存在某函數 |sorted :: RBTree -> Bool| 判斷一棵紅黑樹是否有序。
@@ -1866,14 +1866,16 @@ redBlack t =  sorted t && balanced t && semiRB t && color t == Blk {-"~~."-}
 在這樣一棵二元樹中，由於 |balanced| 被滿足，每條路徑上的黑節點數目均相同；由於 |semiRB| 被滿足，紅節點不會連續出現。因此最長路徑之長度不超過最短路徑的兩倍。在這樣的樹中做二元搜尋，總會在 $O(\log n)$ 的時間內找到資料或走到葉節點。
 
 {title="紅黑樹插入"}
-在紅黑樹中插入元素的方式最初和二元搜尋樹相同：一邊搜尋一邊往下走，如果我們碰到 |E|, 便是插入新元素之處。新元素總在邊緣被插入，而樹的有序性仍保持著。我們令新加入的元素為紅色的，如此一來，插入新元素不會改變一棵樹的黑高度，也使得新樹仍是平衡的。
+在紅黑樹中插入元素的方式最初和二元搜尋樹相同：一邊搜尋一邊往下走，如果我們碰到 |E|, 便是插入新元素之處。新元素總在邊緣被插入，而樹的有序性仍保持著。
+
+新加入的節點該是什麼顏色呢？讓新節點為紅色可能是個合理選擇。如此一來，插入新元素不會改變一棵樹的黑高度，也因此如果該樹原本是平衡的，加入新節點後的新樹仍是平衡的。
 
 但這麼做可能破壞準紅黑性質：路徑上有可能出現兩個連續的紅節點。
 因此我們在插入後的*回程*途中適時做*旋轉*，如圖\@ref{fig:red-black-rotate}所示。
 每當我們看到一個黑節點之下有兩個連續的紅節點，必定是圖中四個角落的四種情形之一（我們只插入了一個元素，最多只有一個多出的紅節點。圖中 |s|, |t|, |u|, 與 |v| 仍是平衡的準紅黑樹）。
 我們將每個情形都旋轉成圖中央的情況。
 如此一來圖中央以 |x|, |z| 為根部的兩顆子樹都是黑根部的紅黑樹，|y| 是紅節點。
-於是我們再往上檢查，如果又出現四種情況之一就再旋轉，否則往上重建路徑，直到碰到根部。
+於是我們再往上檢查，如果又出現四種情況之一就再旋轉，否則往上重建路徑，直到回到根部。
 如此做出一棵滿足準紅黑性質的樹。
 最後，如果根部節點為紅色，便直接改成黑色。
 
@@ -1914,11 +1916,10 @@ Okasaki 認為可能是效率考量。
 另一方面，Okasaki 也認為此種情況較少的版本是比較適合用於教學中的。
 :::
 
-
 函數 |ins| 在遇上紅節點（|R t x u|）時和第\@ref{sec:induction-binary-search-tree}中的 |insert| 很類似：比較 |k| 與 |x| 以決定該往哪邊插入，
 並在歸納呼叫後以 |R| 重做節點。
-但遇到黑節點 |B t x u| 時，我們額外呼叫 |rotate| 函數
-（回顧：圖\@ref{fig:red-black-rotate}的四種旋轉都只在根節點為黑色時啟動）：
+但遇到黑節點 |B t x u| 時，我們不使用 |B|, 而是額外呼叫 |rotate| 函數：
+
 ```haskell
 ins :: Int -> RBTree -> RBTree
 ins k E = R E k E
@@ -1929,7 +1930,7 @@ ins k (B t x u)  | k <  x  = rotate (ins k t) x u
                  | k == x  = B t x u
                  | k >  x  = rotate t x (ins k u) {-"~~."-}
 ```
-函數 |rotate| 只在目前節點為黑色時被呼叫。
+{.nobreak}回顧：圖\@ref{fig:red-black-rotate}的四種旋轉都只在根節點為黑色時啟動，因此我們也只在碰上黑節點時呼叫 |rotate|。
 在 |rotate s x t| 之中，|s| 為目前的左子樹，|x| 為目前的（黑色）節點中的標籤，
 |t| 則為目前的右子樹。
 函數 |rotate| 的定義如下：
@@ -1941,32 +1942,114 @@ rotate s x (R (R t y u) z v)  = R (B s x t) y (B u z v)
 rotate s x (R t y (R u z v))  = R (B s x t) y (B u z v)
 rotate s x t = B s x t {-"~~."-}
 ```
-{.nobreak}其中，前四個情況的右手邊都是一樣的！它們分別對應到圖\@ref{fig:red-black-rotate}的四個情況。
-最後的 |rotate s x t| 則是餘下的、不用旋轉的情況。
+{.nobreak}其中，前四個情況的左邊分別對應到圖\@ref{fig:red-black-rotate}的四個情況；他們的右手邊都是一樣的，對應到圖\@ref{fig:red-black-rotate}正中央的樹。
+最後的 |rotate s x t| 則是四種情況之外、不用旋轉的情形。
 
-{title="紅黑樹之性質"}
+{title="紅黑樹之性質：高度"}
+許多討論紅黑樹的教材在將插入、刪除等等操作的實作呈現讀者看過之後就結束了，
+對於其性質的討論意外地不完整。
+然而，這類資料結構之所以有效，正因為它們需有的性質一直被保持著。
+談資料結構上的操作卻不證明它們怎麼維護資料結構的性質，可說是缺了最重要的一塊。
+本節剩下的篇幅中，我們將描述並證明紅黑樹的一些主要性質。
 
+首先我們談談黑高度。
+讀者稍加嘗試之後會發現，|insert k t| 有時會增加 |t| 的黑高度，有時不會。
+我們怎知道紅黑樹何時會長高呢？
 
-:::{.lemma}
+原來，函數 |ins| 其實是不會讓樹長高的！我們有如下的定理 --- |ins k| 前後樹的黑高度不變：
+:::{.theorem #thm:redblack-bheight-ins}
+對所有 |k| 與 |t|, |bheight (ins k t) = bheight t|.
+:::
+{.nobreak}函數 |insert k t| 呼叫 |ins k t|, 得到的樹仍有原來的黑高度。
+如果 |blacken| 把樹由紅轉黑，新樹的黑高度才因此加一。
+否則樹的黑高度仍不變。
+:::{.corollary #thm:redblack-bheight-insert}
+對所有 |k| 與 |t|，如果 |ins k t| 為黑色，
+|bheight (insert k t) = bheight t|.
+否則 |bheight (insert k t) = 1 + bheight t|.
+:::
+
+我們將嘗試證明定理\@ref{thm:redblack-bheight-ins}.
+回顧我們的原則：*證明的結構依循程式的結構*。
+由於 |insert| 呼叫 |ins|, 欲證明關於 |insert| 的系理 \@ref{thm:redblack-bheight-insert}，
+我們需要關於 |ins| 的定理 \@ref{thm:redblack-bheight-ins}.
+同樣地，由於 |ins| 呼叫 |rotate|, 欲證明定理 \@ref{thm:redblack-bheight-ins},
+我們需要一個關於 |rotate| 的引裡：
+:::{.lemma #lma:redblack-bheight-rotate}
 對所有 |t|, |u| 與 |z|,
 |bheight (rotate t z u) = 1 + (bheight t `max` bheight u)|.
 :::
+這也不意外：|rotate| 的兩個參數 |t| 與 |u| 原本在黑節點之下，旋轉後的黑高度不變，仍是 |1 + (bheight t `max` bheight u)|.
 
-:::{.theorem}
-對所有 |k| 與 |t|, |bheight (ins k t) = bheight t|.
+以下我們證明定理\@ref{thm:redblack-bheight-ins}.
+:::{.proof}
+在 |t| 之上做歸納。以下只列出幾個代表性狀況。
+
+{.nobreak}**狀況** |t := E|.
+```spec
+   bheight (ins k E)
+=  bheight (R E k E)
+=  0
+=  bheight E {-"~~."-}
+```
+
+{.nobreak}**狀況** |t := R t x u|, |k <  x|:
+```spec
+   bheight (ins k (R t x u))
+=    {- |ins| 之定義；|k < x| -}
+   bheight (R (ins k t) x u)
+=    {- |bheight| 之定義 -}
+   bheight (ins k t) `max` bheight u
+=    {- 歸納假設 -}
+   bheight t `max` bheight u
+=    {- |bheight| 之定義 -}
+   bheight (R t x u) {-"~~."-}
+```
+
+{.nobreak}**狀況** |t := B t x u|, |k <  x|:
+```spec
+   bheight (ins k (B t x u))
+=    {- |ins| 之定義；|k < x| -}
+   bheight (balance (ins k t) x u)
+=    {- 引理 \ref{lma:redblack-bheight-rotate} -}
+   1 + (bheight (ins k t) `max` bheight u)
+=    {- 歸納假設 -}
+   1 + (bheight t `max` bheight u)
+=    {- |bheight| 之定義 -}
+   bheight (B t x u) {-"~~."-}
+```
 :::
 
-:::{.corollary}
-|bheight (insert k t)| equals either |bheight t| or |1 + bheight t|, depending on the root color of |ins k t|.
+至於引理\@ref{lma:redblack-bheight-rotate}可證明如下：
+:::{.proof}
+由於 |rotate| 沒有遞迴、不呼叫其他函數，但有許多狀況，
+關於 |rotate| 的證明也大都僅是檢查每個情況，不難但相當繁瑣。
+以下只列舉一種狀況為例。
+
+{.nobreak}**狀況** |(t,z,u) := (R (R t x u) y v, z, w)|:
+```spec
+   bheight (rotate (R (R t x u) y v) z w)
+=    {- |rotate| 之定義 -}
+   bheight (R (B t x u) y (B v z w))
+=    {- |bheight| 之定義 -}
+   (1+ (bheight t `max` bheight u)) `max`
+   (1+ (bheight v `max` bheight w))
+=    {- 由於 |(k+x) `max` (k+y) = k + (x `max` y)|, |max| 有結合律 -}
+   1 + (((bheight t `max` bheight u) `max` bheight v) `max` bheight w)
+=    {- |bheight| 之定義 -}
+   1 + (bheight ((R (R t x u) y v)) `max` bheight w)
+```
 :::
 
-:::{.lemma}
+:::{.lemma #lma:red-black-balanced-rotate}
 對所有 |t| 與 |u|,
 ```spec
 balanced t && balanced u &&
- bheight t = bheight u ==> balanced (rotate t x u)
+   bheight t = bheight u ==> balanced (rotate t x u)
 ```
 :::
+
+
 
 :::{.theorem}
 For all |k| and |t|, |balanced t ==> balanced (ins k t)|
