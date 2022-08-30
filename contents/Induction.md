@@ -2020,11 +2020,11 @@ rotate s x t = B s x t {-"~~."-}
 ```
 :::
 
-至於引理\@ref{lma:redblack-bheight-rotate}可證明如下：
+為求完整，我們也簡述引理\@ref{lma:redblack-bheight-rotate}之證明：
 :::{.proof}
 由於 |rotate| 沒有遞迴、不呼叫其他函數，但有許多狀況，
-關於 |rotate| 的證明也大都僅是檢查每個情況，不難但相當繁瑣。
-以下只列舉一種狀況為例。
+關於 |rotate| 的證明也大都僅是檢查每個情況，雖不難但可能很繁瑣。
+以下只舉一種狀況為例。
 
 {.nobreak}**狀況** |(t,z,u) := (R (R t x u) y v, z, w)|:
 ```spec
@@ -2032,8 +2032,7 @@ rotate s x t = B s x t {-"~~."-}
 =    {- |rotate| 之定義 -}
    bheight (R (B t x u) y (B v z w))
 =    {- |bheight| 之定義 -}
-   (1+ (bheight t `max` bheight u)) `max`
-   (1+ (bheight v `max` bheight w))
+   (1+ (bheight t `max` bheight u)) `max` (1+ (bheight v `max` bheight w))
 =    {- 由於 |(k+x) `max` (k+y) = k + (x `max` y)|, |max| 有結合律 -}
    1 + (((bheight t `max` bheight u) `max` bheight v) `max` bheight w)
 =    {- |bheight| 之定義 -}
@@ -2041,37 +2040,193 @@ rotate s x t = B s x t {-"~~."-}
 ```
 :::
 
+{title="紅黑樹之性質：平衡"}
+之所以討論黑高度，目的之一當然是要討論平衡。我們可證明函數 |ins k| 維持平衡性：
+
+:::{.theorem #thm:red-black-balanced-ins}
+對所有 |k| 與 |t|, |balanced t ==> balanced (ins k t)|.
+:::
+
+{.nobreak}而由於 |balanced t ==> balanced (blacken t)|, 定理 \@ref{thm:red-black-balanced-ins} 蘊含 |insert k| 也維持輸入樹的平衡： |balanced t ==> balanced (insert k t)|.
+
+同樣地，要證明定理 \@ref{thm:red-black-balanced-ins}，我們也需要一個關於 |rotate| 的引理：
 :::{.lemma #lma:red-black-balanced-rotate}
 對所有 |t| 與 |u|,
 ```spec
 balanced t && balanced u &&
-   bheight t = bheight u ==> balanced (rotate t x u)
+   bheight t = bheight u ==> balanced (rotate t x u) {-"~~."-}
+```
+:::
+{.nobreak}由於這些證明與前面提到的證明類似，我們將它們留給讀者做練習。
+
+:::{.exlist}
+:::{.exer}
+證明定理\@ref{thm:red-black-balanced-ins}.
+你將用得上引理\@ref{lma:red-black-balanced-rotate}與定理 \@ref{thm:redblack-bheight-ins}.
+:::
+:::{.exans}
+在 |t| 之上做歸納。基底情況 |t := E| 很容易建立。
+以下只示範一種歸納情況。
+
+{.nobreak}**狀況** |t := B t x u|, |k < x|:
+```spec
+   balanced (ins k (B t x u))
+=    {- |ins| 之定義；|k < x| -}
+   balanced (rotate (ins k t) x u)
+<==  {- 引理 \ref{lma:red-black-balanced-rotate} -}
+   balanced (ins k t) && balanced u && bheight (ins k t) = bheight u
+=    {- 定理 \ref{thm:redblack-bheight-ins} -}
+   balanced (ins k t) && balanced u && bheight t = bheight u
+<==  {- 歸納假設 -}
+   balanced t && balanced u && bheight t = bheight u
+=    {- |balanced| 之定義 -}
+   balanced (B t x u) {-"~~."-}
+```spec
+:::
+:::{.exer}
+證明引理\@ref{lma:red-black-balanced-rotate}.
+:::
+:::{.exans}
+以下只示範其中一種狀況。
+
+{.nobreak}**狀況**: |(t,x,u) := (R (R t x u) y v, z, w)|.
+```spec
+  balanced (rotate (R (R t x u) y v) z w)
+=    {- |rotate| 之定義 -}
+  balanced (R (B t x u) y (B v z w))
+=    {- |balanced| 之定義 -}
+  bheight (B t x u) = bheight (B v z w) &&
+  balanced (B t x u) && balanced (B v z w)
+=    {- |bheight| 之定義 -}
+  1 + (bheight t `max` bheight u) = 1+ (bheight v `max` beight w) &&
+  bheight t = bheight u && balanced t && balanced u &&
+  bheight v = bheight w && balanced v && balanced w
+<==  {- |balanced| 與 |bheight| 之定義；算數性質 -}
+  bheight (R t x u) = bheight v &&
+  balanced (R t x u) && balanced v && balanced w &&
+  bheight t `max` bheight u `max` bheight v = bheight w
+=    {- |balanced| 與 |bheight| 之定義 -}
+  balanced (R (R t x u) y v) && balanced w &&
+   bheight R (R t x u) y v = bheight w {-"~~."-}
+```
+:::
+:::
+
+{title="紅黑樹之性質：顏色"}
+最後，我們談談紅黑樹插入之後的顏色。我們也許希望函數 |ins k| 能保持準紅黑性，意即 |semiRB t ==> semiRB (ins k t)|.
+但這顯然不成立：我們已經知道 |ins k| 可能在一個路徑上產生連續兩個紅節點。
+
+為描述此時的特殊狀況，我們另外定義一個性質：滿足下列述語的樹被稱作*紅外(infrared)樹* --- 取自比紅色還紅一點之意：
+```haskell
+infrared :: RBTree -> Bool
+infrared (R t x u)  =  (color t == Blk || color u == Blk) &&
+                         semiRB t && semiRB u 
+infrared t          =  False {-"~~."-}
+```
+{.nobreak}紅外樹幾乎是一棵根部為紅色的準紅黑樹，但兩個子樹 |t| 與 |u| 之中最多有一個可以是紅色！我們將其表示成 |color t == Blk || color u == Blk|. 此外，|t| 與 |u| 仍必須是準紅黑樹。其他的情形（|E| 或是 |B _ _ _|）是黑色的，都不是紅外樹。
+
+那麼，我們是否能證明：給定 |ins k| 準紅黑樹 |t|， |ins k t| 總是一個紅外樹，意即 |semiRB t ==> infrared (ins k t)|？
+對歸納證明熟悉的讀者可能立刻覺得事有蹊蹺：有二就有三，證明歸納狀況時，如果歸納假設中的子樹有兩個連續的紅節點，在歸納狀況中可能看到三個連續紅節點。如此一來似乎沒完沒了。
+
+這是一個我們必須嘗試證明一個更強的性質才能使歸納證明成立的例子。
+函數 |ins| 真正滿足的是一個更強的性質：
+給定準紅黑樹 |t|, 
+如果 |t| 是紅色，|ins k t| 則是一棵紅外樹；如果 |t| 是黑色，|ins k t| 也將是一棵準紅黑樹：
+:::{.theorem #thm:red-black-semiRB-ins}
+對所有 |t|:
+
+  1. |semiRB t && color t = Red ==> infrared (ins k t)|,
+  2. |semiRB t && color t = Blk ==> semiRB (ins k t)|.
+
+
+
+:::
+{.nobreak}為證明定理\@ref{thm:red-black-semiRB-ins}，我們也需要一個與 |rotate| 相關的引理：
+只要 |t| 與 |u| 之中有一個是準紅黑樹，另一個是準紅黑樹或紅外樹，|rotate t x u| 就會是準紅黑樹：
+:::{.lemma #lma:red-black-semiRB-rotate}
+對所有 |t| 與 |u|, 
+
+  1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)|; 
+  2. |semiRB t && (infrared u |||| semiRB u) ==> semiRB (rotate t x u)|.
+
+
+
+
+:::
+{.nobreak}有了定理\@ref{thm:red-black-semiRB-ins}，由於 |infrared t ==> semiRB (blacken t)|，
+我們立刻得知 |insert k| 保持準紅黑性：
+:::{.corollary}
+|semiRB t ==> semiRB (insert k t)|.
+:::
+
+
+以下證明定理\@ref{thm:red-black-semiRB-ins}:
+:::{.proof}
+定理\@ref{thm:red-black-semiRB-ins}的 1, 2 兩個小性質需在同一個歸納中證明。
+注意： 1 與 2 的合取蘊含了
+```{.equation #eq:red-black-semiRB-ins-infrared}
+|semiRB t ==> (infrared (ins k t) |||| semiRB (ins k t))| \mbox{~~.}
+```
+{.nobreak}我們將用到此性質。
+
+在 |t| 之上做歸納。我們只舉出兩個具代表性的例子：
+
+{.nobreak}**狀況**: |t := B t x u|, |k < x|:
+```spec
+   semiRB (ins k (B t x u))
+=    {- |ins| 之定義, |k < x| -}
+   semiRB (rotate (ins k t) x u)
+<==  {- 引理 \ref{lma:red-black-semiRB-rotate} -}
+   (infrared (ins k t) || semiRB (ins k t)) && semiRB u
+<==  {- 歸納假設，\eqref{eq:red-black-semiRB-ins-infrared} -}
+   semiRB t && semiRB u
+=    {- |semiRB| 之定義 -}
+   semiRB (B t x u) {-"~~."-}
+```
+
+{.nobreak}**狀況**:  |t := R t x u|, |k < x|:
+```spec
+   infrared (ins k (R t x u))
+=    {- |ins| 之定義 -}
+   infrared (R (ins k t) x u)
+=    {- |infrared| 之定義 -}
+   (color (ins k t) = Blk || color u = Blk) && semiRB (ins k t) && semiRB u
+=    {- 歸納假設 -}
+   (color (ins k t) = Blk || color u = Blk) && semiRB t && color t = Blk && semiRB u
+<==  {- 命題邏輯: |((P |||| Q) && R) <== (Q && R)| -}
+   color t = color u = Blk && semiRB t && semiRB u
+=   {- |semiRB| 之定義 -}
+   semiRB (R t x u) {-"~~."-}
 ```
 :::
 
-
-
-:::{.theorem}
-For all |k| and |t|, |balanced t ==> balanced (ins k t)|
+:::{.exlist}
+:::{.exer}
+證明引理 \@ref{lma:red-black-semiRB-rotate}.
 :::
+:::{.exans}
+本證明只是一一檢查每個狀況。
+以 1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)| 為例，由於有 |semiRB u|, 我們只需檢查 |rotate| 的第一、第二、與最後一個狀況。
+以第一個狀況為例：
 
-:::{.lemma}
-for all |t| and |u|,
-|ifred t && semiRB u ==> semiRB (rotate t x u)|.
+{.nobreak}**狀況**: |(t,x,u) := (R (R t x u) y v, z, w)|:
+```spec
+   semiRB (rotate (R (R t x u) y v) z w)
+=    {- |rotate| 之定義 -}
+   semiRB (R (B t x u) y (B v z w))
+=    {- |semiRB| 與 |color| 之定義 -}
+   color t = color u = color v = color w = Blk &&
+   semiRB t && semiRB u && semiRB v && semiRB w
+=    {- |semiRB| 之定義 -}
+   color v = color w = Blk &&
+   semiRB (R t x u) && semiRB v && semiRB w
+=    {- |infrared| 之定義 -}
+   infrared (R (R t x u) y v) && semiRB w 
+=    {- 命題邏輯，|semiRB (R (R t x u) y v) = False| -}  
+   (infrared (R (R t x u) y v) || semiRB (R (R t x u) y v)) && semiRB w  {-"~~."-}
+
+```
 :::
-
-:::{.theorem}
-For all |t|:
-
-  1. |semiRB t && color t = R ==> ifred (ins k t)|,
-  2. |semiRB t && color t = B ==> semiRB (ins k t)|.
-
-
-
-:::
-
-:::{.corollary}
-since |infred t ==> semiRB (blacken t)|, as a corollary we have |semiRB t ==> semiRB (insert k t)|.
 :::
 
 ## 由集合論看歸納法 {#sec:induction-set-theory}
@@ -3015,7 +3170,7 @@ evenOdd = (  \n -> case n of{-"~~"-}  Zero   -> True
 證明 |all (xs ==) (zipWith (++) (inits xs) (tails xs))|. (unfinished)
 :::
 :::{.exans}
-\Answer 在 |xs| 上做歸納。
+在 |xs| 上做歸納。
 ```spec
     all ((x:xs) ==) (zipWith (++) (inits (x:xs)) (tails (x:xs)))
 <=> all ((x:xs) ==) (zipWith (++) ([]: map (x:) (inits xs)) ((x:xs):tails xs))
