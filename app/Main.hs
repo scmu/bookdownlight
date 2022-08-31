@@ -92,6 +92,7 @@ chapters = [ "Introduction"
            , "Semantics"
            , "Derivation"
            , "Folds"
+           , "SegProblems"
            ]
 -- paths
 

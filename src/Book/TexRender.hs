@@ -68,7 +68,7 @@ renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
    envEnd h c
  where thmEnvs :: [Text]
        thmEnvs = ["theorem", "lemma", "definition", "example",
-                  "proof"]
+                  "proof", "corollary"]
 
 renderDIV h "figure" cs ids avs bs = do
    T.hPutStr h "\\begin{figure}"
