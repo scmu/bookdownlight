@@ -10,11 +10,11 @@ import Common.MiniPrelude hiding (exp, gcd)
 import Chapters.Basics (square, ETree(..), ITree(..), positions, fork)
 ```
 
-# 程式推導 {#ch:derivation}
+# 一般程式推導 {#ch:derivation}
 
 *程式推導*(*program derivation*)\index{program derivation 程式推導}是本書的重要主題。
 給定一個待解決的問題，並假設該問題能描述成邏輯、數學、或其他形式語言（稱作一個形式規格(specification)），
-程式推導泛指以嚴謹方式將該規格轉換成一個解決該問題的程式的方法。
+程式推導泛指*以嚴謹方式將該規格轉換成一個解決該問題的程式*的方法。
 指令式語言與函數語言都能做程式推導，而且有許多道理可相通。
 本書討論函數語言的程式推導。
 一個簡單、典型的函數程式語言推導可能有如下的形式：
@@ -41,7 +41,7 @@ import Chapters.Basics (square, ETree(..), ITree(..), positions, fork)
 本書混用這兩個詞彙，並不區分。
 
 為何做程式推導？第一個理由是我們希望程式正確。
-此處的「正確」指的是 |en| 確實滿足了最初的規格 |spec|。但如果只為了正確性，我們為何不能先無論如何把 |en| 寫出，再試著證明 |spec = en|？
+此處「正確」指的是 |en| 確實滿足了最初的規格 |spec|。但如果只為了正確性，我們為何不能先無論如何把 |en| 寫出，再試著證明 |spec = en|？
 原因之一是通常程式寫好了，大家便不想證它了。
 更重要的是：程式開發時，若沒有把「怎麼證明它」列入考量，寫出的程式常常是很難證明的。
 為了確保有證明，最好讓「產生證明」這件事成為程式開發過程的一部分，甚至讓證明引導程式的開發。
@@ -781,93 +781,6 @@ exp b n  | even n  = square (exp b (n `div` 2))
 某些演算法適合快取，等等。
 我們在之後的章節中將看到一些歸納定義程式走訪資料結構的次數雖較少，但反而執行得慢的例子。
 
-### 掃描引理 {#sec:sum-scan-lemma}
-
-在結束本節之前，我們再看一個將在本章後段扮演重要角色的例子。
-如我們所知，函數 |sum :: List Int -> Int| 計算一個串列的總和。
-如果我們想計算一個串列由右到左的*累計和*，例如當給定串列 |[3,7,2,4]|，我們希望得到 |[16,13,6,4,0]|（其中 |6 = 2 + 4|, |13 = 7 + 2 + 4|，|16 = 3 + 7 + 2 + 4|, 而 |0| 是空串列的和），該怎麼做呢？
-
-在第\@ref{sec:list-segments}節中，我們曾提及計算一個串列所有*後段*(*suffixes*)的函數 |tails :: List a -> List (List a)|。\index{list 串列!suffix 後段}
-例如，|tails [3,7,2,4]| 將得到 |[[3,7,2,4],| |[7,2,4],| |[2,4],| |[4],| |[]]|。對串列的每一個後段算總和，我們便得到累計和了：
-```haskell
-runsum :: List Int -> List Int
-runsum = map sum . tails {-"~~."-}
-```
-{.nobreak}由於使用多個 |sum| 函數走訪每個後段，如此定義出的 |runsum| 將是一個執行時間為 $O(n^2)$ 的函數。
-
-但讀者想必已覺得可不用如此費事：我們應該可以在由右到左走訪串列的過程中*記住目前為止的和*，避免重算 |sum|。事實上，同樣的道理可用在 |sum| 以外的更多函數上。給定函數 |f :: List A -> B|, 並假設 |f| 能寫成如下的形式：
-```texonly
-\begin{flalign}
-\qquad\quad
-\begin{split}
-|f []| & |= e|\\
-|f (x:xs)|  & |= x `oplus` f xs {-"~~."-}|
-\end{split}
-\label{eq:f-fold-scan}
-\end{flalign}
-```
-函數 |sum| 是符合 \@eqref{eq:f-fold-scan} 的一個特例： |e = 0|, |oplus = (+)|.
-定義 |scan = map f . tails|, 我們想推導出一個 |oplus| 的被使用次數與輸入串列長度成正比的 |scan| 實作。
-
-為方便讀者，我們回顧一下 |tails| 的定義：
-```spec
-tails []      = [[]]
-tails (x:xs)  = (x:xs) : tails xs {-"~~."-}
-```
-{.nobreak}據此推導 |scan|. 顯然 |scan [] = [e]|. 我們考慮 |scan (x:xs)| 的情況：
-```{.haskell .invisible}
-scanSumLemmaDer1 f oplus x xs =
-```
-```haskell
-      map f (tails (x:xs))
- ===    {- |tails| 之定義 -}
-      map f ((x:xs) : tails xs)
- ===    {- |map| 與 |f| 之定義 -}
-      (x `oplus` f xs) : map f (tails xs) {-"~~."-}
-```
-{.nobreak}推演到此，好像只能把上式收回成 |(x `oplus` f xs) : scan xs| 了，對改進複雜度並沒有什麼幫助。
-為了增進效率，我們希望申論：|f xs| 是已經算出了的，不必重複算。此處將用到幾個關鍵性質。首先，對所有 |xs|, |tails xs| 的第一個元素永遠是 |xs|！這可寫成
-```{.equation #eq:head-tails}
-  |head (tails xs)|&|= xs|\mbox{~~.}
-```
-有了\@eqref{eq:head-tails}，直覺上，算出 |ys = map f (tails xs)| 之後，|f xs| 的值就是 |ys| 的第一個元素，不用重複計算了。
-也就是說， |head (map f (tails xs)) = f xs|。但要由 \@eqref{eq:head-tails} 證明出此性質，我們還需要一個性質允許我們將 |head| 往右推 ---
-對所有 |f|, |head . map f = f . head|:
-```spec
-      head (map f (tails xs))
- ===    {- 因 |head . map f = f . head| -}
-      f (head (tails xs))
- ===    {- 因 \eqref{eq:head-tails} -}
-      f xs {-"~~."-}
-```
-
-現在我們可繼續推導 |scan|:
-```{.haskell .invisible}
-scanSumLemmaDer2 f oplus x xs =
-```
-```haskell
-      (x `oplus` f xs) : map f (tails xs) {-"~~."-}
- ===     {- |head (map f (tails xs)) = f xs| -}
-      (x `oplus` head (map f (tails xs))) : map f (tails xs)
- ===     {- 抽取出 |map f (tails xs)| -}
-      let ys = map f (tails xs)
-      in (x `oplus` head ys) : ys {-"~~."-}
-```
-{.nobreak}由此我們得到
-```spec
-scan []      =  [e]
-scan (x:xs)  =  let  ys = scan xs
-                in   (x `oplus` head ys) : ys {-"~~."-}
-```
-{.nobreak}給定長度為 |n| 的串列，歸納定義的 |scan| 只將 |oplus| 使用 |n| 次。當 |oplus| 只需常數時間，這是一個時間複雜度為 $O(n)$ 的演算法。函數 |runsum| 則是當 |e = 0|, |oplus = (+)| 時的特例。
-
-一個函數 |f :: List A -> B| 若可寫成 \@eqref{eq:f-fold-scan} 的形式，我們說此函數是一個「摺(fold)」.
-\index{fold 摺}
-這是函數語言中相當重要而好用的一個抽象化。我們將在第\@ref{ch:fold}章中細談關於摺的種種。
-當 |f| 是一個摺時，|map f . tails| 這樣的函數習慣上稱作一個「掃描(scan)」。
-這是本節標題的由來。
-關於掃描、摺、與掃描引理，我們將在第\@ref{sec:scan-lemma}節中做更完整的介紹。
-
 ## 變數換常數
 
 接下來的幾節中，我們將介紹幾種常見的程式推導技巧。
@@ -1282,6 +1195,50 @@ dd (Bin t u)  | m <  n  = (ys, 1 + n)
               | m == n  = (xs ++ ys, 1 + n)
               | m >  n  = (xs, 1 + m) {-"~~,"-}
   where ((xs,m),(ys,n)) = (dd t, dd u) {-"~~."-}
+```
+:::
+:::
+
+:::{.exlist}
+:::{.exer}
+第 \@ref{sec:induction-red-black-tree} 節中的函數 |balanced :: RBTree -> Bool| 檢查一棵紅黑樹是否平衡。由於重複呼叫 |bheight|, 這是一個需要 $O(n^2)$ 時間的函數。請用組對的技巧推導出一個可在線性時間內判斷平衡的版本。
+:::
+:::{.exans}
+定義：
+```spec
+balHeight :: RBTree -> (Bool, Nat)
+balHeight = fork balanced bheight {-"~~."-}
+```
+{.nobreak}我們有 |balanced = fst . balHeight|.
+顯然 |balHeight E = (True, 0)|.
+考慮 |B t x u| 的狀況：
+```spec
+  balHeight (B t x u)
+=   {- |balHeight| 之定義 -}
+  (balanced (B t x u), bheight (B t x u))
+=   {- |balanced| 與 |bheight| 之定義 -}
+  (bheight t == bheight u && balanced t && balanced u,
+   1 + (bheight t `max` bheight u))
+=   {- 將 |balanced| 與 |bheight| 的呼叫取出 -}
+  let  (bt,  ht)  = (balanced t, bheight t)
+       (bu,  hu)  = (balanced u, bheight u)
+  in   (ht == hu && bt && bu, 1 + (ht `max` hu))
+=   {- |balHeight| 之定義 -}
+  let  (bt,  ht)  = balHeight t
+       (bu,  hu)  = balHeight u
+  in   (ht == hu && bt && bu, 1 + (ht `max` hu)) {-"~~."-}
+```
+
+當輸入為 |R t x u| 的情況亦雷同。我們可推導出：
+```spec
+balHeight :: RBTree -> (Bool, Nat)
+balHeight E          =  (True, 0)
+balHeight (R t x u)  =  let  (bt,  ht)  = balHeight t
+                             (bu,  hu)  = balHeight u
+                        in   (ht == hu && bt && bu, (ht `max` hu))
+balHeight (B t x u)  =  let  (bt,  ht)  = balHeight t
+                             (bu,  hu)  = balHeight u
+                        in   (ht == hu && bt && bu, 1 + (ht `max` hu)) {-"~~."-}
 ```
 :::
 :::

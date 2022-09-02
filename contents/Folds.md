@@ -106,7 +106,7 @@ h (x:xs)  = ... x ... h xs ...
 下一節將舉更多使用 |foldr| 的例子。
 在那之前我們再次提醒讀者：在 |foldr oplus e (x:xs)| 的狀況中，|oplus| 可以使用 |x| 與 |foldr oplus e xs| 的結果，但不能直接使用 |xs|.
 
-### 更多串列上的摺
+### 更多串列上的摺 {#sec:more-folds-on-lists}
 
 回顧起來，我們可發現第\@ref{ch:induction}章介紹的許多函數都是 |foldr|.
 :::{.example}
@@ -207,7 +207,7 @@ fan :: a -> List a -> List (List a)
 fan y []      = [[y]]
 fan y (x:xs)  = (y:x:xs) : map (x:) (fan y xs) {-"~~."-}
 ```
-{.nobreak}為何這個定義不是一個 |foldr|?
+{.nobreak}為何這個定義目前的形式不是一個 |foldr|?
 有沒有可能將 |fan y| 寫成一個 |foldr| 呢？
 :::
 :::{.exans}
@@ -550,10 +550,13 @@ sumsqFusionCond x xs =
 給定一個整數串列，其中由左到右的數字表示對一個帳戶存款或提款的金額：正數為存款、負數為提款。
 我們想確定在任何一個時刻帳戶金額不至於變成負數。
 一個可能做法是：對該串列的每一個前段算總和，我們可得到每個時刻的帳戶金額。
-接著看看其中最小值是否為負數即可：
+接著看看其中最小值是否為負數即可。
+定義函數 |noOverdraft| 如下：
 ```spec
-   (>= 0) . minimum . map sum . inits {-"~~."-}
+noOverdraft :: Int -> Bool 
+noOverdraft = (>= 0) . minimum . map sum . inits {-"~~."-}
 ```
+{.nobreak}我們試著導出一個比較快速的版本。
 
 ```texonly
 %{
@@ -604,8 +607,9 @@ geqMinimumSumInits :: List Int -> Bool
 geqMinimumSumInits =
 ```
 ```haskell
-  (>= 0) . minimum . map sum . inits ===
-    (>= 0) . foldr (\x y -> 0 `min` (x + y)) 0 {-"~~."-}
+      noOverdraft
+ ===  (>= 0) . minimum . map sum . inits
+ ===  (>= 0) . foldr (\x y -> 0 `min` (x + y)) 0 {-"~~."-}
 ```
 {.nobreak}這是一個只需線性時間的演算法。
 
@@ -624,17 +628,13 @@ geqMinimumSumInits =
 
 也由於同樣的理由，如果我們最初把問題定義為：
 ```spec
-  and . map (>=0) . map sum . inits {-"~~,"-}
+  noOverdraft = and . map (>=0) . map sum . inits {-"~~,"-}
 ```
 {.nobreak}函數 |map (>= 0)| 將無法融合進 |map sum . inits| 之中。
 ```texonly
 %} %format
 ```
 :::
-
-```texonly
-% 我們將在第\@ref{sec:scan-lemma}節討論使用摺融合生成程式的一個重要範例：關於「掃描」。
-```
 
 使用摺融合論證兩個式子相等的證明常有如下的形式：
 ```spec
@@ -808,29 +808,38 @@ decimal = foldr (\c n -> if c then 1 + 2 * n else 2 * n) 0 {-"~~"-}
 
 ### 掃描 {#sec:scan-lemma}
 
-第\@ref{sec:sum-scan-lemma}節介紹了掃描定理，並提及\@eqref{eq:f-fold-scan}就是一個摺。
-其實，掃描定理通常是在定義了摺之後才討論的。本節將做一個更正式的介紹。
-\index{scan 掃描}
-定義函數 |scanr| 如下：
+本節將介紹一個本書首次提及，初見時較難理解，但在許多演算法中扮演重要角色的組件函數：*掃描*（*scan*）。\index{scan 掃描}
+
+如我們所知，函數 |sum :: List Int -> Int| 計算一個串列的總和。
+如果我們想計算一個串列由右到左的*累計和*，例如當給定串列 |[3,7,2,4]|，我們希望得到 |[16,13,6,4,0]|（其中 |6 = 2 + 4|, |13 = 7 + 2 + 4|，|16 = 3 + 7 + 2 + 4|, 而 |0| 是空串列的和），該怎麼做呢？
+
+在第\@ref{sec:list-segments}節中，我們曾提及計算一個串列所有*後段*(*suffixes*)的函數 |tails :: List a -> List (List a)|。\index{list 串列!suffix 後段}
+例如，|tails [3,7,2,4]| 將得到 |[[3,7,2,4],| |[7,2,4],| |[2,4],| |[4],| |[]]|。對串列的每一個後段算總和，我們便得到累計和 |[16,13,6,4,0]| 了：
+```haskell
+runsum :: List Int -> List Int
+runsum = map sum . tails {-"~~."-}
+```
+{.nobreak}由於使用多個 |sum| 函數走訪每個後段，如此定義出的 |runsum| 將是一個執行時間為 $O(n^2)$ 的函數。
+但讀者想必已覺得可不用如此費事：我們應該可以在由右到左走訪串列的過程中*記住目前為止的和*，避免重算 |sum|。這該怎麼做呢？
+
+回想： |sum| 可寫成一個摺。因此我們可稍微推廣一下，定義函數 |scanr| 如下：
 ```spec
 scanr :: (a -> b -> b) -> b -> List a -> List b
 scanr f e = map (foldr f e) . tails {-"~~."-}
 ```
 {.nobreak}給定一個串列 |xs|, |scanr f e| 先算出 |xs| 的所有後段，
-然後對每一個後段都做 |foldr f e|.
-\index{list 串列!suffix 後段}
-例如，|scanr (+) 0 [3,7,2,4]| 計算串列 |[3,7,2,4]| 由右到左的累計和：
-先用 |tails [3,7,2,4]| 算出所有後段 |[[3,7,2,4],| |[7,2,4],| |[2,4],| |[4],| |[]]|,
-然後對每一個後段都計算 |foldr (+) 0 = sum|,
-可得到累計和 |[16,13,6,4,0]|.
+然後對每一個後段都做 |foldr f e|. \index{list 串列!suffix 後段}
+前述的 |runsum| 其實是 |scanr| 的特例：
+|runsum = scanr (+) 0|.
 
 如果把上述的 |scanr| 定義當作演算法，處理長度為 |n| 的串列時呼叫 |f| 的次數為 $O(n^2)$.
-掃描定理則告訴我們：其實只需 $O(n)$ 個呼叫就可以了！
-由於 |tails| 是一個 |foldr|:
+我們找找看是否有比較快的演算法。
+
+第 \@ref{sec:more-folds-on-lists} 節中提及 |tails| 是一個 |foldr|:
 ```spec
 tails = foldr (\x xss -> (x : head xss) : xss) [[]] {-"~~,"-}
 ```
-{.nobreak}我們試著把 |map (foldr f e)| 融合入 |tails| 中，看看是否能找出一個較有效率的 |scanr| 定義。
+{.nobreak}也許我們可試著把 |map (foldr f e)| 融合入 |tails| 中，看看是否能找出一個較有效率的 |scanr| 定義。
 其融合條件如下：
 ```{.haskell .invisible}
 scanrFusionCond :: (a -> b -> b) -> b -> a -> List (List a) -> List b
@@ -842,11 +851,13 @@ scanrFusionCond f e x xss =
       foldr f e (x : head xss) : map (foldr f e) xss
  ===    {- |foldr| 之定義 -}
       f x (foldr f e (head xss)) : map (foldr f e) xss
- ===    {- |foldr f e (head xss) = head (map (foldr f e) xss)| -}
+ ===    {- |g (head ys) = head (map g ys)|; 令 |g := foldr f e|, |ys := xss| -}
+      f x (head (map (foldr f e) xss)) : map (foldr f e) xss
+ ===    {- 取出 |map (foldr f e) xss| -}
       let ys = map (foldr f e) xss
       in f x (head ys) : ys {-"~~."-}
 ```
-{.nobreak}於是我們推導出了 |scanr| 的另一個定義。
+{.nobreak}於是我們推導出了 |scanr| 的另一個定義：
 :::{.lemma title="掃描引理" #lma:scan-lemma}
 對所有 |f|, |e|,
 ```spec
@@ -860,102 +871,18 @@ scanr f e []      = [e]
 scanr f e (x:xs)  = f x (head ys) : ys {-"~~,"-}
     where ys = scanr f e xs {-"~~."-}
 ```
-
-### 再看最大區段和問題 {#sec:maximum-segment-sum-foldr}
-
-第\@ref{sec:maximum-segment-sum}節中的最大區段和問題其實常被當作摺融合的應用例。
-\index{maximum segment sum 最大區段和}
-回顧：給定一個串列，我們希望計算它的所有區段中，總和最大的和。
-寫成規格如下：
+{.nobreak} 在第 \@ref{sec:more-folds-on-lists} 節中，使得 |tails| 能寫成一個 |foldr| 的重要性質是|head (tails xs) = xs| -- |tails xs| 的第一個元素就是 |xs| 本身。使用 |tails| 定義的 |scanr| 自然繼承了相關的性質：|scanr f e xs| 的第一個元素就是 |foldr f e xs|, 因此可直接用 |head| 取出，不需每次重新計算。
+用本節開頭的例子說明，以下我們令 |scr = (\x ys -> x + head ys : ys)|:
 ```spec
-mss = maximum . map sum . segments {-"~~."-}
+     scanr (+) 0 [3,7,2,4]
+===  scr 3 (scr 7 (scr 2 (scr 4 [0])))
+===  scr 3 (scr 7 (scr 2 [4 + 0, 0]))
+===  scr 3 (scr 7 [2 + 4 + 0, 4 + 0, 0])
+===  scr 3 [7 + 2 + 4 + 0, 2 + 4 + 0, 4 + 0, 0]
+===  [3 + 7 + 2 + 4 + 0, 7 + 2 + 4 + 0, 2 + 4 + 0, 4 + 0, 0]
+===  [16,13,6,4,0] {-"~~,"-}
 ```
-```{.haskell .invisible}
-segments = concat . map inits . tails
-```
-{.nobreak}要解此問題，我們和第\@ref{sec:maximum-segment-sum}節中一樣先做前段-後段分解，
-```{.haskell .invisible}
-mssDer00 :: List Int -> Int
-mssDer00 =
-```
-```haskell
-      maximum . map sum . segments
- ===  maximum . map sum . concat . map inits . tails
- ===   {- |map f . concat = concat . map (map f)| (習題 \ref{ex:map-concat}) -}
-      maximum . concat . map (map sum) . map inits . tails
- ===   {- |maximum . concat = maximum . map maximum| -}
-      maximum . map maximum . map (map sum) . map inits . tails
- ===   {- |map| 融合 （定理\ref{thm:map-fusion}） -}
-      maximum . map (maximum . map sum . inits) . tails
- ===   {- 令 |mps = maximum . map sum . inits| -}
-      maximum . map mps . tails {-"~~."-}
-```
-```{.haskell .invisible}
- where mps = maximum . map sum . inits
-```
-{.nobreak}也就是說：要找出最大區段和，我們可以對*每一個後段，找出其最大前段和*。
-
-剛讀過掃描引理\@ref{lma:scan-lemma}的讀者可能立刻注意到
-|map mps . tails| 這個子算式：
-如果我們能把 |mps| 變成一個摺，
-|map mps . tails| 可改寫為 |scanr|.
-如果該摺的步驟函數只花常數時間，我們就有了一個線性時間的演算法了！
-
-如何把 |mps| 變成摺呢？
-由於 |inits| 是摺，我們可使用摺融合。
-此處的計算和例\@ref{ex:minimumMapSumInits}很類似，我們可以把 |map sum| 與 |maximum| 分兩次融合進 |inits|, 也可以一次把 |maximum . map sum| 融合進 |inits|.
-這次我們試試看後者。
-基底值 |maximum (map sum [[]]) = 0|.
-我們想要尋找滿足融合條件
-|maxmium (map sum ([] : map (x:) xss)) = step x (maximum (map sum xss))|
-的函數 |step|.
-計算如下：
-```{.haskell .invisible}
-maxMapSumFuse :: Int -> List [Int] -> Int
-maxMapSumFuse x xss =
-```
-```haskell
-      maximum (map sum ([] : map (x:) xss))
- ===    {- |map| 與 |sum| 之定義  -}
-      maximum (0 : map sum (map (x:) xss))
- ===    {- |map| 融合  -}
-      maximum (0 : map (sum . (x:)) xss)
- ===    {- |sum| 之定義 -}
-      maximum (0 : map ((x+). sum) xss)
- ===    {- |maximum| 之定義 -}
-      0 `max` maximum (map ((x+). sum) xss)
- ===    {- |maximum . map (x+) = (x+) . maximum| -}
-      0 `max` (x + maximum (map sum xss)) {-"~~."-}
-```
-{.nobreak}因此我們推導出了：
-```{.haskell .invisible}
-mpsDer00 :: List Int -> Int
-mpsDer00 =
-```
-```haskell
-      maximum . map sum . inits
- ===  maximum . map sum . foldr (\x xss -> [] : map (x:) xss) [[]]
- ===   {- 摺融合定理，融合條件如上 -}
-      foldr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
-```
-
-既然 |mps| 已經是一個摺，我們可以使用掃描引理：
-```{.haskell .invisible}
-mssDer01 :: List Int -> Int
-mssDer01 =
-```
-```haskell
-      maximum . map sum . segments
- ===    {- 上述計算 -}
-      maximum . map (foldr (\x s -> 0 `max` (x + s)) 0) . tails
- ===    {- 掃描引理\ref{lma:scan-lemma} -}
-      maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
-```
-{.nobreak}我們得到 |mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0|.
-這是一個使用線性時間、線性空間的演算法。
-
-由於 |scanr| 也是一個摺，我們可再嘗試把 |maximum| 融合進去，試圖消除 |scanr| 產生的中間串列，以便得到一個使用線性時間、常數空間的演算法。
-但我們將會發現融合條件無法達成，因此得做組對轉換。剩下的計算便和第\@ref{sec:maximum-segment-sum}節相同了。
+{.nobreak}其中每個 |scr| 都可直接使用之前累積計算的結果，不用從頭加起。
 
 ### 香蕉船定理
 

@@ -95,54 +95,81 @@ mssDer1 =
 ^[反過來當然也可以。如果我們定義 |segments = concat . map tails . inits|, 此處的策略就變成「對每個前段，算出其最佳後段」。]
 
 {title="使用掃描引理"}
-接下來我們注意到 |map mps . tails| 這個子算式。回顧第 \@ref{sec:sum-scan-lemma} 節的掃描引理。如果 |mps| 能被寫成 \@eqref{eq:f-fold-scan} 的形式：
+接下來我們注意到 |map mps . tails| 這個子算式。回顧*掃描引理*(\@ref{lma:scan-lemma}), 重複如下：
 ```spec
-mps []      = e
-mps (x:xs)  = x `oplus` mps xs {-"~~,"-}
+map (foldr f e) . tails = scanr f e = foldr (\x ys -> f x (head ys) : ys) [e] {-"~~."-}
 ```
-{.nobreak}那麼我們就有了只把 |oplus| 呼叫 |n| 次便計算出 |map mps . tails| 的方法。
-這是可能的嗎？我們推導看看。
+如果我們能把 |mps| 變成一個 |foldr|，
+|map mps . tails| 可改寫為 |scanr|.
+如果該摺的步驟函數只花常數時間，我們就有了一個線性時間的演算法了！
 
-基底狀況很容易算出：|mps [] =| |(maximum . map sum . inits) [] =|
-|maximum [0] = 0|. 考慮歸納情況：
+如何把 |mps| 變成摺呢？由於 |inits| 是摺，我們可使用摺融合。
+此處的計算和例\@ref{ex:minimumMapSumInits}很類似，我們可以把 |map sum| 與 |maximum| 分兩次融合進 |inits|, 也可以一次把 |maximum . map sum| 融合進 |inits|.
+這次我們試試看後者。
+基底值 |maximum (map sum [[]]) = 0|.
+我們想要尋找滿足融合條件
+|maxmium (map sum ([] : map (x:) xss)) = step x (maximum (map sum xss))|
+的函數 |step|.
+計算如下：
 ```{.haskell .invisible}
-msiDer2 x xs =
+maxMapSumFuse :: Int -> List [Int] -> Int
+maxMapSumFuse x xss =
 ```
 ```haskell
-      maximum . map sum . inits $ (x:xs)
- ===    {- |inits| 之定義 -}
-      maximum . map sum $ ([] : map (x:) (inits xs))
- ===    {- |map| 之定義 -}
-      maximum (sum [] : map sum (map (x:) (inits xs)))
- ===    {- |sum| 與 |maximum| 之定義, |map| 融合 -}
-      0 `max` maximum (map (sum . (x:)) (inits xs))
- ===    {- |sum| 之定義 --- |sum . (x:) = (x+) . sum| -}
-      0 `max` maximum (map ((x+) . sum) (inits xs))
+      maximum (map sum ([] : map (x:) xss))
+ ===    {- |map| 與 |sum| 之定義  -}
+      maximum (0 : map sum (map (x:) xss))
+ ===    {- |map| 融合  -}
+      maximum (0 : map (sum . (x:)) xss)
+ ===    {- |sum| 之定義 -}
+      maximum (0 : map ((x+). sum) xss)
+ ===    {- |maximum| 之定義 -}
+      0 `max` maximum (map ((x+). sum) xss)
  ===    {- |maximum . map (x+) = (x+) . maximum| -}
-      0 `max` (x + maximum (map sum (inits xs))) {-"~~."-}
+      0 `max` (x + maximum (map sum xss)) {-"~~."-}
 ```
-{.nobreak}果然成功了！我們得到：
+{.nobreak}因此我們推導出了：
+```{.haskell .invisible}
+mpsDer00 :: List Int -> Int
+mpsDer00 =
+```
 ```haskell
-mps []      = 0
-mps (x:xs)  = 0 `max` (x + mps xs) {-"~~."-}
+      maximum . map sum . inits
+ ===  maximum . map sum . foldr (\x xss -> [] : map (x:) xss) [[]]
+ ===   {- 摺融合定理，融合條件如上 -}
+      foldr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
 ```
-{.nobreak}令 |x `oplus` y = 0 `max` (x + y)|, 函數 |mps| 便符合我們要求的模式了。
-此處 |oplus| 是一個只需常數時間的函數。
-因此，我們將有一個能在線性時間內計算最大區段和的演算法！
 
-以上計算完全依照我們所說的原則：將定義展開、然後試圖將 |maximum| 與 |map sum| 往右推直到與 |inits xs| 相接，以便將 |mps| 的定義收回。
-前幾步只是簡單地展開定義並使用 |map| 融合。最後一步中，為了將 |maximum| 往右推，使用了如下的性質
+注意：步驟函數推導的最後一步中，為了將 |maximum| 往右推，使用了如下的性質
 ```{.equation #eq:max-mapadd}
   |maximum . map (x+)|&|= (x+) . maximum| \mbox{~~.}
 ```
-在 \@eqref{eq:max-mapadd} 的左手邊，我們將一個串列的每個元素都加上 |x|, 然後取最大值。
+{.nobreak}在 \@eqref{eq:max-mapadd} 的左手邊，我們將一個串列的每個元素都加上 |x|, 然後取最大值。
 性質 \@eqref{eq:max-mapadd} 告訴我們，其實我們可以先取最大值，然後做一個加法即可。
 這個步驟允許我們在每一步省下了 $O(n)$ 個加法，是使得整個演算法之所以能加速的關鍵一步。
 而 \@eqref{eq:max-mapadd} 的證明只需使用例行的歸納法，但其中的關鍵一步需要如下的分配律：
 ```{.equation #eq:plus-max}
 |x + (y `max` z)| &|= (x + y) `max` (x + z)| \mbox{~~.}
 ```
-加法與|max|的分配率是使我們能有一個線性時間演算法的關鍵性質。
+{.nobreak}加法與|max|的分配率是使我們能有一個線性時間演算法的關鍵性質。
+
+既然 |mps| 已經是一個摺，我們可以使用掃描引理：
+```{.haskell .invisible}
+mssDer01 :: List Int -> Int
+mssDer01 =
+```
+```haskell
+      maximum . map sum . segments
+ ===    {- 上述計算 -}
+      maximum . map (foldr (\x s -> 0 `max` (x + s)) 0) . tails
+ ===    {- 掃描引理\ref{lma:scan-lemma} -}
+      maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
+```
+{.nobreak}我們得到
+```spec
+mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
+```
+這是一個使用線性時間、線性空間的演算法。
 
 藉由程式推導，我們不僅找到了一個較快的演算法，也找出了使得該演算法之所以成立的根本性質。
 這使我們能輕易將該演算法推廣：除了加法與|max|，之外，該演算法能用在任何滿足 \@eqref{eq:plus-max} 的一組運算元之上。
@@ -153,72 +180,65 @@ mps (x:xs)  = 0 `max` (x + mps xs) {-"~~."-}
 :::
 :::
 
-{title="線性時間、常數空間"}
-根據之前的演算，我們得到：\label{code:mpsAll}
-```texonly
-%{
-%format mss' = mss
-```
-```haskell
-mss' :: List Int -> Int
-mss' = maximum . mpsAll {-"~~,"-}
-
-mpsAll []      =  [0]
-mpsAll (x:xs)  =  let ys = mpsAll xs
-                  in (0 `max` (x + head ys)) : ys {-"~~."-}
-```
-```texonly
-%} % mss'
-```
-其中 |mpsAll = map mps . tails|.
-使用掃描引理導出的 |mpss| 能在線性時間內對輸入串列的每個後段算出其 |mps| （即「最大前段和」）並存放在一個串列中。
-方法是將串列由右到左走訪一遍，在每一步將 |x| 與 |mps xs| 的值（存放在 |head ys| 中）相加，並和 |0| 比大小。
+{title="常數空間"}
+使用掃描引理導出的 |mss| 能在線性時間內對輸入串列的每個後段算出其 |mps| （即「最大前段和」）並存放在一個串列中。
+方法是使用一個 |scanr| 將串列由右到左走訪一遍，在每一步將 |x| 與 |mps xs| 的值（存放在串列中）相加，並和 |0| 比大小。
 每個 |mps| 值之中最大的那個，便是我們要的答案。
 在函數語言圈內，關於最大區段和的討論大多到此為止：我們已經有了一個漂亮的線性時間演算法了。
 
-若要再挑惕，我們還有個小問題可解決：這個演算法需要線性的空間 --- |mpsAll| 會產生一個中間串列，由 |maximum| 消掉。
-我們有可能把 |maximum| 與 |mpsAll| 融合，得到一個不產生中間串列的演算法嗎？我們試試看：
-```{.haskell .invisible}
-maxmpsAllDer x xs =
+若要再挑惕，我們還有個小問題可解決：這個演算法需要線性的空間 --- |scanr| 會產生一個中間串列，由 |maximum| 消掉。
+我們有可能把 |maximum| 與 |scanr| 融合，得到一個不產生中間串列的演算法嗎？根據摺融合定理，我們將需要找到滿足以下融合條件的函數 |step|：
+```spec
+ maximum (0 `max` (x + head ys) : ys) = step x (maximum ys) {-"~~."-}
 ```
-```haskell
-      (maximum . mpsAll) (x:xs)
- ===    {- |maximum| 與 |mpsAll| 之定義；提出 |let| -}
-      let ys = mpsAll xs
-      in (0 `max` (x + head ys)) `max` maximum ys
- ===  (0 `max` (x + head (mpsAll xs))) `max` maximum (mpsAll xs) {-"~~."-}
-```
-{.nobreak}雖然作出了 |maximum (mpsAll xs)|，但還有一個 |head (mpsAll xs)| 無法消掉。
+{.nobreak}這顯然做不到：從 |maximum ys| 是無法取出 |head ys| 的。
 
-這時就用得上*組對*的技巧了 --- 既然需要 |head (mpsAll xs)|，就把它一併歸納地算出來。
+
+這時就用得上*組對*的技巧了 --- 既然需要 |head|，就把它一併歸納地算出來吧！
 定義：
 ```{.haskell .invisible}
 maxhd xs = (maximum xs, head xs)
 ```
 ```spec
-  msps xs = (maximum (mpsAll xs), head (mpsAll xs)) {-"~~,"-}
+  msps = fork maximum head . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
 ```
-{.nobreak}藉由簡單的展開-收回，我們可推導出：
+{.nobreak}要把 |fork maximum head| 融入 |scanr|, 我們依融合條件推導：
+```spec
+     fork maximum head (0 `max` (x + head ys) : ys)
+===    {- |fork| 之定義 -}
+     (maximum (0 `max` (x + head ys) : ys), head (0 `max` (x + head ys) : ys))
+===    {- |maximum| 與 |head| 之定義 -}
+     ((0 `max` (x + head ys)) `max` maximum ys, 0 `max` (x + head ys))
+===    {- 取出 |(maximum ys, head ys)| -}
+     (\m s -> ((0 `max` (x + s)) `max` m, 0 `max` (x + s))) (maximum ys, head ys) 
+===    {- 取出重複項 |0 `max` (x + s)| -}     
+     (\m s -> let s' = 0 `max` (x + s) in (s' `max` m, s')) (maximum ys, head ys)  {-"~~."-}
+```
+{.nobreak}我們得到
 ```texonly
 %{
 %format mss'' = mss
 ```
-```{.haskell #code:msps}
+```spec
+mss'' = fst . msps {-"~~,"-}
+
 msps :: List Int -> (Int :* Int)
+msps = foldr (\m s -> let s' = 0 `max` (x + s) in (s' `max` m, s')) (0,0) {-"~~."-}
+```
+{.nobreak}或著，我們把 |msps| 的 |foldr| 定義展開，也許比較容易理解：
+```{.haskell #code:msps}
 msps []      =  (0,0)
 msps (x:xs)  =  let  (m,s) = msps xs
-                in   ((0 `max` (x + s)) `max` m, 0 `max` (x + s)) {-"~~,"-}
-
-mss'' = fst . msps {-"~~."-}
+                     s' = 0 `max` (x + s)
+                in   (s' `max` m, s') {-"~~."-}
 ```
 ```texonly
 %} %mss''
 ```
-這是一個使用線性時間、常數空間計算最大區段和的演算法。當 |(z,y) = msps xs|, |z| 是 |xs| 的最大區段和，|y| 則是 |xs| 的最大前段和。
-每考慮一個新元素 |x|, 最大前段和被更新為 |0 `max` (x + y)| --- 如果把 |x| 接上後仍是正數，|x+y| 就是最好的前段和，否則最大前段和是空串列的和 |0|.
-新的最大前段和再與 |z| 比較，得到新的最大區段和。
+{.nobreak}這是一個使用線性時間、常數空間計算最大區段和的演算法。當 |(m,s) = msps xs|, |m| 是 |xs| 的最大區段和，|s| 則是 |xs| 的最大前段和。
+每考慮一個新元素 |x|, 最大前段和被更新為 |0 `max` (x + s)| --- 如果把 |x| 接上後仍是正數，|x+s| 就是最好的前段和，否則最大前段和是空串列的和 |0|.
+新的最大前段和再與 |m| 比較，得到新的最大區段和。
 
-第 \@ref{sec:maximum-segment-sum-foldr} 節中將用稍抽象一些的定理解最大區段和問題。
 
 :::{.infobox title="指令式版本的最大區段和"}
 ```texonly
@@ -242,35 +262,6 @@ return m
 %} %GCL
 ```
 :::
-
-:::{.exlist}
-:::{.exer}
-由 |msps xs = (maximum (mpsAll xs), head (mpsAll xs)) | 開始，推導出 |msps| 的歸納定義。
-:::
-:::{.exans}
-顯然 |msps [] = (0,0)|. 考慮 |msps (x:xs)|:
-```{.haskell .invisible}
-mspsDer1 x xs =
-```
-```haskell
-      (maximum (mpsAll (x:xs)), head (mpsAll (x:xs)))
- ===    {- |mpsAll| 之定義；將 |let| 往外提 -}
-      let ys = mpsAll xs
-      in (maximum (0 `max` (x + head ys):ys), 0 `max` (x + head ys))
- ===    {- |maximum| 之定義 -}
-      let ys = mpsAll xs
-      in ((0 `max` (x + head ys)) `max` maximum ys, 0 `max` (x + head ys))
- ===    {- 將 |maximum ys| 與 |head ys| 提出 -}
-      let (m, s) = (maximum (mpsAll xs), head (mpsAll xs))
-      in ((0 `max` (x + s)) `max` m, 0 `max` (x + s))
- ===    {-|msps| 之定義 -}
-      let (m, s) = msps xs
-      in ((0 `max` (x + s)) `max` m, 0 `max` (x + s)) {-"~~."-}
-```
-{.nobreak}因此我們便推導出了第\@ref{sec:maximum-segment-sum}節中的 |msps|.
-:::
-:::
-
 
 
 ## 最長高原問題
