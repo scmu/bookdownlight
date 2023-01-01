@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -23,7 +23,6 @@ source-repository head
 
 library
   exposed-modules:
-      Book.TexRender
       Cheapskate
       Cheapskate.Html
       Cheapskate.Inlines
@@ -31,6 +30,8 @@ library
       Cheapskate.ParserCombinators
       Cheapskate.Types
       Cheapskate.Util
+      Html.HtmlRender
+      LHs.LHsRender
       Testing
   other-modules:
       Paths_bookdownlight

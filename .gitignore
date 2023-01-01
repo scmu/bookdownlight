@@ -34,3 +34,5 @@ _build/
 tex/fpbook.ind
 
 *.ilg
+
+html/Chapters/

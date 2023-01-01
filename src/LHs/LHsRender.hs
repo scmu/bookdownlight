@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Book.TexRender where
+module LHs.LHsRender where
 
 import System.IO (hPutChar, hPutStr, Handle)
 import Data.Sequence (Seq(..))
@@ -8,8 +8,8 @@ import qualified Data.Text.IO as T
 import Control.Monad (when)
 import Cheapskate
 
-texRender :: Handle -> Doc -> IO ()
-texRender h (Doc _ blocks) = renderBlocks h blocks
+lhsRender :: Handle -> Doc -> IO ()
+lhsRender h (Doc _ blocks) = renderBlocks h blocks
 
 renderBlocks :: Handle -> Blocks -> IO ()
 renderBlocks h = mapM_ (renderBlock h)

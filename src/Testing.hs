@@ -16,10 +16,10 @@ import Cheapskate.Util
 import Cheapskate.Inlines
 import Cheapskate.Types
 
-import Book.TexRender
+import LHs.LHsRender
 
 handle :: Handle -> Text -> IO ()
-handle h = texRender h . markdown def
+handle h = lhsRender h . markdown def
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
