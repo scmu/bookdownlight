@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+<title>bookdownlight</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript"
+    src="https://www.maths.nottingham.ac.uk/plp/pmadw/LaTeXMathML.js">
+</script>
+<link rel="stylesheet" href="mystyle.css">
+</head>
+<body class="introcontent">
+
+
+<div class='main' >
+    <div>
+        <h1 class="container">
+        <p> 程式設計：函數程式語言 </p>
+        </h1>
+    </div>
+    <nav>
+        <ul class="container">
+            <li><a href="Introduction.html"> Introduction </a></li>
+            <li><a href="Basics.html"> Basics </a></li>
+            <li><a href="Induction.html"> Induction </a></li>
+            <li><a href="Semantics.html"> Semantics </a></li>
+            <li><a href="Derivation.html"> Derivation </a></li>
+            <li><a href="Folds.html"> Folds </a></li>
+        </ul>
+    </nav>
+
+
+<div class="book">
+
+<div><pre style='display:none'>
+
+{-# LANGUAGE TypeOperators #-}
+module Chapters.Semantics where
+
+import Prelude ()
+import Control.Arrow ((***))
+import Common.MiniPrelude hiding (exp, length, take, drop, gcd)
+</pre></div>
+ <h1 class='chapter'>關於語意的基本概念<id='ch:semantics'></h1><p>第 ref ch:basics 章介紹了函數語言的基礎概念，第 ref ch:induction 章談了歸納定義與證明。我們將運用這些知識在第 ref ch:derivation 章之中推導一些程式、解一些編程問題。但在那之前，我們得暫緩一下，釐清一些和語意相關的概念。</p>
+<p>語意(semantics) index semantics 語意 一詞由語言學中借用而來。語意學是關於字句、詞語的意思的研究。一段程式的「意思」為何？在電腦技術發展的早期這似乎不是個問題。當時，「程式語言」只是屬於某台特定型號電腦的指令集，指令的意思就如同其操作手冊所說。若有疑義，用電腦執行看看就知道了。隨著技術發展，同一個程式語言可在不同電腦上執行，各廠商、研究機構都可以實作同一語言的編譯器。同時，實用性質的程式語言也發展得更加複雜，一個程式語言中常有不太能憑直覺理解的細微處。我們因而需要有個不依賴特定硬體、特定編譯器，也可討論程式語言的「意思」的方法。不僅可作為各家實作程式語言的依據，也方便大家溝通：每當我們設計新的語言、符號，我們也常需要釐清它的語意是什麼。</p>
+<p>描述語意的方式有許多種。本書目前為止其實在不知不覺中混用了兩種語意：指稱語意談一個程式<em>是什麼</em>，操作語意談一個程式<em>做什麼</em>。以下我們以非常粗略的方式介紹它們。</p>
+<h2 class='section' >指稱語意</h2><p><em>指稱語意</em>(denotational semantics) index semantics 語意!denotational 指稱語意 談一個程式<em>是什麼</em>。在我們的討論範圍中，有堅實基礎、有不含糊的定義的東西只有數學物件。因此，指稱語意試圖把程式語言對應到數學物件。最簡單的指稱語意可能是基於集合論的：把型別視為集合，把程式語言中的函數視為集合論中的函數。例如，<code class='haskell'>Nat</code> 便是自然數的集合；<code class='haskell'>(A * B)</code> 是 <code class='haskell'>A</code> 與 <code class='haskell'>B</code> 的笛卡兒積：<p class='footer'>在更嚴謹的說法中，我們通常用一個<em>語意函數</em>$\llbracket\_\rrbracket$將語法對應到其意義。因此我們會說 $\llbracket |A*B| \rrbracket = \llbracket |A| \rrbracket \times \llbracket |B| \rrbracket$. 此處採用較不正式的說法。</p></p>
+<div><code class='haskell'>
+    |(A * B)| ~&= \{ (a,b) \mid a \in |A|, b \in |B| \} \mbox{~~.}
+</code></div>
+但函數又是什麼呢？集合論中，一個型別為 <code class='haskell'>A -> B</code> 的函數可視為 <code class='haskell'>A * B</code> 的一個子集；若 <code class='haskell'>f x = y</code>，該子集中便有 <code class='haskell'>(x,y)</code> 這個元素。例如，<code class='haskell'>double :: Nat -> Nat</code> 可表示成如下的集合：<br>
+<div><code class='haskell'>
+   \{(0,0), (1,1), (2,4), (3,6), (4,8) \ldots \} \mbox{~~.}
+</code></div>
+<p>能稱為函數的集合還需滿足兩個額外條件：</p>
+<ul>
+<li>
+<p>簡單性(<em>simplicity</em>): 對所有 $x \in |A|$, 該集合中僅存在一對唯一的 <code class='haskell'>(x,y)</code>。意即每個輸入只對應到一個輸出。</p>
+</li>
+<li>
+<p>完整性(<em>totality</em>): 對所有 $x \in |A|$, 在該集合中都存在某對 <code class='haskell'>(x,y)</code>。意即值域中的每個元素都被涵蓋到。</p>
+</li>
+</ul>
+<p>至於遞迴函數呢？以階層 <code class='haskell'>fact</code> 為例，其定義為：</p>
+<div><pre class='spec'>
+fact :: Nat -> Nat
+fact Zero     = 1
+fact (Suc n)  = (Suc n) * fact n {-"~~."-}
+</pre></div>
+我們可想成：有一個從集合到集合的函數 <code class='haskell'>factF</code>，<br>
+<div><code class='haskell'>
+  \Varid{factF}~X ~=~ \{(|Zero|,1)\} \cup \{(|Suc n|, (|Suc n|) \times m) \mid (n,m) \in X \} \mbox{~~.}
+</code></div>
+給任何集合 <code class='haskell'>X</code>，<code class='haskell'>factF</code> 傳回這樣的集合：<br>
+<ul>
+<li>
+<p>新集合中有 <code class='haskell'>(Zero,1)</code> --- 這對應到 <code class='haskell'>fact Zero = 1</code>.</p>
+</li>
+<li>
+<p>對 <code class='haskell'>X</code> 之中的每一個 <code class='haskell'>(n,m)</code>, 新集合中有 <code class='haskell'>(Suc n, (Suc n) * m)</code> --- 這對應到 <code class='haskell'>fact (Suc n)  = (Suc n) * fact n</code>.</p>
+</li>
+</ul>
+而函數 <code class='haskell'>fact</code> 的語意就是 <code class='haskell'>factF</code> 唯一的定點 (fixed point). index fixed point 定點 意即 <code class='haskell'>fact</code> 是唯一滿足 <code class='haskell'>fact = factF fact</code> 的集合。關於定點的較完整理論可參照第  ref sec:induction-set-theory  節。確實，<code class='haskell'>fact</code> 可寫成集合如下：<br>
+<div><pre class='spec'>
+ fact = {(0,1),(1,1),(2,2),(3,6),(4,24)...} {-"~~."-}
+</pre></div>
+若將 <code class='haskell'>fact</code> 餵給 <code class='haskell'>factF</code>,<br>
+<div><pre class='spec'>
+   factF fact
+=  {(0,1)} `union` {(Suc n, (Suc n) * m) | (n,m) `elem` {(0,1),(1,1),(2,2),(3,6)...}}
+=  {(0,1)} `union` {(1,1),(2,2),(3,6),(4,24)...} {-"~~,"-}
+</pre></div>
+我們又得到了 <code class='haskell'>fact</code>. 因此 <code class='haskell'>fact</code> 確實是 <code class='haskell'>factF</code> 的定點。<br>
+<p>但，要把「<code class='haskell'>fact</code> 便是 <code class='haskell'>factF</code> 的定點」當作 <code class='haskell'>fact</code> 的定義，我們還得確定：確實只有這麼一個集合滿足 <code class='haskell'>fact = factF fact</code>。讀者稍加檢查一下，即可發現確實如此 ---例如，把 <code class='haskell'>fact</code> 添一項或刪一項，都會使得 <code class='haskell'>factF fact</code> 不等於 <code class='haskell'>fact</code>.</p>
+<p>並不是所有從集合到集合的函數都有唯一的定點。考慮如下兩個函數：</p>
+<table>
+<tr>
+0.5\textwidth<td>
+<div><pre class='spec'>
+g 0  = 0
+g x  = g (Suc x) {-"~~,"-}
+</pre></div>
+</td>
+</tr>
+<tr>
+0.5\textwidth<td>
+<div><pre class='spec'>
+h 0  = 0
+h x  = (-1) * h x {-"~~."-}
+</pre></div>
+</td>
+</tr>
+</table>
+若以類似 <code class='haskell'>fact</code> 的方式試圖將它們寫成某函數的定點，我們可能寫出如下的 <code class='haskell'>gF</code> 和 <code class='haskell'>hF</code>:<br>
+<div><pre class='spec'>
+gF X  = {(0,0)} `union` {(n,m) | (Suc n,m) `elem` X}  {-"~~,"-}
+hF X  = {(n,(-1*m)) | (n,m) `elem` X} {-"~~."-}
+</pre></div>
+但 <code class='haskell'>gF</code> 的定點有<br>
+<div><pre class='spec'>
+  {(0,0),(1,1),(2,1),(3,1)...} {-"~~,"-}
+  {(0,0),(1,2),(2,2),(3,2)...} {-"~~,"-}
+  {(0,0),(1,10),(2,10),(3,10)...} {-"~~..."-}
+</pre></div>
+等無限多個。而 <code class='haskell'>hF</code> 有一個唯一定點：空集合，但空集合違反了前述的完整性要求。<br>
+<p>如同 <code class='haskell'>g</code> 和 <code class='haskell'>f</code> 這樣的函數，在我們目前介紹的簡單指稱語意中是沒有定義的。它們沒有語意，在我們的語言中是不該有的存在。它們剛好也是執行起來不會終止的函數。因此，我們似乎可以猜測「有唯一定點」和「執行會終止」似乎有些關聯。但，如前所述，我們的指稱語意中沒有「執行」的觀念。那是操作語意擅長描述的。</p>
+<p>值得一提地，指稱語意採取了一個靜態的世界觀。一個函數單純地<em>是</em>輸入與輸出的對應，沒有「執行」的觀念，沒有執行快慢的考量，也沒有預設「終止」的概念。</p>
+%{
+%format double1
+%format double2<br>22
+<p>函數 <code class='haskell'>double1 x = x + x</code> 與 <code class='haskell'>double2 x = 2 * x</code> 使用不同的演算法，但它們的語意都是同一個集合，因此被視為同一個函數 --- 在語意上我們無法區分 <code class='haskell'>double1</code> 與 <code class='haskell'>double2</code>。</p>
+%}<br>22
+<p>在指稱語意中，當我們說兩個函數相等，意指它們的語意是同一個集合。例如，<code class='haskell'>map Suc . concat = concat . map (map (Suc))</code>, 因為兩者的語意都是下述的集合：</p>
+<div><pre class='spec'>
+ {([],[]), ... ([[1],[2]], [2,3]),... ([[1],[2,3]],[2,3,4]), ...} {-"~~."-}
+</pre></div>
+<h2 class='section' >操作語意</h2><p><em>操作語意</em>(operational semantics) index semantics 語意!operational 操作語意 談一個程式<em>做什麼</em>。在操作語意中，我們通常不談符號的「意思」是什麼。符號 <code class='haskell'>Zero</code> 只代表它本身，<code class='haskell'>Suc Zero</code> 也只代表它本身。操作語意著重的是一串符號如何變成另一段符號。在這個意義下，前述的 <code class='haskell'>fact</code> 定義：</p>
+<div><pre class='spec'>
+fact :: Nat -> Nat
+fact Zero     = 1
+fact (Suc n)  = (Suc n) * fact n {-"~~,"-}
+</pre></div>
+從操作語意的觀點可被讀解成覆寫規則：看到 <code class='haskell'>fact Zero</code>, 均可改寫為 <code class='haskell'>1</code>; 看到 <code class='haskell'>fact (Suc n)</code>, 均可改寫為 <code class='haskell'>(Suc n) * fact n</code>.歸約 <code class='haskell'>fact (Suc (Suc Zero))</code> 這個式子可被視為是不斷使用這兩條覆寫規則：<br>
+<div><pre class='spec'>
+   fact (Suc (Suc Zero))
+=  (Suc (Suc Zero)) * fact (Suc Zero)
+=  (Suc (Suc Zero)) * (Suc Zero) * fact Zero
+=  (Suc (Suc Zero)) * (Suc Zero) * 1 {-"~~,"-}
+</pre></div>
+其中的每個等號都可讀解為「改寫成」。<br>
+<p>操作語意中較容易談「執行」與「終止」的概念。改寫一個式子相當於執行它，如果已經沒有可改寫之處，也就是碰到了範式，執行便終止了。在操作語意中，兩個數值（例如 <code class='haskell'>4+4</code> 與 <code class='haskell'>2*4</code>）相等意謂它們可被歸約成同一個範式；兩個函數 <code class='haskell'>f</code> 和 <code class='haskell'>g</code> 相等則意謂對於任何 <code class='haskell'>x</code>, <code class='haskell'>f x</code> 與 <code class='haskell'>g x</code> 都相等。</p>
+<p>有了兩種談語意的方式，我們自然希望它們有些一致性。確實，我們有如下的定理：</p>
+<div>theorem<br>
+<p>操作語意保持指稱語意。意即，給定一個有指稱語意的算式 <code class='haskell'>e</code>, 若算式 <code class='haskell'>e</code> 能在零步或多步之內依據操作語意改寫成 <code class='haskell'>e'</code>, 則 <code class='haskell'>e</code> 與 <code class='haskell'>e'</code> 的指稱語意相同。</p>
+theorem</div>
+<div>theorem<br>
+<p>給定一個遞迴的函數定義 <code class='haskell'>f = F f</code>。若在操作語意中，該函數對所有輸入都正常終止，則在指稱語意中，<code class='haskell'>f</code> 是 <code class='haskell'>F</code> 的唯一定點。</p>
+theorem</div>
+<p>我們在下一節會</p>
+</div>
+</div>
+</body>
+</html>
