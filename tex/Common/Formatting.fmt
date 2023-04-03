@@ -112,6 +112,9 @@
 %format h0
 %format h1
 %format h2
+%format v0
+%format v1
+%format v2
 
 
 %format mu = "\mu\!"
