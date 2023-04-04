@@ -90,8 +90,8 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 既然對任何 |m|, 都做得出一個 |P m| 的證明，我們就可安心相信 |P| 對任何自然數都成立了。
 
 為了之後討論方便，我們將前述的數學歸納法寫得更形式化些：
-```spec
-  {-"\mbox{\bf 自然數上之歸納法}:~"-} (forall n . P n) {-"~"-}<== {-"~"-} P Zero && (forall n . P (Suc n) <== P n) {-"~~."-}
+```{.equation title="自然數上之歸納法："}
+|(forall n . P n) {-"~"-}<== {-"~"-} P Zero && (forall n . P (Suc n) <== P n) {-"~~."-}|
 ```
 {.nobreak}這只是把之前的文字描述改寫成二階邏輯，但可清楚看出：給定 |P|, 我們希望證明它對所有自然數都成立，只需要提供 |P Zero| 和 |P (Suc n) <== P n| 兩個證明。
 其中 |P Zero| 是確定 |P| 對 |0| 成立的*基底* (base case)，\index{induction 歸納!base case 基底}
@@ -283,8 +283,8 @@ expPlusTimesP1 b m n =
 對這個證明，讀者是否有所懷疑？最大的疑問可能在「假設 |exp b (m + n) = exp b m * exp b n| 成立」這句上。這不就是我們要證明的性質嗎？在證明中假設它成立，似乎是用該性質自己在證明自己。這是可以的嗎？
 
 為清楚說明，我們回顧一下第\@ref{sec:math-induction}節中的數學歸納法（並把區域識別字改為 |k| 以避免混淆）：
-```spec
-  {-"\mbox{\bf 自然數上之歸納法}:~"-} (forall k . P k) {-"~"-}<== {-"~"-} P Zero && (forall k . P (Suc k) <== P k) {-"~~."-}
+```{.equation title="自然數上之歸納法："}
+  |(forall k . P k) {-"~"-}<== {-"~"-} P Zero && (forall k . P (Suc k) <== P k) {-"~~."-}|
 ```
 {.nobreak}證明\@ref{thm:exp-plus-times}欲證的是 |exp b (m + n) = exp b m * exp b n|，並在 |m| 上做歸納。
 更精確地說，就是選用了下述的 |P|:%
@@ -436,8 +436,8 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 ### 串列上之歸納證明
 
 如果 |List a| 是一個歸納定義出的資料結構，我們應可以在 |List a| 之上做歸納證明。確實，串列上的歸納法可寫成：
-```spec
-  {-"\mbox{\bf 串列上之歸納法}:~"-} (forall xs . P xs) {-"~"-}<== {-"~"-} P [] && (forall x xs . P (x:xs) <== P xs) {-"~~."-}
+```{.equation title="串列上之歸納法："}
+  |(forall xs . P xs) {-"~"-}<== {-"~"-} P [] && (forall x xs . P (x:xs) <== P xs) {-"~~."-}|
 ```
 {.nobreak}以文字敘述的話：給定一個述語 |P :: List a -> Bool|, 若要證明 |P xs| 對所有 |xs| 都成立，只需證明 |P []| 和「對所有 |x| 和 |xs|, 若 |P xs| 則 |P (x:xs)|」。
 
@@ -1607,9 +1607,9 @@ mapE f (Tip x)    = Tip (f x)
 mapE f (Bin t u)  = Bin (mapE f t) (mapE f u) {-"~~."-}
 ```
 {.nobreak}我們也有如下的歸納原則：
-```spec
-  {-"\mbox{\bf ETree 上之歸納法}:~"-} (forall t :: ETree a . P t) {-"~"-}<== {-"~"-}
-    (forall x . P (Tip x)) && (forall t u . P (Bin t u) <== P t && P u) {-"~~."-}
+```{.equation title="ETree 上之歸納法："}
+  |(forall t :: ETree a . P t) {-"~"-}<== {-"~\\\qquad"-}|
+  |(forall x . P (Tip x)) && (forall t u . P (Bin t u) <== P t && P u) {-"~~."-}|
 ```
 
 作為例子，我們證明下列性質：
@@ -1641,9 +1641,9 @@ minEmapEplusPf1 x t u =
 請寫出 |ITree| 的歸納原則？
 :::
 :::{.exans .compact}
-```spec
-  {-"\mbox{\bf ITree 上之歸納法}:~"-} (forall t :: ITree a . P t) {-"~"-}<== {-"~"-}
-    (P Null && (forall x t u . P (Node x t u) <== P t && P u) {-"~~."-}
+```{.equation title="ITree 上之歸納法："}
+  |(forall t :: ITree a . P t) {-"~"-}<== {-"~\\\qquad"-}|
+    |(P Null && (forall x t u . P (Node x t u) <== P t && P u) {-"~~."-}|
 ```
 :::
 :::{.exer #ex:ITree-tags}
@@ -2120,7 +2120,7 @@ balanced t && balanced u &&
 ```haskell
 infrared :: RBTree -> Bool
 infrared (R t x u)  =  (color t == Blk || color u == Blk) &&
-                         semiRB t && semiRB u 
+                         semiRB t && semiRB u
 infrared t          =  False {-"~~."-}
 ```
 {.nobreak}紅外樹幾乎是一棵根部為紅色的準紅黑樹，但兩個子樹 |t| 與 |u| 之中最多有一個可以是紅色！我們將其表示成 |color t == Blk || color u == Blk|. 此外，|t| 與 |u| 仍必須是準紅黑樹。其他的情形（|E| 或是 |B _ _ _|）是黑色的，都不是紅外樹。
@@ -2130,7 +2130,7 @@ infrared t          =  False {-"~~."-}
 
 這是一個我們必須嘗試證明一個更強的性質才能使歸納證明成立的例子。
 函數 |ins| 真正滿足的是一個更強的性質：
-給定準紅黑樹 |t|, 
+給定準紅黑樹 |t|,
 如果 |t| 是紅色，|ins k t| 則是一棵紅外樹；如果 |t| 是黑色，|ins k t| 也將是一棵準紅黑樹：
 :::{.theorem #thm:red-black-semiRB-ins}
 對所有 |t|:
@@ -2144,9 +2144,9 @@ infrared t          =  False {-"~~."-}
 {.nobreak}為證明定理\@ref{thm:red-black-semiRB-ins}，我們也需要一個與 |rotate| 相關的引理：
 只要 |t| 與 |u| 之中有一個是準紅黑樹，另一個是準紅黑樹或紅外樹，|rotate t x u| 就會是準紅黑樹：
 :::{.lemma #lma:red-black-semiRB-rotate}
-對所有 |t| 與 |u|, 
+對所有 |t| 與 |u|,
 
-  1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)|; 
+  1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)|;
   2. |semiRB t && (infrared u |||| semiRB u) ==> semiRB (rotate t x u)|.
 
 
@@ -2221,8 +2221,8 @@ infrared t          =  False {-"~~."-}
    color v = color w = Blk &&
    semiRB (R t x u) && semiRB v && semiRB w
 =    {- |infrared| 之定義 -}
-   infrared (R (R t x u) y v) && semiRB w 
-=    {- 命題邏輯，|semiRB (R (R t x u) y v) = False| -}  
+   infrared (R (R t x u) y v) && semiRB w
+=    {- 命題邏輯，|semiRB (R (R t x u) y v) = False| -}
    (infrared (R (R t x u) y v) || semiRB (R (R t x u) y v)) && semiRB w  {-"~~."-}
 
 ```
@@ -2695,8 +2695,8 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 > 則我們可得知 |P| 對所有自然數皆成立。
 
 {.nobreak}以更形式化的方式可寫成：
-```spec
-  {-"\mbox{\bf 完全歸納}:~"-} (forall n . P n) {-"~"-} <==  (forall n . P n  <== (forall i < n . P i)) {-"~~."-}
+```{.equation title="完全歸納："}
+  |(forall n . P n) {-"~"-} <==  (forall n . P n  <== (forall i < n . P i)) {-"~~."-}|
 ```
 {.nobreak}請注意：前提 |P n  <== (forall i < n . P i)| 隱含 |P 0| 成立，因為當 |n := 0|, 由於沒有自然數 |i| 滿足 |i < n|, 算式 |(forall i < n . P i)| 可化簡為 |True|.
 
@@ -2813,8 +2813,8 @@ ys < xs  <=> ys `mem` tails xs && ys /= xs {-"~~."-}
 ```
 {.nobreak}也就是說 |ys| 是 |xs| 的一個後段，但不是 |xs| 自己。
 有了如上定義，串列上的完全歸納法是：
-```spec
-  {-"\mbox{\bf 串列的完全歸納}:~"-} (forall xs . P xs) {-"~"-} <==  (forall xs . P xs  <== (forall ys < xs . P ys)) {-"~~."-}
+```{.equation title="串列的完全歸納："}
+|(forall xs . P xs) {-"~"-} <==  (forall xs . P xs  <== (forall ys < xs . P ys)) {-"~~."-}|
 ```
 {.nobreak}應用在編程上，當定義 |f (xs:)| 時，遞迴呼叫可作用在 |xs| 的任何後段上。
 
@@ -2875,9 +2875,9 @@ f x = ... f y ... f z ...  {- 如果 |y <: x| 且 |z <: x| -}
 > 則我們可得知 |P| 對所有 |A| 皆成立。
 
 {.nobreak}或著可寫成如下形式：
-```spec
-  {-"\mbox{\bf 良基歸納}:~"-}  (forall x . P x) {-"~"-} <==  (forall x . P x  <== (forall y <: x . P y)) {-"~~,"-}
-                              {-"\qquad\mbox{其中 $(\lhd)$ 為一個良基序。}"-}
+```{.equation title="良基歸納："}
+|(forall x . P x) {-"~"-} <==  (forall x . P x  <== (forall y <: x . P y)) {-"~~,\\"-}
+{-"\qquad\mbox{其中 $(\lhd)$ 為一個良基序。}"-}|
 ```
 
 {title="終止證明與良基歸納"}

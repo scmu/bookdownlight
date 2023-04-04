@@ -94,37 +94,6 @@ data Attr = AtrClass Text    -- .class
           | Atr Text Text    -- attr="val"
   deriving (Show, Data, Typeable, Eq)
 
-isAtrId (AtrID _) = True
-isAtrId _         = False
-unAtrID (AtrID xs) = xs
-
-isAtrCls (AtrClass _) = True
-isAtrCls _            = False
-unAtrClass (AtrClass xs) = xs
-
-isAtrAV (Atr _ _) = True
-isAtrAV _         = False
-unAtrAv (Atr atr val) = (atr, val)
-
-attrsId :: [Attr] -> [Text]
-attrsId = map unAtrID . filter isAtrId
-
-attrsClass :: [Attr] -> [Text]
-attrsClass = map unAtrClass . filter isAtrCls
-
-attrsAVs :: [Attr] -> [(Text, Text)]
-attrsAVs = map unAtrAv . filter isAtrAV
-
-lookupAttrs :: Text -> [Attr] -> Maybe Text
-lookupAttrs atr [] = Nothing
-lookupAttrs atr (Atr atr' val : attrs)
-   | atr == atr' = Just val
-   | otherwise   = lookupAttrs atr attrs
-lookupAttrs atr (_ : attrs) = lookupAttrs atr attrs
-
-hasClass :: Text -> [Attr] -> Bool
-hasClass cls attrs = AtrClass cls `elem` attrs
-
 deriving instance Generic Doc
 instance NFData Doc
 

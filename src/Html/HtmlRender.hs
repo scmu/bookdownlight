@@ -7,6 +7,7 @@ import Data.Text (Text, head)
 import qualified Data.Text.IO as T
 import Control.Monad (when)
 import Cheapskate
+import Syntax.Util
 
 htmlRender :: Handle -> Doc -> IO ()
 htmlRender h (Doc _ blocks) = renderBlocks h blocks

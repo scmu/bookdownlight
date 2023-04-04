@@ -32,6 +32,7 @@ library
       Cheapskate.Util
       Html.HtmlRender
       LHs.LHsRender
+      Syntax.Util
       Testing
   other-modules:
       Paths_bookdownlight

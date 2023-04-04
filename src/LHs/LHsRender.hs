@@ -2,11 +2,16 @@
 module LHs.LHsRender where
 
 import System.IO (hPutChar, hPutStr, Handle)
+import Data.Maybe (isJust)
 import Data.Sequence (Seq(..))
+import Data.Foldable (toList)
 import Data.Text (Text, head)
+import Data.List (partition)
 import qualified Data.Text.IO as T
-import Control.Monad (when)
+import Control.Monad (when, (<=<))
+import Control.Arrow ((***))
 import Cheapskate
+import Syntax.Util
 
 lhsRender :: Handle -> Doc -> IO ()
 lhsRender h (Doc _ blocks) = renderBlocks h blocks
@@ -140,6 +145,14 @@ renderDIV h "exans" cs _ _ bs = do
  where printCompact | "compact" `elem` cs = T.hPutStr h "~\\\\ \\vspace{-0.5cm}"
                     | otherwise = return ()
 
+renderDIV h (c@"equations") cs ids avs bs = do
+   case parseEquations bs of
+     Just eqs -> renderEquations h eqs
+     Nothing -> do -- falling back to catch-all case
+       envBegin h c >> mapM_ (renderLabel h) ids >> hPutChar h '\n'
+       renderBlocks h bs
+       envEnd h c
+
  -- catch-all case.
  -- possible instances: example, answer.
 renderDIV h c cs ids avs bs = do
@@ -182,9 +195,13 @@ renderCode h cls ids _ txt | "haskell" `elem` cls =
      envEnd h "code"
      when invisible (T.hPutStr h "%endif\n")
  where invisible = "invisible" `elem` cls
-renderCode h cls ids _ txt | "equation" `elem` cls =
+renderCode h cls ids avs txt | "equation" `elem` cls =
   do envBegin h alignEnv
      hPutChar h '\n'
+     case lookup "title" avs of
+       Nothing  -> return ()
+       Just ttl -> T.hPutStr h "\\textbf{" >>
+                   T.hPutStr h ttl >> T.hPutStr h "}~ "
      T.hPutStr h txt
      mapM_ (renderLabel h) ids
      hPutChar h '\n'
@@ -207,6 +224,51 @@ renderCode h _ ids _ txt = do
      T.hPutStr h txt
      hPutChar h '\n'
      envEnd h "code"
+
+renderEquations :: Handle -> [(Maybe Text, Maybe Text, [Text])] -> IO ()
+                   -- (title, id, formulae)
+renderEquations h eqs = do
+    envBegin h "align"
+    hPutChar h '\n'
+    renderEquations eqs
+    envEnd h "align"
+  where hasTitle  = any (isJust . fst3) eqs
+        allSingle = all (isSingle . trd3) eqs
+        fst3 (x,_,_) = x
+        trd3 (_,_,z) = z
+        isSingle [_] = True
+        isSingle _   = False
+
+        renderEquations :: [(Maybe Text, Maybe Text, [Text])] -> IO ()
+        renderEquations [] = return ()
+        renderEquations [eq] = renderEquation eq >> hPutChar h '\n'
+        renderEquations (eq:eqs) = do
+           renderEquation eq
+           T.hPutStr h "\\\\\n"
+           renderEquations eqs
+
+        renderEquation :: (Maybe Text, Maybe Text, [Text]) -> IO ()
+        renderEquation (title, iid, fms) = do
+          when hasTitle (do
+            case title of Nothing  -> T.hPutStr h " & & "
+                          Just ttl -> do T.hPutStr h " & \\textbf{"
+                                         T.hPutStr h ttl
+                                         T.hPutStr h "} & "
+            )
+          when allSingle (T.hPutStr h " & ")
+          renderFs fms
+          case iid of Nothing -> T.hPutStr h " \\notag "
+                      Just lbl -> do T.hPutStr h "\\label{"
+                                     T.hPutStr h lbl
+                                     T.hPutStr h "}"
+
+        renderFs []     = return ()
+        renderFs [f]    = hPutChar h '|' >> T.hPutStr h f >> hPutChar h '|'
+        renderFs (f:fs) = do hPutChar h '|'
+                             T.hPutStr h f
+                             T.hPutStr h "| & "
+                             renderFs fs
+
 
 envBegin :: Handle -> Text -> IO ()
 envBegin h env = hPutStr h "\\begin{" >> T.hPutStr h env >> hPutStr h "}"
@@ -288,3 +350,27 @@ latexCmdOpt h cmd opt arg =
   hPutChar h '\\' >> T.hPutStr h cmd >>
   hPutChar h '[' >> T.hPutStr h opt >> hPutChar h ']' >>
   hPutChar h '{' >> T.hPutStr h arg >> hPutChar h '}'
+
+--
+parseEquations :: Blocks -> Maybe [(Maybe Text, Maybe Text, [Text])]
+                            -- (title, id, formulae)
+parseEquations bs = concat <$> mapM pEqList bs
+ where pEqList :: Block -> Maybe [(Maybe Text, Maybe Text, [Text])]
+       pEqList (List _ _ eqs) = mapM (pEq <=< concatPara) eqs
+       pEqList _ = Nothing
+
+       concatPara :: Blocks -> Maybe [Inline]
+       concatPara Empty = return []
+       concatPara (Para ins :<| ps) = (toList ins ++) <$> concatPara ps
+       concatPara _ = Nothing
+
+       pEq :: [Inline] -> Maybe (Maybe Text, Maybe Text, [Text])
+       pEq xs = Just (lookupAttrs "title" attrs,
+                      head' . attrsId $ attrs,
+                      hss)
+          where (attrs, hss) =
+                   ((concat . map unAttrs) ***
+                    map unHsCode . filter isHsCode) .
+                    partition isAttrs $ xs
+                head' []     = Nothing
+                head' (x:xs) = Just x

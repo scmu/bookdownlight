@@ -259,10 +259,17 @@ catch (Expt msg)  hdl = hdl msg {-"~~."-}
 一個單子(monad)\index{monad 單子}包含一個型別建構子 |m|,
 以及兩個運算子 |return :: a -> m a| 與 |(>>=) :: m a -> (a -> m b) -> m b|. 它們須滿足以下三條*單子律*：\index{monad laws 單子律}
 
-  * **右單位律(right identity)**: |p >>= return {-"~"-}={-"~"-} p|,
-  * **左單位律(left identity)**: |return x >>= f {-"~"-}={-"~"-} f x|,
-  * **結合律(associativity)**: |(p >>= f) >>= g {-"~"-}={-"~"-} p >>= (\x -> f x >>= g)|.
+:::{.equations}
+  * {title="右單位律(right identity): " #eq:monad-right-id}
+    |p >>= return {-"~"-}| |={-"~"-} p {-"~~,"-}|
+  * {title="左單位律(left identity): " #eq:monad-left-id}
+    |return x >>= f {-"~"-}| |={-"~"-} f x {-"~~,"-}|
+  * {title="結合律(associativity): " #eq:monad-assoc}
+    |(p >>= f) >>= g {-"~"-}| |={-"~"-} p >>= (\x -> f x >>= g) {-"~~."-}|
 
+
+
+:::
 
 :::
 
@@ -473,11 +480,11 @@ eval (Var x) = lookupVar x {-"~~."-}
 如果目前的環境是 |env|, 算式 |local f p| 在新環境 |f env| 之下執行 |p|:
 ```spec
 local :: (Env -> Env) -> Reader a -> Reader a
-local f p env = p (f env) {-"~~."-} 
+local f p env = p (f env) {-"~~."-}
 ```
 有了 |local| 的幫忙，|eval| 遇上 |Let| 時可寫成：
 ```spec
-eval (Let x e0 e1) =  eval e0 >>= \v -> 
+eval (Let x e0 e1) =  eval e0 >>= \v ->
                       local ((x,v):) (eval e1) {-"~~."-}
 ```
 我們用 |((x,v):)| 幫環境增加一筆資料，在這之下計算 |eval e2|.
@@ -489,7 +496,7 @@ eval (Let x e0 e1) =  eval e0 >>= \v ->
 ```spec
 eval (Add e0 e1)    env = eval e0 env + eval e1 env {-"~~,"-}
 eval (Let x e0 e1)  env = eval e1 ((x, eval e0 env):env)  {-"~~."-}
-```  
+```
 :::
 :::{.exans}
 考慮 |eval (Add e0 e1)|:
@@ -497,15 +504,15 @@ eval (Let x e0 e1)  env = eval e1 ((x, eval e0 env):env)  {-"~~."-}
      eval (Add e0 e1) env
 ===     {- |eval| 之定義 -}
      (eval e0  >>= \v0 -> eval e1  >>= \v1 -> return (v0 + v1)) env
-===     {- |(>>=)| 之定義 -}     
+===     {- |(>>=)| 之定義 -}
      (\v0 -> eval e1 >>= \v1 -> return (v0 + v1)) (eval e0 env) env
 ===     {- 函數應用 -}
      (eval e1 >>= \v1 -> return (eval e0 env + v1)) env
-===     {- |(>>=)| 之定義, 函數應用 -} 
+===     {- |(>>=)| 之定義, 函數應用 -}
      return (eval e0 env + eval e1 env) env
 ===     {- |return| 之定義 -}
      eval e0 env + eval e1 env {-"~~."-}
-``` 
+```
 
 考慮 |eval (Let x e0 e1) env|:
 ```spec
@@ -521,7 +528,7 @@ eval (Let x e0 e1)  env = eval e1 ((x, eval e0 env):env)  {-"~~."-}
 :::
 
 {title="更通用的環境單子"}
-為了說明方便，目前為止我們假設「環境」是某個固定的型別: |Env|. 
+為了說明方便，目前為止我們假設「環境」是某個固定的型別: |Env|.
 我們當然可以把這部份也抽象掉：
 ```spec
 type Reader e a = e -> a  {-"~~."-}
@@ -552,13 +559,13 @@ lookupVar x =  ask >>= \env ->
 我們得把 |Reader| 用 |data| 宣告成一個資料型別：^[更普遍的做法是用 |newtype| 宣告：|newtype Reader e a = Reader { runReader :: (e -> a) }|. 但本書不談 |newtype|.]
 ```spec
 data Reader e a = Reader (e -> a) {-"~~,"-}
-  
-instance Monad (Reader e) where 
+
+instance Monad (Reader e) where
     return a        = Reader (\e -> a)
     Reader r >>= f  = Reader (\e -> f (r e) e) {-"~~."-}
 ```
 
-### {#sec:reader-monad-laws}
+### 性質 {#sec:reader-monad-laws}
 
 給一個單子程式，如何討論它的性質？
 比如說，我們如何得知 |eval (Let "x" (Num 4) (Var "x"))| 的值是什麼？
@@ -569,26 +576,15 @@ instance Monad (Reader e) where
 但一來如此的證明可能非常瑣碎，二來 |return|, |(>>=)| 等運算子的定義可能還會改變。
 我們是否能在稍微抽象一點的層次運作，假裝我們不知道這些單子運算子的定義，只討論它們具有什麼性質，並用這些性質來做證明？
 
-```texonly
-%:::{.equations}
-%  * {#eq:reader-local-bind} |local g (p >>= f) = local g p >>= (local g . f)|
-%  * {#eq:reader-local-return} |local g (return e) = return e|
-%  * {#eq:reader-local-ask} |local g ask = ask >>= (return . g)|
-%  * {#eq:reader-ask-return} |ask >>= \v -> return e = return e|
-%  * {#eq:reader-ask-ask} |ask >>= \v0 -> ask >>= \v1 -> f v0 v1 = ask >>= \v -> f v v|
-%:::
-```
+:::{.equations}
+  * {#eq:reader-local-bind} |local g (p >>= f)| |= local g p >>= (local g . f)|
+  * {#eq:reader-local-return} |local g (return e)| |= return e|
+  * {#eq:reader-local-ask} |local g ask| |= ask >>= (return . g)|
+  * {#eq:reader-ask-return} |ask >>= \v -> return e| |= return e|
+  * {#eq:reader-ask-ask} |ask >>= \v0 -> ask >>= \v1 -> f v0 v1| |= ask >>= \v -> f v v|
 
-|local g (p >>= f) = local g p >>= (local g . f)|
 
-|local g (return e) = return e|
-
-|local g ask = ask >>= (return . g)|
-
-|ask >>= \v -> return e = return e|
-
-|ask >>= \v0 -> ask >>= \v1 -> f v0 v1 = ask >>= \v -> f v v|.
-
+:::
 
 
 ```spec
@@ -602,12 +598,12 @@ instance Monad (Reader e) where
 ===    {- |eval| 之定義 -}
      local (("x",4):) (eval (Var "x") >>= \v0 -> eval (Var "x") >>= \v1 -> return (v0 + v1))
 ===    {- -}
-     local (("x",4):) (eval (Var "x")) >>= \v0 -> 
+     local (("x",4):) (eval (Var "x")) >>= \v0 ->
      local (("x",4):) (eval (Var "x")) >>= \v1 ->
      local (("x",4):) (return (v0 + v1))
 ```
 
-```spec 
+```spec
     local (("x",4):) (eval (Var "x"))
 ===   {- |eval| 與 |lookupVar| 之定義 -}
     local (("x",4):) (ask >>= \env -> case lookup env "x" of Just v -> return v)
@@ -620,10 +616,10 @@ instance Monad (Reader e) where
     local (("x",4):) (return 4)
 ===   {- -}
     return 4 {-"~~."-}
-```    
+```
 
 ```spec
-     local (("x",4):) (eval (Var "x")) >>= \v0 -> 
+     local (("x",4):) (eval (Var "x")) >>= \v0 ->
      local (("x",4):) (eval (Var "x")) >>= \v1 ->
      local (("x",4):) (return (v0 + v1))
 ===   {-  -}
@@ -631,7 +627,7 @@ instance Monad (Reader e) where
 ===   {- -}
      return (4 + 4) {-"~~."-}
 ```
-    
+
 
 我們稍早曾遇到這個問題：如果給這樣的式子 |eval (Var "x") [("y",0)]|,
 變數 |x| 並不在環境中，|lookup| 將傳回 |Nothing|，這時該怎麼辦？
