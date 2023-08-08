@@ -6,8 +6,33 @@ import Data.Sequence (Seq(..))
 import Data.Text (Text, head)
 import qualified Data.Text.IO as T
 import Control.Monad (when)
+import Control.Monad.State
 import Cheapskate
 import Syntax.Util
+import Data.List (intersperse)
+
+{-
+type DictState = [([Int], Text)]
+addDict :: Int -> String -> State DictState String
+addDict id label = do
+  dict <- get
+  let ids = case dict of
+                     []                      -> [1, 0, 0, 0]
+                     (([a, b, c, d], _) : _) -> case id of
+                                                    --0 -> dictState
+                                                1 -> [a + 1, 0, 0, 0]
+                                                2 -> [a, b + 1, 0, 0]
+                                                3 -> [a, b, c + 1, 0]
+                                                4 -> [a, b, c, d + 1]
+  put ((ids, label) : dict)
+  return (concat . intersperse "." . map show $ ids)
+
+
+getDict :: State DictState String
+getDict = do
+  (nums, _) <- gets Prelude.head
+  return (concat . intersperse "." . map show $ nums)
+-}
 
 htmlRender :: Handle -> Doc -> IO ()
 htmlRender h (Doc _ blocks) = renderBlocks h blocks
@@ -150,19 +175,29 @@ renderDIV h c cs ids avs bs = do
 renderHeader :: Handle -> Int -> [Attr] -> Inlines -> IO ()
 renderHeader h hd attrs is =
   do hPutStr h (seclevel hd)
+     mapM_ (renderLabel' h hd) (attrsId attrs)
      renderInlines h is
-     mapM_ (renderLabel h) (attrsId attrs)
      hPutStr h (seclevel_end hd)
- where seclevel 1 = "<h1 class='chapter'>"
-       seclevel 2 = "<h2 class='section' >"
-       seclevel 3 = "<h3 class='subsection' >"
-       seclevel 4 = "<h4 class='subsubsection' >"
+     --addDict hd "label"
+
+ where seclevel 1 = "<h1 class='chapter' id='"
+       seclevel 2 = "<h2 class='section' id='"
+       seclevel 3 = "<h3 class='subsection' id='"
+       seclevel 4 = "<h4 class='subsubsection' id='"
        seclevel_end 1 = "</h1>"
        seclevel_end 2 = "</h2>"
        seclevel_end 3 = "</h3>"
        seclevel_end 4 = "</h4>"
 
-renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> hPutStr h "'>"
+--renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> hPutStr h "'>"
+renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
+renderLabel' h hd xs =
+  do --addDict hd xs
+     T.hPutStr h xs
+     T.hPutStr h "'>"
+     --let id = evalState getDict [([1,0,0,0], xs)]
+     let id = "id"
+     hPutStr h (id ++ " ") -- should be the actual indices
 
 renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
