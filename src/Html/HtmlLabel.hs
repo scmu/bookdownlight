@@ -102,8 +102,8 @@ updateFNCount ch = do
                 8 -> "Monads"
   return ([ch, count+1], root)
 
-type DictState = [(String, [Int], String, String)] -- (label, value, type, root) should be (key, value)
-addDict :: String -> String -> State ([Int], [Int], [Int], DictState) DictState
+type DictState = [(Text, [Int], Text, String)] -- (label, value, type, root) should be (key, value)
+addDict :: Text -> Text -> State ([Int], [Int], [Int], DictState) DictState
 addDict t label = do
   counter <- get
   let (seccnt, thmcnt, fncnt, dict) = counter
@@ -113,16 +113,14 @@ addDict t label = do
                     "section"       -> updateSecCount 2
                     "subsection"    -> updateSecCount 3
                     "subsubsection" -> updateSecCount 4
-                    --t `elem` thmEnvs -> updateThExCount t
                     "theorem"       -> updateThmCount "theorem" ch
                     "lemma"         -> updateThmCount "lemma" ch
                     "definition"    -> updateThmCount "definition" ch
                     "example"       -> updateThmCount "example" ch
                     "exercise"      -> updateThmCount "exercise" ch
                     "footnote"      -> updateFNCount ch
-                    --where thmEnvs :: [Text]
-                    --      thmEnvs = ["theorem", "lemma", "definition", "example", "exercise"]
 
+  put (seccnt, thmcnt, fncnt, (label, ids, t, root) : dict)
   return ((label, ids, t, root) : dict)
   --return (concat . intersperse "." . map show $ ids)
 
@@ -130,33 +128,52 @@ addDict t label = do
 --([1,2,0,0], "header", "sec:sec2") : [([1,1], "TheEx", "theorem:th1"), ([1,1,0,0], "header", "sec:sec1"), ([1,0,0,0], "header" , "ch:ch1")]
 
 --theorem, exercise, footnote
-
+{-
 getDict :: State DictState String
 getDict = do
   (nums, _, _, _) <- gets Prelude.head
   return (concat . intersperse "." . map show $ nums)
-
+-}
 
 htmlLabel :: Handle -> Doc -> State ([Int], [Int], [Int], DictState) DictState
-htmlLabel h (Doc _ blocks) = labelBlocks h blocks
+htmlLabel h (Doc _ blocks) = do
+  dict <- labelBlocks h blocks
+  return dict
 
 labelBlocks :: Handle -> Blocks -> State ([Int], [Int], [Int], DictState) DictState
-labelBlocks h = mapM (labelBlock h)
+labelBlocks h blocks = do
+  dict <- mapM (labelBlock h) blocks
+  return (concat dict)
 
 labelBlock :: Handle -> Block -> State ([Int], [Int], [Int], DictState) DictState
-labelBlock h (Header hd attrs is) = labelHeader h hd attrs is
+labelBlock h (Header hd attrs is) = do
+  dict <- labelHeader h hd attrs is
+  return dict
 labelBlock h (DIV attrs bs)
-     | [] <- cls    = labelBlocks h bs
-     | (c:cs) <- cls = labelDIV h c cs ids avs bs
+     | [] <- cls    = do
+        dict <- labelBlocks h bs
+        return dict
+     | (c:cs) <- cls = do
+        dict <- labelDIV h c cs ids avs bs
+        return dict
   where ids = attrsId attrs
         cls = attrsClass attrs
         avs = attrsAVs attrs
 
 labelDIV :: Handle -> Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> State ([Int], [Int], [Int], DictState) DictState
 labelDIV h c cs ids avs bs | c `elem` thmEnvs = do
-   labelBlocks h bs
+  dict <- forM ids $ \label ->
+    addDict c label
+--   dict <- labelBlocks h bs
+  return (concat dict)
  where thmEnvs :: [Text]
        thmEnvs = ["theorem", "lemma", "definition", "example"]
+
+labelDIV h "exer" _ ids _ bs = do
+  dict <- forM ids $ \label ->
+    addDict "exercise" label
+  --labelBlocks h bs
+  return (concat dict)
 
 labelHeader :: Handle -> Int -> [Attr] -> Inlines -> State ([Int], [Int], [Int], DictState) DictState
 labelHeader h hd attrs is = do
@@ -166,6 +183,18 @@ labelHeader h hd attrs is = do
           3 -> "subsection"
           4 -> "subsubsection"
   --mapM_ addDict h
-  mapM addDict t (attrsId attrs)
-  --return dict
+  dict <- forM (attrsId attrs) $ \label ->
+    addDict t label
+  return (concat dict)
+
+labelInlines :: Handle -> Inlines -> State ([Int], [Int], [Int], DictState) DictState
+labelInlines h inlines = do
+  dict <- mapM (labelInline h) inlines
+  return (concat dict)
+
+labelInline :: Handle -> Inline -> State ([Int], [Int], [Int], DictState) DictState
+labelInline h (Footnote is) = do
+  dict <- addDict "footnote" "fn:fn"
+     --labelInlines h is
+  return dict
 
