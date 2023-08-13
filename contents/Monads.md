@@ -25,7 +25,7 @@ import Chapters.Basics (ETree(..), ITree(..))
 只是，副作用也必須被納入嚴謹的數學架構中。
 在純函數語言中，我們需好好地談每個副作用到底「是什麼」（即其語意為何），滿足哪些性質，而這些性質便可用來推論含副作用的程式的正確性。
 
-例如，「拋出例外(exception)」\index{exception 例外}算是一種副作用。
+例如，「拋出例外(exception)」\index{side effect 副作用!exception 例外}算是一種副作用。
 如果我們定義如下的型別：
 ```spec
 data Except b = Exception String | Return b {-"~~,"-}
@@ -81,7 +81,7 @@ eval (Add e0 e1)  = eval e0 + eval e1 {-"~~."-}
 因此單子可以視為模組化地加入副作用的方法
 
 ## 例外處理 {#sec:exceptions}
-
+\index{side effect 副作用!exception 例外}
 
 假設我們添了一個整數除法運算元：
 ```spec
@@ -323,7 +323,8 @@ instance Monad Except where
 每個單子都必須定義 |return| 與 |(>>=)|, 並確保它們滿足單子律。2. 此外，每個副作用還可能擁有特有的運算子，它們可能也有些該滿足的性質。
 我們將在介紹各個副作用的小節中看到更多例子。
 
-## 讀取單子 {#sec:reader-monad}
+## 讀取單子 {#sec:monad-reader}
+\index{side effect 副作用!reader 讀取}
 
 為了進入下一個例子，我們為算式型別加上變數：
 ```spec
@@ -565,69 +566,112 @@ instance Monad (Reader e) where
     Reader r >>= f  = Reader (\e -> f (r e) e) {-"~~."-}
 ```
 
-### 性質 {#sec:reader-monad-laws}
+### 推論讀取單子程式的性質 {#sec:monad-reader-laws}
 
 給一個單子程式，如何討論它的性質？
-比如說，我們如何得知 |eval (Let "x" (Num 4) (Var "x"))| 的值是什麼？
-它和 的值是否總是相等？
+比如說，對某一個 |e|, 如何得知 |eval| |(Let "x" (Num 3)| |(Let "y" (Num 4) e))|
+的值是什麼？
+它和 |eval| |(Let "y" (Num 4)| |(Let "x" (Num 3) e))| 的值是否總是相等？
+
 由於 |eval| 是用 |return|, |(>>=)|, |local| ... 等等運算子定義出來的，而這幾個運算子的定義也都已經有了，
 我們總是可以把他們的定義都展開，
 回到最基礎的層次證明任何我們想確認的性質。
 但一來如此的證明可能非常瑣碎，二來 |return|, |(>>=)| 等運算子的定義可能還會改變。
 我們是否能在稍微抽象一點的層次運作，假裝我們不知道這些單子運算子的定義，只討論它們具有什麼性質，並用這些性質來做證明？
 
+我們應可以合理要求一個「正確」的讀取單子實作應該要滿足下列的性質。
+首先，假設 |e| 是一個不含變數 |v| 的算式：
+```{.equation #eq:reader-ask-return}
+|ask >>= \v -> return e = return e {-"~~,"-}| \mbox{如果 |v| 不出現在 |e| 之中。}
+```
+{.nobreak}等號兩邊都只是傳回 |e| 的值，而 |e| 的值不受 |v| 影響，因此 |ask| 是可以省略掉的。
+其次，連續使用 |ask| 兩次可以縮減為一次就好：
+```{.equation #eq:reader-ask-ask}
+|ask >>= \v0 -> ask >>= \v1 -> f v0 v1 {-"~~"-}={-"~~"-} ask >>= \v -> f v v {-"~~."-}|
+```
+在等號左手邊，我們把問了環境兩次之後的計算抽象為一個函數呼叫 |f v0 v1|.
+在右手邊我們則讓 |f| 的兩個參數都是 |v| --- 詢問環境一次的結果。
+
+下面兩個式子討論當 |local| 遇上 |return| 與 |(>>=)| 時會如何：
 :::{.equations}
-  * {#eq:reader-local-bind} |local g (p >>= f)| |= local g p >>= (local g . f)|
   * {#eq:reader-local-return} |local g (return e)| |= return e|
-  * {#eq:reader-local-ask} |local g ask| |= ask >>= (return . g)|
-  * {#eq:reader-ask-return} |ask >>= \v -> return e| |= return e|
-  * {#eq:reader-ask-ask} |ask >>= \v0 -> ask >>= \v1 -> f v0 v1| |= ask >>= \v -> f v v|
+  * {#eq:reader-local-bind} |local g (p >>= f)| |= local g p >>= (local g . f)|
 
 
 :::
+{.nobreak}在 \@eqref{eq:reader-local-return} 的左手邊，改變環境之後立刻 |return e|, 其實和單純做 |return e| 一樣。
+性質 \@eqref{eq:reader-local-bind} 則告訴我們 |local g| 可以分配到 |(>>=)| 的兩側。由於型別之故，|(>>=)| 的左邊是 |local g p|, 右邊則得用函數合成 |(.)|.
 
+最後，下列性質將 |local| 與 |ask| 關聯在一起：
+```{.equation #eq:reader-local-ask}
+|local g ask = ask >>= (return . g) {-"~~."-}|
+```
+{.nobreak}在 |local g| 的環境之下做 |ask|, 相當於先做 |ask|, 然後把得到的環境交給 |g| 加工。
+我們可說算式 \@eqref{eq:reader-local-ask} 藉由這兩個運算子的互動定義出了 |local| 的「意思」。
 
+有了這些性質，我們不需引用 |local|, |ask|, |(>>=)| ... 等等的定義，也可論證讀取單子程式的性質了。例如，我們來看看 |let x = 4 in x + x| 的值會是什麼：
 ```spec
      eval (Let "x" (Num 4) (Add (Var "x") (Var "x")))
 ===    {- |eval| 之定義 -}
      eval (Num 4) >>= \v -> local (("x",v):) (eval (Add (Var "x") (Var "x")))
 ===    {- |eval| 之定義 -}
      return 4 >>= \v -> local (("x",v):) (eval (Add (Var "x") (Var "x")))
-===    {- 單子律：左單元律 -}
+===    {- 單子律：左單位律 \eqref{eq:monad-left-id} -}
      local (("x",4):) (eval (Add (Var "x") (Var "x")))
 ===    {- |eval| 之定義 -}
-     local (("x",4):) (eval (Var "x") >>= \v0 -> eval (Var "x") >>= \v1 -> return (v0 + v1))
-===    {- -}
+     local (("x",4):) (  eval (Var "x") >>= \v0 ->
+                         eval (Var "x") >>= \v1 -> return (v0 + v1))
+===    {- \eqref{eq:reader-local-bind} -}
      local (("x",4):) (eval (Var "x")) >>= \v0 ->
      local (("x",4):) (eval (Var "x")) >>= \v1 ->
      local (("x",4):) (return (v0 + v1))
 ```
-
+{.nobreak}我們將 |local (("x",4):) (eval (Var "x"))| 抽出來化簡：
 ```spec
     local (("x",4):) (eval (Var "x"))
 ===   {- |eval| 與 |lookupVar| 之定義 -}
     local (("x",4):) (ask >>= \env -> case lookup env "x" of Just v -> return v)
-===   {- -}
+===   {- \eqref{eq:reader-local-bind} -}
     local (("x",4):) ask >>= \env ->
     local (("x",4):) (case lookup env "x" of Just v -> return v)
-===   {- -}
+===   {- \eqref{eq:reader-local-ask}, 左單位律 \eqref{eq:monad-left-id} -}
     local (("x",4):) (case lookup (("x",4):env) "x" of Just v -> return v)
 ===   {- |lookup (("x",4):env) "x" = Just 4| -}
     local (("x",4):) (return 4)
-===   {- -}
+===   {- \eqref{eq:reader-local-return} -}
     return 4 {-"~~."-}
 ```
-
+{.nobreak}由此我們得知 |local (("x",4):) (eval (Var "x"))| 就是 |return 4|.
+將它放回原式中：
 ```spec
      local (("x",4):) (eval (Var "x")) >>= \v0 ->
      local (("x",4):) (eval (Var "x")) >>= \v1 ->
      local (("x",4):) (return (v0 + v1))
-===   {-  -}
+===   {- 前述計算 -}
      return 4 >>= \v0 -> return 4 >>= \v1 -> return (v0 + v1)
-===   {- -}
+===   {- 單子律：左單位律 \eqref{eq:monad-left-id} -}
      return (4 + 4) {-"~~."-}
 ```
+{.nobreak}因此，|eval (Let "x" (Num 4) (Add (Var "x") (Var "x")))| 就是 |return 8|.
 
+提醒讀者注意一點：|eval (Let "x" (Num 4) (Add (Var "x") (Var "x")))| 和 |return 8| 都不是基礎型別，而是「尚待完成的計算」。
+論證單子程式時我們常常不是在基礎型別的層次上運作，而是證明一個計算與另一個計算是等價的。
+這意味著它們傳回同樣的值，也發生同樣的副作用。
+我們日後會看到更多此類的例子。
+
+:::{.exlist}
+:::{.exer}
+證明對所有 |e :: Expr|,
+```spec
+  eval (Let "x" (Num 3) (Let "y" (Num 4) e)) =
+    eval (Let "y" (Num 4) (Let "x" (Num 3) e)) {-"~~,"-}
+```
+如果 |(("x",3):) . (("y",4):) = (("y",4):) . (("x",3):)| 成立。
+:::
+:::{.exer}
+然而，|(("x",3):) . (("y",4):) = (("y",4):) . (("x",3):)| 並不成立。
+:::
+:::
 
 我們稍早曾遇到這個問題：如果給這樣的式子 |eval (Var "x") [("y",0)]|,
 變數 |x| 並不在環境中，|lookup| 將傳回 |Nothing|，這時該怎麼辦？
@@ -650,9 +694,10 @@ rm >>= f = \env -> case rm env of
 
 也就是說，給了兩個單子 M1 和 M2, 能否把他們的功能加在一起，產生另一個新單子呢？
 
-## 狀態單子
+## 狀態單子 {#sec:monad-state}
+\index{side effect 副作用!state 狀態}
 
-沿用 \@ref{sec:exceptions} 之中的型別：
+沿用第 \@ref{sec:exceptions} 節之中的型別：
 ```spec
 data Expr = Num Int | Neg Expr | Add Expr Expr | Div Expr Expr  {-"~~."-}
 ```
@@ -660,17 +705,91 @@ data Expr = Num Int | Neg Expr | Add Expr Expr | Div Expr Expr  {-"~~."-}
 指令式語言中，一個常見的作法是用一個可變變數來計數。
 在函數語言中我們怎麼模擬這種行為呢？
 
-經過前幾節的熟悉，我們現在應該可以更抽象地、*由上而下*地想像單子了：對於一個我們需要的副作用，先假設其單子存在，考慮它該有哪些運算子，這些運算子該滿足什麼性質，用它們如何寫程式。
-然後才考慮這個單子的實作。
+在指令式語言中，可變變數的值常用來表示整個系統目前的「狀態(state)」：諸如已處理過的資料個數、處理中的元素號碼、棋盤上每個棋子的位置... 等等。因此我們把「存取可變變數」的能力稱作*狀態*(*state*)副作用。
 
-我們假設 |State s a| 表示一個結果型別為 |a|, 但在執行時可能使用一個型別為 |s| 的可變變數的計算。
-|return :: a -> State s a| 和 |(>>=) :: State s a -> (a -> State s b) -> State s b| 滿足單子律。
-此外，我們
+經過前幾節的熟悉，我們現在應可以更抽象地、*由上而下*地想像單子了：對於一個我們需要的副作用，先假設其單子存在，考慮它該有哪些運算子、這些運算子該滿足什麼性質、用它們如何寫程式。
+然後才考慮這個單子的實作。對於狀態這個副作用，我們該怎麼設計其運算子呢？
+
+在命令式語言中，|x := x + 1| 這行指令把可變變數 |x| 的值遞增。這一行看似單純的指令其實包含幾項特性：
+  * 變數是有名字的；
+  * 當變數名字出現在 |:=| 的右手邊，表示讀取變數的值；
+  * 當變數名字出現在 |:=| 的左手邊，表示將值寫入該變數。
+
+
+{.nobreak}函數語言中討論狀態副作用時偏好用單純些、使用時比較繁瑣、但比較好討論性質的設計：變數沒有名字，並且把「讀取」與「寫入」兩個動作分為單獨的運算子。
+
+具體說來，令 |State s a| 表示一個結果型別為 |a|, 但在執行時可讀寫一個型別為 |s| 的可變變數的計算。我們要求 |State s| 是一個單子 --- 意謂存在著滿足單子律的
+|return :: a -> State s a| 和 |(>>=) :: State s a -> (a -> State s b) -> State s b|。
+一個型別為 |State s a| 的運算中隱藏的可變變數沒有名字，只能用下述兩個運算子存取：
 ```spec
 get  :: State s s  {-"~~,"-}
 put  :: s -> State s () {-"~~."-}
 ```
+{.nobreak}運算子 |get| 和第 \@ref{sec:monad-reader} 節中的 |ask| 類似，讀出該可變變數的值；|put e| 則把 |e| 的值寫到可變變數中，並傳回 |()|。
+例如，當 |s = Int|, 我們可以定義如下的操作 |inc|，把可變變數加一：
+```spec
+inc :: State Int ()
+inc = get >>= \v -> put (1+v) {-"~~."-}
+```
 
+關於 |put| 有幾件事情可提醒。首先，當我們呼叫 |put e|, 其中的 |e| 已經是一個型別為 |s| 的純數值，不含副作用。
+例如在 |inc| 之中，我們必須先將變數的值 |get| 出來（這是一個有副作用的動作），才能計算新的值並寫回去。
+這讓程式寫起來很繁瑣，但也使得推論程式的性質容易許多。
+其次，關於 |put e| 的型別 |State s ()|. 回想：|()| 是一個只有一個值的型別，該值在 Haskell 中也寫作 |()|. 給定 |e :: s| 後，|put e :: State s ()| 是一個會存取型別為 |s| 的可變變數，並傳回 |()| 的計算。在此，「傳回 |()|」可理解為傳回一個不帶資訊的值，僅表達「我做完了」。
+
+這個傳回值既然沒有資訊，通常不會被用上。因此當 |put| 不是函數的最後一個動作時，程式常有如下的模樣：
+```spec
+   ... put e >>= \_ -> ...
+```
+{.nobreak}由於「執行一段程式，但只需要它的副作用，不需要它的結果」這件事在本章還會常常發生，我們另外訂一個運算元：
+```spec
+(>>) :: m a -> m b -> m b
+p >> q = p >>= \_ -> q {-"~~."-}
+```
+{.nobreak}如此一來 |put e >>= \_ -> q| 可以簡寫成 |put e >> q|.
+（注意： |p >> q| 並不要求 |p| 的傳回值型別為 |()|.）
+
+回到 |get| 與 |put|。
+如果它們的某個實作確實表達了我們前面口述的意圖，該實作應該會滿足以下的規則：
+:::{.equations}
+  * {title="get-put:" #eq:state-get-put}
+    |get >>= put| |= return () {-"~~,"-}|
+  * {title="put-get:" #eq:state-put-get}
+    |put e >> get| |= put e >> return e {-"~~,"-}|
+  * {title="put-put:" #eq:state-put-put}
+    |put e0 >> put e1| |= put e1 {-"~~,"-}|
+
+
+:::
+{.nobreak}以及一個和第 \@ref{sec:monad-reader} 節中的 |ask| 類似的性質：
+```{.equation title="get-get:" #eq:state-get-get}
+|get >>= \v0 -> get v1 >>= \v1 -> f v0 v1 {-"~"-}={-"~"-} get >>= \v -> f v v {-"~~."-}|
+```
+{.nobreak}其中，**get-put** 意謂：將可變變數的值讀出後立刻寫入相當於什麼都不做。
+規則 **put-get** 意謂：剛做完 |put e| 之後立刻讀取可變變數的值，必定得到 |e|.
+規則 **put-put** 意謂：連做兩個 |put| 之後，只有第二個 |put| 寫入的值會被留下。
+規則 **get-get** 則意謂：連做兩次 |get| 所得到的值必定相同，可以只 |get| 一次就好。
+
+如前所述，用 |get| 與 |put| 可定義出 |inc|, 而我們只需在 |eval| 遇到 |Div| 的情況中呼叫 |inc|，就可記錄做了多少次除法了：
+```spec
+eval (Div e0 e1) =  eval e1  >>= \v1 ->
+                    eval e0  >>= \v0 ->
+                    inc >>
+                    return (v0 `div` v1) {-"~~."-}
+```
+{.nobreak}函數 |eval| 的其他條款可完全不變，只需把所用單子的型別改成 |State Int|.
+由於單子捕捉了含副作用的程式的共通模式，我們只需選用不同的副作用運算子，就可在不更動大部分程式的情況下使用我們需要的副作用。
+
+### 河內塔問題 {#sec:hanoi}
+
+本節以河內塔問題為例子，示範狀態單子的推論。
+
+```spec
+hanoi 0        = return ()
+hanoi (Suc n)  = hanoi n >> inc >> hanoi n {-"~~."-}
+```
+
+|hanoi n = put (2^n -1)|.
 
 ## 參考資料
 
