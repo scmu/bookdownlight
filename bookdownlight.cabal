@@ -35,6 +35,7 @@ library
       LHs.LHsRender
       Syntax.Util
       Testing
+      TestingHtml
   other-modules:
       Paths_bookdownlight
   hs-source-dirs:

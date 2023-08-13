@@ -175,7 +175,7 @@ renderDIV h c cs ids avs bs = do
 renderHeader :: Handle -> Int -> [Attr] -> Inlines -> IO ()
 renderHeader h hd attrs is =
   do hPutStr h (seclevel hd)
-     mapM_ (renderLabel' h hd) (attrsId attrs)
+     mapM_ (renderLabel' h) (attrsId attrs)
      renderInlines h is
      hPutStr h (seclevel_end hd)
      --addDict hd "label"
@@ -189,15 +189,11 @@ renderHeader h hd attrs is =
        seclevel_end 3 = "</h3>"
        seclevel_end 4 = "</h4>"
 
---renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> hPutStr h "'>"
-renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
-renderLabel' h hd xs =
-  do --addDict hd xs
+renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> T.hPutStr h "'>"
+--renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
+renderLabel' h xs = do
      T.hPutStr h xs
      T.hPutStr h "'>"
-     --let id = evalState getDict [([1,0,0,0], xs)]
-     let id = "id"
-     hPutStr h (id ++ " ") -- should be the actual indices
 
 renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
