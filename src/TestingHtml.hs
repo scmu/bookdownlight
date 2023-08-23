@@ -63,12 +63,13 @@ makeDict :: IO [DictState]
 makeDict = do
   let initState = ([1,0,0,0], [0,0,0,0,0], [0,0])
   (dicts, _) <- foldM processChapter ([], initState) chapters
-  hdl <- openFile "./src/Html/dict.hs" WriteMode
-  hPutStrLn hdl "dict :: [DictState]"
+  hdl <- openFile "./src/Html/Dict.hs" WriteMode
+  readFile dictHeader >>= TIO.hPutStr hdl
   hPutStr hdl "dict = "
   hPrint hdl dicts
   hClose hdl
   return dicts
+  where dictHeader = "templates/dictheader.hs"
 
 processChapter :: ([DictState], ([Int], [Int], [Int])) -> String -> IO ([DictState], ([Int], [Int], [Int]))
 processChapter (dicts, s) chapter = do

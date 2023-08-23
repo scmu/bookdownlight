@@ -312,7 +312,8 @@ testHeader hd attrs is = do
   let (ids, count) = counter
   dicts <- testInlines is
   if null (attrsId attrs)
-    then return $ ("head", ids, "", count) : dicts
+    then return dicts
+    --then return $ ("head", ids, "", count) : dicts
     else return $ (Prelude.head (attrsId attrs), ids, t, count) : dicts
 
 testInlines :: Inlines -> State ([Int], [Int], [Int]) [DictState]
@@ -334,7 +335,8 @@ testInline (Attrs attrs) = do
   counter <- incrementT "attrs"
   let (ids, count) = counter
   if null (attrsId attrs)
-    then return [("InlineAttrs", ids, "", count)]
+    then return []
+    --then return [("InlineAttrs", ids, "", count)]
     else return [(Prelude.head (attrsId attrs), ids, "attrs", count)]
 
 testInline _ = return []
@@ -345,6 +347,7 @@ testHdParaHeader attrs = do
   counter <- incrementT "attrs"
   let (ids, count) = counter
   if null (attrsId attrs)
-    then return [("hdPara", ids, "", count)]
+    then return []
+    --then return [("hdPara", ids, "", count)]
     else return [(Prelude.head (attrsId attrs), ids, "attrs", count)]
 
