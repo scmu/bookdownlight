@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 module Html.HtmlRender where
 
-import System.IO (hPutChar, hPutStr, Handle)
+import System.IO (hPutChar, hPutStr, Handle, hPrint)
 import Data.Sequence (Seq(..))
 import Data.Text (Text, head)
 import qualified Data.Text.IO as T
@@ -9,7 +10,8 @@ import Control.Monad (when)
 import Control.Monad.State
 import Cheapskate
 import Syntax.Util
-import Data.List (intersperse)
+import Data.List (intersperse, find, intercalate)
+import Html.Dict
 
 {-
 type DictState = [([Int], Text)]
@@ -300,9 +302,16 @@ renderInline h (CiteP cites) = -- with multiple citation we ignore options.
                                  putRefs cites
 
 latexCmd :: Handle -> Text -> Text -> IO ()
-latexCmd h cmd arg =
-  hPutChar h ' ' >> T.hPutStr h cmd >>
-  hPutChar h ' ' >> T.hPutStr h arg >> hPutChar h ' '
+latexCmd h cmd arg = do
+  hPutChar h ' '
+  T.hPutStr h cmd
+  hPutChar h ' '
+  --T.hPutStr h arg
+  let output = find (\(l, _, _, _) -> l == arg) dict
+  case output of
+    Nothing -> do hPutChar h '0'
+    Just (l, v, _, _) -> do hPutStr h $ intercalate "." . map show $ v
+  hPutChar h ' '
 
 latexCmdOpt :: Handle -> Text -> Text -> Text -> IO ()
 latexCmdOpt h cmd opt arg =
