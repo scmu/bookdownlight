@@ -24,7 +24,7 @@ import Common.MiniPrelude hiding (exp, length, take, drop, gcd)
 
 描述語意的方式有許多種。本書目前為止其實在不知不覺中混用了兩種語意：指稱語意談一個程式*是什麼*，操作語意談一個程式*做什麼*。以下我們以非常粗略的方式介紹它們。
 
-## 指稱語意
+## 指稱語意 {#sec:denotational-semantics}
 
 *指稱語意*(denotational semantics)\index{semantics 語意!denotational 指稱語意}談一個程式*是什麼*。
 在我們的討論範圍中，有堅實基礎、有不含糊的定義的東西只有數學物件。
@@ -132,7 +132,7 @@ hF X  = {(n,(-1*m)) | (n,m) `elem` X} {-"~~."-}
  {([],[]), ... ([[1],[2]], [2,3]),... ([[1],[2,3]],[2,3,4]), ...} {-"~~."-}
 ```
 
-## 操作語意
+## 操作語意 {#sec:operational-semantics}
 
 *操作語意*(operational semantics)\index{semantics 語意!operational 操作語意}談一個程式*做什麼*。
 在操作語意中，我們通常不談符號的「意思」是什麼。
@@ -160,11 +160,11 @@ fact (Suc n)  = (Suc n) * fact n {-"~~,"-}
 兩個函數 |f| 和 |g| 相等則意謂對於任何 |x|, |f x| 與 |g x| 都相等。
 
 有了兩種談語意的方式，我們自然希望它們有些一致性。確實，我們有如下的定理：
-:::{.theorem}
+:::{.theorem #thm:operational-denotational}
 操作語意保持指稱語意。意即，給定一個有指稱語意的算式 |e|, 若算式 |e| 能在零步或多步之內依據操作語意改寫成 |e'|, 則 |e| 與 |e'| 的指稱語意相同。
 :::
 
-:::{.theorem}
+:::{.theorem #thm:semantics-fixedpoint}
 給定一個遞迴的函數定義 |f = F f|。若在操作語意中，該函數對所有輸入都正常終止，則在指稱語意中，|f| 是 |F| 的唯一定點。
 :::
 

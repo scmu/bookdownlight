@@ -175,7 +175,7 @@ mss = maximum . scanr (\x s -> 0 `max` (x + s)) 0 {-"~~."-}
 這使我們能輕易將該演算法推廣：不僅是加法與|max|，該演算法能用在任何滿足 \@eqref{eq:plus-max} 的一組運算元之上。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:max-mapadd}
 證明性質 \@eqref{eq:max-mapadd}。
 :::
 :::
@@ -210,8 +210,8 @@ maxhd xs = (maximum xs, head xs)
 ===    {- |maximum| 與 |head| 之定義 -}
      ((0 `max` (x + head ys)) `max` maximum ys, 0 `max` (x + head ys))
 ===    {- 取出 |(maximum ys, head ys)| -}
-     (\m s -> ((0 `max` (x + s)) `max` m, 0 `max` (x + s))) (maximum ys, head ys) 
-===    {- 取出重複項 |0 `max` (x + s)| -}     
+     (\m s -> ((0 `max` (x + s)) `max` m, 0 `max` (x + s))) (maximum ys, head ys)
+===    {- 取出重複項 |0 `max` (x + s)| -}
      (\m s -> let s' = 0 `max` (x + s) in (s' `max` m, s')) (maximum ys, head ys)  {-"~~."-}
 ```
 {.nobreak}我們得到
@@ -264,7 +264,7 @@ return m
 :::
 
 
-## 最長高原問題
+## 最長高原問題 {#sec:maximum-plateau-length}
 
 ```texonly
 %format initsP = "\Varid{inits}^{+}"
@@ -486,7 +486,7 @@ lpphAll (x:xs)  = (if x == y then 1 + n else 1, x) : (n,y) : ys {-"~~,"-}
 ```
 {.nobreak}這是一個使用線性時間、線性空間的演算法。
 
-## 參考資料
+## 參考資料 {#sec:segProblems-ref}
 
 {title="最大區段和"} 對試圖推銷程式推導的人來說，最大區段和問題幾乎有模範問題該有的一切特質：
 目標不難理解，但又不容易一眼看出怎麼解得快；

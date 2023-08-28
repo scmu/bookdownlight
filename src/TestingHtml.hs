@@ -36,7 +36,7 @@ mdtstF :: String -> IO ()
 mdtstF file =
   do contents <- readFile file
      let doc = markdown def $ contents
-     let initState = ([1,0,0,0], [0,0,0,0,0], [0,0])
+     let initState = ([1,0,0,0], [0,0,0,0,0,0,0,0,0], [0,0])
      print (runState (htmlTest doc) initState)
 
 mdtStr :: String -> StateT ([Int], [Int], [Int]) IO [DictState]
@@ -45,7 +45,7 @@ mdtStr file = do
   contents <- liftIO $ readFile file
   let doc = markdown def $ contents
   let (v, ([c, _, _, _], _, cont)) = runState (htmlTest doc) currState
-  put ([c+1,0,0,0], [0,0,0,0,0], cont)
+  put ([c+1,0,0,0], [0,0,0,0,0,0,0,0,0], cont)
   return v
 
 
@@ -59,16 +59,15 @@ chapters = [ "Introduction"
            , "SegProblems"
            ]
 
-makeDict :: IO [DictState]
+makeDict :: IO ()
 makeDict = do
-  let initState = ([1,0,0,0], [0,0,0,0,0], [0,0])
+  let initState = ([1,0,0,0], [0,0,0,0,0,0,0,0,0], [0,0,0])
   (dicts, _) <- foldM processChapter ([], initState) chapters
   hdl <- openFile "./src/Html/Dict.hs" WriteMode
   readFile dictHeader >>= TIO.hPutStr hdl
   hPutStr hdl "dict = "
   hPrint hdl dicts
   hClose hdl
-  return dicts
   where dictHeader = "templates/dictheader.hs"
 
 processChapter :: ([DictState], ([Int], [Int], [Int])) -> String -> IO ([DictState], ([Int], [Int], [Int]))

@@ -5,6 +5,7 @@
   --LemonChiffoon: #FFDACD;
   --AliceBlue: #F0F8FF;
   --GhostWhite: #F8F8FF;
+  --NiceRed: #A52126;
   /* aliceblue */
 }
 
@@ -86,10 +87,13 @@ nav li:hover {
     color: navy;
   }
 
-
+  a {
+    text-decoration:none;
+  }
 
   .haskell {
-    border-radius: 5px;
+    /*border-radius: 5px;*/
+    font-size: larger;
   }
   p {
     /* line-height: 30px; */
@@ -99,13 +103,54 @@ nav li:hover {
     display: block;
     word-wrap:break-word;
     white-space: pre-wrap;
+    font-size: larger;
 
-    margin: 20px ;
+    /*margin: 20px ;*/
     color: rgb(33, 123, 197);
     /* background-color: aquamarine; */
   }
+
+  .title {
+    color: var(--NiceRed);
+  }
+
+  .theorem {
+    background-color: rgb(231, 252, 221);
+    margin: 20px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .proof {
+    background-color: rgb(238, 221, 252);
+    margin: 20px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .definition {
+    background-color: rgb(221, 252, 244);
+    margin: 20px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .lemma {
+    background-color: rgb(221, 252, 229);
+    margin: 20px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
+  .corollary {
+    background-color: rgb(252, 241, 221);
+    margin: 20px;
+    padding: 10px;
+    border-radius: 5px;
+  }
+
   .infobox {
-    background-color:rgb(252, 221, 227);
+    background-color:rgb(252, 248, 221);
     margin: 20px ;
     padding: 10px;
     border-radius: 5px;
@@ -113,7 +158,7 @@ nav li:hover {
   .exlist {
     /* background-color:Yellow; */
   }
-  .Exercise{
+  .exercise{
     background-color:var(--AliceBlue);
     margin: 20px ;
     padding: 10px;
@@ -121,9 +166,29 @@ nav li:hover {
     border-radius: 5px;
     /* border-color:rgb(33, 123, 197); */
   }
-  .Answer{
+
+  .example {
+    background-color: var(--AliceBlue);
+    margin: 20px;
+    padding: 10px;
+    /* border-style: solid; */
+    border-radius: 5px;
+    /* border-color:rgb(33, 123, 197); */
+  }
+
+  .answer{
     background-color:rgb(255, 236, 239);
     margin: 20px ;
+    padding: 10px;
+
+    /* border-style: solid; */
+    border-radius: 5px;
+    /* border-color:red; */
+  }
+
+  .footnote {
+    background-color: rgb(236, 236, 236);
+    margin: 20px;
     padding: 10px;
 
     /* border-style: solid; */
