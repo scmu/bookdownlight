@@ -1,13 +1,14 @@
 module TestingHtml where
 
 import Prelude hiding (readFile)
-import System.IO (stdout, IOMode(..), Handle)
+import System.IO (stdout, IOMode(..), Handle, openFile, writeFile, hPrint, hClose, hPutStr, hPutStrLn)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
 import Control.Monad.State
+import Control.Monad.Trans
 
 import Cheapskate
 import Control.Monad.RWS
@@ -35,8 +36,47 @@ mdtstF :: String -> IO ()
 mdtstF file =
   do contents <- readFile file
      let doc = markdown def $ contents
-     let initState = ([0,0,0,0], [0,0,0,0,0,0], [0,0])
+     let initState = ([1,0,0,0], [0,0,0,0,0,0,0,0,0], [0,0])
      print (runState (htmlTest doc) initState)
+
+mdtStr :: String -> StateT ([Int], [Int], [Int]) IO [DictState]
+mdtStr file = do
+  currState <- get
+  contents <- liftIO $ readFile file
+  let doc = markdown def $ contents
+  let (v, ([c, _, _, _], _, cont)) = runState (htmlTest doc) currState
+  put ([c+1,0,0,0], [0,0,0,0,0,0,0,0,0], cont)
+  return v
+
+
+chapters :: [String]
+chapters = [ "Introduction"
+           , "Basics"
+           , "Induction"
+           , "Semantics"
+           , "Derivation"
+           , "Folds"
+           , "SegProblems"
+           ]
+
+makeDict :: IO ()
+makeDict = do
+  let initState = ([1,0,0,0], [0,0,0,0,0,0,0,0,0], [0,0,0])
+  (dicts, _) <- foldM processChapter ([], initState) chapters
+  hdl <- openFile "./src/Html/Dict.hs" WriteMode
+  readFile dictHeader >>= TIO.hPutStr hdl
+  hPutStr hdl "dict = "
+  hPrint hdl dicts
+  hClose hdl
+  where dictHeader = "templates/dictheader.hs"
+
+processChapter :: ([DictState], ([Int], [Int], [Int])) -> String -> IO ([DictState], ([Int], [Int], [Int]))
+processChapter (dicts, s) chapter = do
+  (chapterDict, newState) <- runStateT (mdtStr $ "./contents/" ++ chapter ++ ".md") s
+  return (dicts ++ chapterDict, newState)
+
+
+
 pltstF :: String -> IO ()
 pltstF file =
   do contents <- readFile file

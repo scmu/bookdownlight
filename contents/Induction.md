@@ -90,7 +90,7 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 既然對任何 |m|, 都做得出一個 |P m| 的證明，我們就可安心相信 |P| 對任何自然數都成立了。
 
 為了之後討論方便，我們將前述的數學歸納法寫得更形式化些：
-```{.equation title="自然數上之歸納法："}
+```{.equation title="自然數上之歸納法：" #eq:induction-on-Nat}
 |(forall n . P n) {-"~"-}<== {-"~"-} P Zero && (forall n . P (Suc n) <== P n) {-"~~."-}|
 ```
 {.nobreak}這只是把之前的文字描述改寫成二階邏輯，但可清楚看出：給定 |P|, 我們希望證明它對所有自然數都成立，只需要提供 |P Zero| 和 |P (Suc n) <== P n| 兩個證明。
@@ -335,7 +335,7 @@ P m <=> (exp b (m + n) = exp b m * exp b n) {-"~~,"-}
 符號幫助我們，使我們的思考清晰而有方向。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:proof-no-induction}
 證明 |1 * k = k|. 這個證明並不需要歸納。
 :::
 :::{.exer #ex:add-associative}
@@ -360,7 +360,7 @@ fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
 
 ## 串列與其歸納定義 {#sec:induction-lists}
 
-如同第\@ref{sec:lists}所述，「元素型別為|a|的串列」可定義成如下的資料型別：^[Haskell 中「元素型別為|a|的串列」寫成|[a]|. 由於這樣的符號在教學中遇到許多困難，本書中寫成|List a|.]
+如同第\@ref{sec:lists}節所述，「元素型別為|a|的串列」可定義成如下的資料型別：^[Haskell 中「元素型別為|a|的串列」寫成|[a]|. 由於這樣的符號在教學中遇到許多困難，本書中寫成|List a|.]
 ```spec
 data List a = [] | a : List a {-"~~."-}
 ```
@@ -433,7 +433,7 @@ concat [] = []
 concat (xs:xss) = xs ++ concat xss {-"~~."-}
 ```
 
-### 串列上之歸納證明
+### 串列上之歸納證明 {#sec:induction-lists-proof}
 
 如果 |List a| 是一個歸納定義出的資料結構，我們應可以在 |List a| 之上做歸納證明。確實，串列上的歸納法可寫成：
 ```{.equation title="串列上之歸納法："}
@@ -445,7 +445,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 \index{map-fusion map 融合定理@@{|map|-fusion |map| 融合定理}}
 是關於 |map| 極常用的定理之一。所謂「融合」在此處是把兩個 |map| 融合為一。
 我們日後會見到更多的融合定理。
-::: {.theorem title="|map| 融合定理" #thm:map-fusion}
+::: {.theorem #thm:map-fusion title="|map| 融合定理"}
 對任何 |f| 與 |g|,
 |map f . map g = map (f.g)|.
 :::
@@ -550,7 +550,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:append-nil}
 證明對所有 |xs|, |xs ++ [] = xs|. 比較本題與習題\@ref{ex:add-right-id}的證明。
 :::
 :::{.exer #ex:reverse}
@@ -600,7 +600,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 :::
 
 討論自然數時，習題\@ref{ex:add-associative}曾請讀者證明加法都滿足結合律。此處示範證明類似定理的串列版：
-::: {.theorem}
+::: {.theorem #thm:append-associative}
 |(++)| 滿足結合律。意即，對任何 |xs|, |ys|, 和|zs|,
 |(xs ++ ys) ++ zs = xs ++ (ys ++ zs)|.
 :::
@@ -807,7 +807,7 @@ sumConcatInd xs xss =
 
 為讓讀者熟悉，本節中我們多看一些自然數或串列上的歸納定義。
 
-### |filter|, |takeWhile|, 與 |dropWhile|
+### |filter|, |takeWhile|, 與 |dropWhile| {#sec:filter-takeWhile-dropWhile}
 
 {title="filter"} 我們曾見過的函數 |filter| 可寫成如下的歸納定義：
 ```spec
@@ -856,7 +856,7 @@ filterMapPf1 p f x xs =
 
 答案是：如果我們假設的世界中有不終止的程式，\@eqref{eq:fn-if-distribute}便不正確了。
 例如，當 |f| 是 |three x = 3|，而 |p| 是個永遠執行、不終止的算式（例：|let b = not b in b|)：
-```equation
+```{.equation #eq:fn-if-three-distribute}
   |three (if p then e1 else e2) {-"~\stackrel{?}{=}~"-} if p then three e1 else three e2| {-"~~."-}
 ```
 {.nobreak}上述式子的左手邊直接化簡成|3|, 但右手邊卻不會終止，因為 |if| 得知道 |p| 的值。
@@ -908,14 +908,14 @@ dropWhile p (x:xs)  = if p x then dropWhile p xs else x:xs {-"~~."-}
 :::{.exer #ex:take-cat-drop}
 證明 |takeWhile p xs ++ dropWhile p xs = xs|.
 :::
-:::{.exer}
+:::{.exer #ex:protect-takeWhile-dropWhile}
 以保護式語法定義 |takeWhile| 與 |dropWhile|, 以此定義做做看習題 \@ref{ex:take-cat-drop}.
 :::
 :::
 
 
 
-### |elem| 與不等式證明
+### |elem| 與不等式證明 {#sec:elem-neq-proof}
 
 {title="不等式證明"} 給定如下的定義，|elem x xs| 判斷 |x| 是否出現在串列 |xs| 中：
 ```spec
@@ -953,7 +953,7 @@ elem x (y:xs)  = (x == y) || elem x xs {-"~~."-}
 {.nobreak}讀者可注意：第1, 2, 4 步使用的邏輯關係都是 |(<=>)| ，第 3 步卻是 |(<==)|，因此整個證明建立了「若|elem z (x:xs)|，則|elem z ((x:xs) ++ ys)|」。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:weaken-not-elem}
 證明 |not (elem z (xs ++ ys)) ==> not (elem z xs)|.
 :::
 :::{.exer #ex:elem-catleft}
@@ -968,7 +968,7 @@ all p []      = True
 all p (x:xs)  = p x && all p xs {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:all-elem}
 證明 |all (`elem` xs) (filter p xs)|. 其中 |x `elem` xs| 是 |elem x xs| 的中序寫法。 我們可能需要習題 \@ref{ex:elem-catleft} 和 \@ref{ex:all-monotonic} 的結果，以及下述性質：
 ```{.equation #eq:ifpxx}
     |if p then x else x| = |x| \mbox{~~.}
@@ -1043,7 +1043,7 @@ inits (x:xs)  = [] : map (x:) (inits xs) {-"~~."-}
 %format initsp = "\Varid{inits}^{+}"
 ```
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:initsp}
 試定義 |initsp :: List a -> List (List a)|, 計算一個串列的所有*非空前段*。例如 |initsp [1,2,3]| 是 |[[1],[1,2],[1,2,3]]|。當然，其中一個定義方式是 |initsp = tail . inits|. 你能以歸納方式定義出 |initsp| 嗎？
 ```spec
 initsp []      = ?
@@ -1057,7 +1057,7 @@ initsp []      = []
 initsp (x:xs)  = [x] : map (x:) (initsp xs) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:inits-upto}
 我們驗證一下 |inits| 在例\@ref{ex:inits} 中的組件定義與本章的歸納定義是相等的。定義 |upto :: Nat -> List Nat|:
 ```haskell
 upto Zero     = [Zero]
@@ -1125,7 +1125,7 @@ segments = concat . map inits . tails {-"~~."-}
 {.nobreak}但 |segments| 無法寫成本章目前這種形式的歸納定義。我們將在以後的章節再討論到 |segments|.
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:segments-pattern}
 試著把 |segments| 寫成如下的歸納定義：
 ```spec
 segments :: List a -> List (List a)
@@ -1224,10 +1224,10 @@ lengthPermsPf1 x xs =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:map-fan}
 證明 |map f . fan x = fan (f x) . map f|.
 :::
-:::{.exer}
+:::{.exer #ex:perm-map}
 證明 |perm . map f = map (map f) . perm|.
 :::
 :::{.exer #ex:length-fan}
@@ -1637,7 +1637,7 @@ minEmapEplusPf1 x t u =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:ITree-principle}
 請寫出 |ITree| 的歸納原則？
 :::
 :::{.exans .compact}
@@ -1662,7 +1662,7 @@ tags Null          = []
 tags (Node x t u)  = tags t ++ [x] ++ tags u {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:ITree-size}
 試定義函數 |size :: ITree a -> Int|, 傳回給定的 |ITree| 之標籤數目 --- 例如 |size Null = 0|, |size (Node 3 Null (Node 4 Null Null)) = 2|.
 :::
 :::{.exans .compact}
@@ -1672,7 +1672,7 @@ size Null          = Zero
 size (Node x t u)  = Suc (size t +: size u) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:ITree-length-size}
 接續前兩題，證明 |length (tags t) = size t|.
 :::
 :::{.exans}
@@ -1720,7 +1720,7 @@ lenLeavesPf1 x t u =
 
 :::
 
-:::{.definition title="最小上界、最大下界"}
+:::{.definition title="最小上界、最大下界" #def:min-max-bound}
 給定偏序集合 $(S,(\leq))$，考慮其子集 $T \subseteq S$:
 
   * 如果 $x \in S$ 滿足 $(\forall y \in T: y \leq x)$, 則 $x$ 是 $T$ 的一個*上界*(*upper bound*).
@@ -1740,7 +1740,7 @@ lenLeavesPf1 x t u =
 
 :::
 
-:::{.definition title="格、完全格"}
+:::{.definition title="格、完全格" #def:lattice}
 考慮偏序集合 $(S,(\leq))$:
 
   * 如果對任何 $x, y \in S$, |sup {x,y}| 和 |inf {x,y}| 均存在且都在 $S$ 之中，則 $(S,(\leq))$ 是一個格 (lattice)。
@@ -1755,7 +1755,7 @@ lenLeavesPf1 x t u =
 
 
 {title="定點"} 再回顧一些與*定點*相關的理論。
-:::{.definition title="定點"}
+:::{.definition title="定點" #def:fixed-point}
 給定完全格 |(A, (<=))| 和函數 |f :: A -> A|,
 
   1. 如果 |f x <= x|, 我們說 |x| 是 |f| 的一個*前定點* (*prefixed point*).
@@ -1780,7 +1780,7 @@ lenLeavesPf1 x t u =
 
 :::
 
-:::{.theorem}
+:::{.theorem #thm:f-muf}
 給定完全格 |(A, (<=))| 和函數 |f :: A -> A|,
 
   * |f| 的最小前定點 |mu f| 也是最小的定點，
@@ -1899,7 +1899,7 @@ data List a {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} a : List a {-"~~,"-}
 餘歸納和歸納的相關理論剛好是漂亮的對偶。我們將在 \todo{where} 介紹餘歸納。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:ITree-ETree-mu}
 回顧第\@ref{sec:user-defined-data}節中介紹的兩種樹狀結構：
 ```spec
 data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
@@ -2010,7 +2010,7 @@ drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 |take|/|drop| 的證明，一種可能做法是也依循著它們的結構：
 先拆解自然數，在 |n := Suc n| 的情況中再分析串列的值。
 作為例子，我們來驗證第\@pageref{eq:taken-dropn}頁提到的這個性質：
-:::{.theorem}
+:::{.theorem #thm:take-drop-id}
 對所有 |n| 與 |xs|, |take n xs ++ drop n xs = xs|.
 :::
 :::{.proof}
@@ -2035,11 +2035,11 @@ drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 如果我們的世界中有不終止程式存在，上式便不見得成立了。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:take-drop-non-termination}
 請舉一個在允許不終止程式的 Haskell 中，
 |take n xs ++ drop n xs = xs| 不成立的例子。
 :::
-:::{.exer}
+:::{.exer #ex:head-tail-id-neg}
 對任何串列 |xs|，|head xs : tail xs = xs| 都成立嗎？請舉一個反例。
 :::
 :::{.exans}
@@ -2126,7 +2126,7 @@ zip (x:xs)  (y:yz)  = (x,y) : zip xs ys {-"~~."-}
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:zipWith-map-uncurry-zip}
 試定義 |zipWith :: (a -> b -> c) -> List a -> List b -> List c|,
 並證明 |zipWith f xs ys = map (uncurry f) (zip xs ys)|.
 :::
@@ -2159,7 +2159,7 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 > 則我們可得知 |P| 對所有自然數皆成立。
 
 {.nobreak}以更形式化的方式可寫成：
-```{.equation title="完全歸納："}
+```{.equation title="完全歸納：" #eq:complete-induction}
   |(forall n . P n) {-"~"-} <==  (forall n . P n  <== (forall i < n . P i)) {-"~~."-}|
 ```
 {.nobreak}請注意：前提 |P n  <== (forall i < n . P i)| 隱含 |P 0| 成立，因為當 |n := 0|, 由於沒有自然數 |i| 滿足 |i < n|, 算式 |(forall i < n . P i)| 可化簡為 |True|.
@@ -2167,7 +2167,7 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 在完全歸納法之中，證明 |P n| 時，我們可假設 |P| 對*所有*小於 |n| 的值都已成立了。
 對寫程式的人來說，有了完全歸納法，表示我們日後定義自然數上的函數 |f :: Nat -> a| 時，每個 |f n| 都可以自由使用 |f| 在*所有*小於 |n| 的輸入之上的值。因此 |fib (2+n)| 可以用到 |fib (1+n)| 與 |fib n|, 因為 |n < 1+n < 2+n|.
 
-:::{.example}
+:::{.example #eg:complete-induction-example}
 關於完全歸納，離散數學教科書中的一個常見例子是「試證明所有自然數都可寫成不相同的二的乘冪的和」，例如 $50 = 2^5 + 2^4 + 2$.
 這可用完全歸納證明。我們以半形式的方式論述如下：
 令 |P n| 為「$n$可寫成一串不相同的二的乘冪的和」. 對所有 |n|, 我們想要證明 |P n  <== (forall i < n . P i)|. 當 |n| 為 |Zero|, 這一串數字即是空串列。
@@ -2202,7 +2202,7 @@ f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 計算 |fib 2 = fib 1 + fib 0| 時便會出錯。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:sum-binary}
 證明 |sum (binary n) = n|.
 :::
 :::{.exans}
@@ -2221,7 +2221,7 @@ f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 =  n {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:fib-alpha}
 證明當 |n >= 1|, |fib (2+n) > {-"\alpha^n"-}|, 其中
 $\alpha = (1+\sqrt{5})/2$. 這個證明可用 |n := 1| 和 |n := 2| 當基底狀況。
 :::
@@ -2379,7 +2379,7 @@ ys <: xs {-"~"-}<=>{-"~"-} length ys < length xs {-"~~,"-}
 {.nobreak}在 |qsort (x:xs)| 子句中，|ys <: xs| 和 |zs <: xs| 均被滿足，而 |(<:)| 是一個良基序。因此 |qsort| 是一個奠立在 |(<:)| 之上的良基歸納定義。
 :::
 
-:::{.example title="合併排序"}
+:::{.example title="合併排序" #eg:mergesort}
 在串列上，合併排序\index{merge sort 合併排序}也是很常使用的排序方式。
 我們在第\@ref{sec:wholemeal}節中示範過以全麥編程方式寫成、由下往上的合併排序。
 此處的寫法則更接近大家一般的認知：拿到一個長度為 |n| 的串列，將之分割為長度大致為 |n/2| 的兩段，分別排序之後合併。
@@ -2401,7 +2401,7 @@ msort xs   = merge (msort ys) (msort zs) {-"~~,"-}
 這是為何我們需要 |msort [x]| 這個子句把 |length xs = 1| 的情況分開處理。如果沒有這個子句，|msort| 將有可能不終止 --- 讀者不妨試試看。
 :::
 
-:::{.example title="最大公因數"}
+:::{.example title="最大公因數" #eg:gcd}
 歐幾里得(Euclid)的《幾何原本》成書於西元前三百年，其中描述「計算最大公因數」\index{greatest common divisor 最大公因數}的做法可能是世界上最古老的演算法。
 以下函數計算兩個自然數 |(m,n)| 的最大公因數。
 如果兩數相等，它們的最大公因數也是自身。
@@ -2482,7 +2482,7 @@ interleave' (x:xs,  ys)  = x : interleave' (ys,xs) {-"~~."-}
 因此我們也會比較寬鬆地說 |interleave| 也是 |(<:)| 之上的良基歸納定義。
 :::
 
-:::{.example}
+:::{.example #eg:McCarthy91}
 下列函數被稱作「McCarthy 91 函數」：
 ```haskell
 mc91 :: Nat -> Nat
@@ -2527,7 +2527,7 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
 {.nobreak}如前所述，先比較 |x1| 與 |x2|, 如果相等，再比較 |y1| 與 |y2|.
 
 我們可以再稍微擴充一些，考慮 $x_i$ 與 $y_i$ 型別不同的情況：
-:::{.definition}
+:::{.definition #def:lhd-prec}
 給定義在型別 |A| 之上的序 $(\lhd)$ 和型別 |B| 之上的序 $(\prec)$, 它們的*詞典序*(*lexicographic ordering*)，寫做 $(\lhd;\prec)$，是 |(A :* B)| 上的一個序，定義為：
 ```equation
     (x_1, y_1) (\lhd;\prec) (x_2,y_2) ~~\equiv~~
@@ -2537,7 +2537,7 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
 {.nobreak}上述定義也可擴充到三個、四個... 元素的序對上。此處便不把他們寫出來了。
 
 關於詞典序的有趣性質相當多，此處僅用到下述性質
-:::{.theorem}
+:::{.theorem #thm:lhd-prec}
 如果 $(\lhd)$ 與 $(\prec)$ 均為良基序，$(\lhd;\prec)$ 也是良基序。
 :::
 {.nobreak}因此，$(\lhd;\prec)$ 也可用來做歸納定義。
@@ -2561,7 +2561,7 @@ merge' (x:xs,  y:ys)  = if x <= y  then  x : merge' (xs, y:ys)
 如前所述，函數 |merge| 的定義不一定得看成辭典序歸納 --- 它也可和 |interleave| 一樣看成另一種較簡單的良基歸納 --- 比較兩參數的長度之和。
 接下來的例子就得倚靠辭典序歸納了。
 
-:::{.example}
+:::{.example #eg:Ackermann-function}
 知名的 Ackermann 函數 (Ackermann's function)
 \index{Ackermann's function Ackermann 函數}
 是一個遞增得相當快的函數。
@@ -2581,7 +2581,7 @@ ack (Suc m)  (Suc n)  = ack m (ack (Suc m) n) {-"~~."-}
 
 :::
 
-## 交互歸納
+## 交互歸納 {#sec:mutual-induction}
 
 許多工作無法由一個函數獨立完成，而需要許多函數彼此呼叫。本章最後談談這類的*交互歸納*(mutual induction)定義。\index{induction 歸納!mutual 交互}
 下列函數定義中，|even| 判斷其輸入是否為偶數。第二個子句告訴我們：如果 |n| 是奇數， |Suc n| 便是偶數。但如何判斷一個數字是否為奇數？如果 |n| 是偶數，|Suc n| 便是奇數：
@@ -2645,7 +2645,7 @@ evenOdd = (  \n -> case n of{-"~~"-}  Zero   -> True
 :::
 :::
 
-## 參考資料
+## 參考資料 {#sec:induction-ref}
 
 快速排序\index{quicksort 快速排序}最初由 Hoare 在 Communications of the ACM 的演算法專欄中發表為兩個獨立的演算法：
 將陣列分割為大、小兩塊的「演算法63: PARTITION」[@Hoare:61:Partition]，

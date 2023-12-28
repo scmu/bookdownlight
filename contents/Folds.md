@@ -47,7 +47,7 @@ map f   = foldr (\x ys -> f x : ys) [] {-"~~."-}
 ```
 {.nobreak}函數 |foldr| 是串列上的「摺(fold)」 --- |foldr| 一詞是 fold 與「右邊(right)」的縮寫，意謂該函數是一個往右結合的摺。我們將在下一節解釋。
 
-## 串列的摺
+## 串列的摺 {#sec:folds-on-lists}
 
 「摺」有許多方式可理解。
 我們可說 |foldr| 捕捉了最常見的一種歸納定義模式，並將它形式化地表達出來。
@@ -109,7 +109,7 @@ h (x:xs)  = ... x ... h xs ...
 ### 更多串列上的摺 {#sec:more-folds-on-lists}
 
 回顧起來，我們可發現第\@ref{ch:induction}章介紹的許多函數都是 |foldr|.
-:::{.example}
+:::{.example #eg:foldr}
 以下函數都可寫成 |foldr|:
 
   * |concat = foldr (++) []|.
@@ -180,7 +180,7 @@ splits = foldr spl [([],[])] {-"~~,"-}
 :::
 :::
 
-### 不是 |foldr| 的函數
+### 不是 |foldr| 的函數 {#sec:not-foldr}
 
 並非所有輸入為串列的函數都是 |foldr|.
 最明顯的例子是 |tail|: 我們無法由 |x| 和 |tail xs| 算出 |tail (x:xs)|。
@@ -303,7 +303,7 @@ foldrFusionEx h f e g x0 x1 x2 =
 在本章接下來大部分的例子中，我們其實可以證明融合條件對*所有 |y|* 均成立。但只要我們處理的演算法問題稍微複雜些，我們便會常遇到融合條件只對 |foldr f e| 的值域中的 |y| 成立的情況。
 我們將在第\@ref{sec:bring-in-context}節中看到一些例子。
 
-### 將摺融合用於定理證明
+### 將摺融合用於定理證明 {#sec:foldr-fusion-theorem-proof}
 
 定理\@ref{thm:foldr-fusion}有幾種用法：
 
@@ -355,7 +355,7 @@ mapFusionFuse1 f g x ys =
   |foldr f e . map g = foldr (f . g) e|.
 :::
 我們時常看到 |foldr| 與 |map| 一起出現，此時定理\@ref{thm:foldr-map-fusion} 相當好用。
-:::{.example}
+:::{.example #eg:foldr-sum-map}
 我們嘗試證明 |sum . map (2*) = (2*) . sum|.
 首先考慮等號左手邊的 |sum . map (2*)|. 由於 |sum| 是一個 |foldr|, 我們可用定理\@ref{thm:foldr-map-fusion}將該式合併為一個 |foldr|:
 ```{.haskell .invisible}
@@ -392,7 +392,7 @@ sumMapTwoTimesFusion x y =
 :::
 
 許多等式可用類似的模式證明：為證明 |e1 = e2|, 我們對兩邊都做融合，看是否能製造出同一個 |foldr|.
-:::{.example}
+:::{.example #eg:foldr-map-append}
 回顧練習\@ref{ex:map-append}：證明對所有 |f|, |xs|, 與 |ys|, |map f (xs ++ ys) = map f xs ++ map f ys|. 若把 |xs| 提出，這相當於證明：
 ```spec
   map f . (++ys) = (++ map f ys) . map f  {-"~~."-}
@@ -422,7 +422,7 @@ mapAppendFusion f ys =
 
 在本節的許多例子中，使用摺融合定理大大簡化了證明 --- 幾乎到了只要把式子寫下就快要證完了，「沒什麼可說」的地步。我們再看最後一個例子。
 
-:::{.example}
+:::{.example #eg:foldr-sunConcatMapSum}
 考慮證明第\@ref{sec:data-prog-proof}節中提及的性質: |sum . concat = sum . map sum|.
 我們可使用 |foldr|-|map| 融合定理與摺融合定理：
 ```{.haskell .invisible}
@@ -447,10 +447,10 @@ sumConcatMapSum =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:foldr-map-fusion}
 請用摺融合證明 |foldr|-|map| 融合定理(\@ref{thm:foldr-map-fusion}).
 :::
-:::{.exer}
+:::{.exer #ex:foldr-length-concat}
 使用 |foldr|-|map| 融合和摺融合證明 |sum . map length = length . concat|.
 :::
 :::{.exans .compact}
@@ -479,7 +479,7 @@ lengthConcatMapLengthFusion xs ys =
        ((+) . length) xs (length ys) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:mapConcat-concatMapMap}
 使用摺融合定理證明對所有 |f|, |map f . concat = concat . map (map f)|.
 :::
 :::{.exer #ex:map-filter-split}
@@ -521,7 +521,7 @@ mapFilterSplitFuse f g p x xs =
 :::
 :::
 
-### 以摺融合生成程式
+### 以摺融合生成程式 {#sec:foldr-program-gen}
 
 如前所述，另一種使用摺融合的理由是生成程式：我們希望 |h . foldr f e| 能在一個 |foldr| 之中完成。
 此時我們已知 |h|, |f|, 與 |e|, 希望用融合條件找出適合的步驟函數。
@@ -553,7 +553,7 @@ sumsqFusionCond x xs =
 接著看看其中最小值是否為負數即可。
 定義函數 |noOverdraft| 如下：
 ```spec
-noOverdraft :: Int -> Bool 
+noOverdraft :: Int -> Bool
 noOverdraft = (>= 0) . minimum . map sum . inits {-"~~."-}
 ```
 {.nobreak}我們試著導出一個比較快速的版本。
@@ -646,7 +646,7 @@ geqMinimumSumInits =
 ```
 {.nobreak}此時，我們也常需要藉由兩個融合條件之一來發現步驟函數 |g| 是什麼。
 
-:::{.example}
+:::{.example #eg:foldr-length-sublists}
 習題 \@ref{ex:length-sublists} 曾證明 |length . sublists = exp 2 . length|.
 此處我們用摺融合定理試試看。
 
@@ -680,7 +680,7 @@ lengthSublistFuse x xss =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:foldr-map-sum-inits}
 回顧例\@ref{ex:minimumMapSumInits}. 試著將 |map (>=0)| 融入 |map sum . inits| 中，說說看為何該融合會失敗。
 :::
 :::{.exans .compact}
@@ -693,7 +693,7 @@ lengthSublistFuse x xss =
 ```
 {.nobreak}然而我們無法由 |map (>=0) ys| 算出 |map ((>=0) . (x+)) ys|.
 :::
-:::{.exer}
+:::{.exer #ex:foldr-sum-distributivity}
 使用摺融合定理證明 |sum (xs ++ ys) = sum xs + sum ys|.
 **提示**：這相當於證明 |sum . (++ys) = (+ (sum ys)) . sum|.
 :::
@@ -723,7 +723,7 @@ sumAppendPlusFusionCond x y ys =
  ===  x + ((+ (sum ys)) y) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:foldr-lengthFan-SucLength}
 參考習題 \@ref{ex:fan-foldr}, 使用摺融合定理證明 |length (fan y xs) = Suc (length xs)|.
 :::
 :::{.exans}
@@ -748,7 +748,7 @@ sumAppendPlusFusionCond x y ys =
 {.nobreak}由此發現步驟函數為 |Suc|.
 第二次融合的融合條件則只需展開定義即可證成。
 :::
-:::{.exer}
+:::{.exer #ex:foldr-decimal}
 回顧第\@ref{sec:exp-binary-roll}節中將反轉表示的二進位數字轉為自然數的函數 |decimal :: List Bool -> Nat|.
 該函數可寫成一個摺：
 ```spec
@@ -884,7 +884,7 @@ scanr f e (x:xs)  = f x (head ys) : ys {-"~~,"-}
 ```
 {.nobreak}其中每個 |scr| 都可直接使用之前累積計算的結果，不用從頭加起。
 
-### 香蕉船定理
+### 香蕉船定理 {#sec:banana-split}
 
 第\@ref{sec:tupling-conclude}節簡短地提到一個例子：
 令 |sumlen = fork sum length|,
@@ -917,7 +917,7 @@ bananaSplit f1 e1 f2 e2 =
 我們能做更多後續處理（例如，使用掃描定理或其他只對摺成立的性質）。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:banana-split}
 證明香蕉船定理。
 你可以在輸入串列上做歸納證明，
 也可以利用
@@ -945,7 +945,7 @@ steepSumId =
 ```
 {.nobreak}其融合條件的證明與第\@ref{sec:steep}節中幾乎相同。
 
-### 累積參數與摺融合
+### 累積參數與摺融合 {#sec:accum-param-fold-fusion}
 
 第\@ref{sec:accumulating-param}節介紹的「累積參數」技巧也常可視為高階函數與摺的融合。
 以第\@ref{sec:reversal-append}節的經典例子 --- 串列反轉為例。
@@ -1084,12 +1084,12 @@ psuc n = if n >= 0 then n+1 else 0 {-"~~."-}
 
 例\@ref{ex:suc-map-square}是個刻意設計的、簡單的例子。在第TODO節中，我們會看到其他需要引入脈絡的演算法。
 
-## 左摺、串列同構、與 Paramorphism
+## 左摺、串列同構、與 Paramorphism {#sec:foldl-listHomo-para}
 
 為了完整性，本節介紹與串列的摺相關的另外幾個組件函數。
 初次閱讀時可跳過本節。
 
-### 左摺
+### 左摺 {#sec:foldl}
 
 除了 |foldr|, Haskell 的標準函式庫有另一個函數 |foldl|, 名字中的字母 |l| 為「左」之意：
 |foldr| 將串列中的元素往右括，|foldl| 則往左括，例如，
@@ -1189,7 +1189,7 @@ sndDualityGen lhd rhd x y z xs =
 其中 |flip f x y = f y x|.
 :::
 
-### 串列同構
+### 串列同構 {#sec:list-homomorphism}
 
 考慮函數 |h :: List a -> b|. 如果存在 |e :: b|, |f :: a -> b|, 和 |odot :: b -> b -> b| 使得 |h| 滿足下列等式：
 ```spec
@@ -1222,12 +1222,12 @@ homFoldlFoldr odot f e =
                 === foldl (\y x -> y `odot` f x) e {-"~~."-}
 ```
 {.nobreak}下述定理則告訴我們反過來也成立：如果 |h| 同時可寫成 |foldr| 及 |foldl|, 則 |h| 是一個串列同構：
-:::{.theorem title="第三同構定理(The Third Homomorphism Theorem)"}
+:::{.theorem title="第三同構定理(The Third Homomorphism Theorem)" #thm:third-homo-thm}
 考慮 |h :: List a -> b|。如果存在 |e :: b|, |lhd :: a -> b -> b|, 及 |rhd :: b -> a -> b| 使得 |h = foldr lhd e = foldl rhd e|,
 則存在 |odot :: b -> b -> b| 使得 |h = hom odot f e| （其中 |f x = x `lhd` e = e `rhd` x|）.
 :::
 
-### Paramorphism 與本原遞迴
+### Paramorphism 與本原遞迴 {#sec:paramorphism}
 
 如果我們把 |foldr| 的限制放寬，允許 |xs| 出現在遞迴呼叫之外，得到的模式稱為 *paramorphism*.
 串列版的 paramorphism 可定義如下：
@@ -1241,7 +1241,7 @@ para f e (x:xs)  = f x xs (para f e xs) {-"~~."-}
 para f e = fst . foldr (\x (y, xs) -> (f x xs y, x:xs)) (e, []) {-"~~."-}
 ```
 
-## 自然數的摺
+## 自然數的摺 {#sec:foldN}
 
 自然數可以視為有兩個建構元 |Zero| 和 |Suc| 的歸納資料結構。
 我們也可為自然數定義一個摺：
@@ -1275,7 +1275,7 @@ h . foldN f e = foldN g (h e) {-"~~."-}
 ```
 :::
 
-:::{.example}
+:::{.example #eg:foldN-even}
 判斷一個自然數是否為偶數的述語 |even :: Nat -> Bool| 可寫成一個摺:
 ```spec
   even = foldN not True {-"~~."-}
@@ -1291,7 +1291,7 @@ even . (+n) = foldN not (even n) {-"~~."-}
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:foldN-fib}
 回顧第\@ref{sec:complete-induction}節中提到的費氏數定義：
 ```spec
 fib 0      = 0
@@ -1347,7 +1347,7 @@ fib2 = foldN (\(x,y) -> (x+y,x)) (1,0) {-"~~."-}
 % ```
 ```
 
-## 其他資料結構
+## 其他資料結構 {#sec:fold-on-other-data-structures}
 
 既然串列與自然數都有摺，其他的資料結構也可以有。
 
@@ -1390,7 +1390,7 @@ mapE f  = foldET Bin f {-"~~."-}
 ```
 
 兩個二元樹的摺也有它們的融合定理：
-:::{.theorem title="摺融合定理(|ITree|版)"}
+:::{.theorem title="摺融合定理(|ITree|版)" #thm:fold-fusion-ITree}
 \index{fold 摺!fold fusion 摺融合}
 給定 |f :: a -> b -> b -> b|, |e :: b|, |h :: b -> c|, 與 |g :: a -> c -> c -> c|.
 如果融合條件 |h (f x y z) = g x (h y) (h z)| 對任何 |x :: a| 與在 |foldIT f e| 值域中的 |y, z :: b| 成立，
@@ -1403,7 +1403,7 @@ foldITFusion f e h g = h . foldIT f e === foldIT g (h e)
 ```
 :::
 
-:::{.theorem title="摺融合定理(|ETree|版)"}
+:::{.theorem title="摺融合定理(|ETree|版)" #thm:fold-fusion-ETree}
 給定 |f :: b -> b -> b|, |k :: a -> b|, |h :: b -> c|, 與 |g :: c -> c -> c|.
 如果融合條件 |h (f x y) = g (h x) (h y)| 對任何在 |foldET f k| 值域中的 |x, y :: b| 成立，我們有
 |h . foldET f k = foldET g (h . k)|.
@@ -1419,7 +1419,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 兩個定理都可用單純的歸納法證明。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:fold-length-tags-size}
 以摺融合定理證明 |length (tags t) = size t|.
 :::
 :::{.exans}
@@ -1440,7 +1440,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 {.nobreak}由於 |mapE g = foldET Bin f|, 欲證明上式可用摺融合定理。
 其融合條件 |foldET f k (Bin t u) = f (foldET f k t) (foldET f k u)| 恰巧是 |foldET| 之定義。
 :::
-:::{.exer}
+:::{.exer #ex:foldIT-mapI-fusion}
 函數 |mapI :: (a -> b) -> ITree a -> ITree b| 將一個 |a -> b| 的函數作用在 |ITree| 的每一個標記上。
 請用 |foldIT| 定義 |mapI|, 並寫下 |foldIT| 與 |mapI| 的融合定理並證明之。
 :::
@@ -1458,7 +1458,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 ```
 {.nobreak}因此 |foldIT f e . mapI g = foldIT (\x y z -> f (g x) y z) e|.
 :::
-:::{.exer}
+:::{.exer #ex:fold-fusion-minE-mapE}
 以摺融合定理證明 |minE (mapE (x +) t) = x + minE t|.
 :::
 :::{.exans}
@@ -1474,7 +1474,7 @@ foldETFusion f k h g = h . foldET f k === foldET g (h . k)
 {.nobreak}融合的基底函數為 |id . (x+) = (x+) . id|,
 融合條件則為 |x + (y `min` z) = (x + y) `min` (x + z)|。
 :::
-:::{.exer}
+:::{.exer #ex:fold-ITree-append-tags}
 將 |(++) . tags| 融合，以便推導出一個在線性時間內收集 |ITree| 內所有標籤的演算法。
 :::
 :::{.exans}
@@ -1505,7 +1505,7 @@ foldrn f k [x]     = k x
 foldrn f k (x:xs)  = f x (foldrn f k xs) {-"~~."-}
 ```
 
-:::{.example}
+:::{.example #eg:foldrn-partsP}
 例\@ref{ex:partsP}中的 |partsP| 可以寫成
 ```haskell
 partsP :: ListP a -> List (ListP (ListP a))
@@ -1616,7 +1616,7 @@ upHills = foldrn step (\x -> [[x]]) {-"~~,"-}
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:filtAscPExtend}
 將 |filter (all ascending) . partsP| 融合為 |foldrn (\x -> concat . map (extendAsc x)) wrap3|, 並在過程中推導 |extendAsc| 的定義。
 您可能用得上習題\@ref{ex:map-filter-split}提及的性質：
 如果 |filter p (f x) = if p x then g x else []|, 則 |concat . map (filter p . f) = concat . map g . filter p|.
@@ -1678,6 +1678,6 @@ extendAsc x (ys:yss) = if x >= head ys  then [[x]:ys:yss, (x:ys):yss]
 :::
 :::
 
-## 參考資料
+## 參考資料 {#sec:folds-ref}
 
 @GibbonsHutton:01:When
