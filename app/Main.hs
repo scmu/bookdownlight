@@ -101,6 +101,7 @@ chapters :: [String]
 chapters = [ "Introduction"
            , "Basics"
            , "Induction"
+           , "SearchTrees"
            , "Semantics"
            , "Derivation"
            , "Folds"
