@@ -1124,7 +1124,7 @@ ascMin (x:xs)  =  let (b, y) = ascMin xs
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:baobab-ITree}
 回顧第 \@ref{sec:user-defined-data} 節中談到的 |ITree|:
 ```spec
 data ITree a = Null | Node a (ITree a) (ITree a) {-"~~."-}
