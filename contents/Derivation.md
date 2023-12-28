@@ -2523,3 +2523,18 @@ ddD (Bin t u)  | m <  n  = (f, 1 + n)
 ```
 :::
 :::
+
+### 如何挑選累積參數？
+
+```haskell
+depths :: ITree a -> List (a :* Nat)
+depths Null          =  []
+depths (Node x t u)  =  map (id *** (Suc)) (depths t) ++ [(x,0)] ++
+                        map (id *** (Suc)) (depths u) {-"~~."-}
+```
+
+```spec
+ascending :: List Int -> Bool
+ascending []      = True
+ascending (x:xs)  = all (x <=) xs && ascending xs {-"~~."-}
+```

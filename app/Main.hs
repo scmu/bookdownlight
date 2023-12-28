@@ -106,6 +106,7 @@ chapters = [ "Introduction"
            , "Derivation"
            , "Folds"
            , "SegProblems"
+           , "Monads"
            ]
 -- paths
 
