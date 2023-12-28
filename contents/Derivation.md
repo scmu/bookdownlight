@@ -2538,3 +2538,32 @@ ascending :: List Int -> Bool
 ascending []      = True
 ascending (x:xs)  = all (x <=) xs && ascending xs {-"~~."-}
 ```
+
+```spec
+ascendBnd z xs = all (z<=) xs && ascending xs {-"~~."-}
+```
+
+```{.equation #eq:gen-split}
+  |z <= x && all (z <=) xs && all (x <=) xs|
+```
+
+```{.haskell .invisible}
+ascendBndDerInd z x xs =
+```
+```haskell
+      ascendBnd z (x:xs)
+ ===    {- |ascendBnd| 與 |ascending| 之定義 -}
+      all (z<=) (x:xs) && all (x <=) xs && ascending xs
+ ===    {- |all| 之定義 -}
+      z <= x && all (z <=) xs && all (x <=) xs && ascending xs
+ ===    {-  -}
+      z <= x && all (x <=) xs && ascending xs
+ ===    {- |ascendBnd| 之定義 -}
+      z <= x && ascendBnd x xs {-"~~."-}
+```
+
+```haskell
+ascendBnd :: Int -> List Int -> Bool
+ascendBnd z []      = True
+ascendBnd z (x:xs)  = z <= x && ascendBnd x xs {-"~~."-}
+```
