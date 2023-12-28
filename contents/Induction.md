@@ -1645,6 +1645,15 @@ minEmapEplusPf1 x t u =
   |(forall t :: ITree a . P t) {-"~"-}<== {-"~\\\qquad"-}|
     |(P Null && (forall x t u . P (Node x t u) <== P t && P u) {-"~~."-}|
 ```
+:::{.exer #ex:ITree-mapI}
+定義函數 |mapT :: (a -> b) -> ITree a -> ITree b|, 使得 |mapT f| 則將函數 |f| 作用在樹中的每個元素上。
+:::
+:::{.exans .compact}
+```haskell
+mapI :: (a -> b) -> ITree a -> ITree b
+mapI f Null          = Null
+mapI f (Node x t u)  = Node (f x) (mapI f t) (mapI f u) {-"~~."-}
+```
 :::
 :::{.exer #ex:ITree-tags}
 試定義函數 |tags :: ITree a -> List a|, 由左至右傳回給定之 |ITree| 的所有標籤。例如，若

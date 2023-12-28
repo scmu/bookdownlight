@@ -8,6 +8,7 @@ import Data.List (inits, tails)
 import Common.MiniPrelude hiding (exp, gcd)
 
 import Chapters.Basics (square, ETree(..), ITree(..), positions, fork)
+import Chapters.Induction (mapI)
 ```
 
 # 一般程式推導 {#ch:derivation}
@@ -2524,13 +2525,28 @@ ddD (Bin t u)  | m <  n  = (f, 1 + n)
 :::
 :::
 
-### 如何挑選累積參數？
+### 如何設計累積參數？
+
+和各種程式堆導與證明技巧一樣，使用累積參數的技巧時，最難的一步是決定怎麼設計擴充版的函數：找到那個適當的、更通用的定義？一但找到了適當的定義，剩下的都是機械性的例行公事。但如何找到那個正確的開頭呢？
+
+我們的答案仍一樣：讓符號為你許多時候，我們
+
+```haskell
+depthsT :: ITree a -> ITree (a :* Nat)
+depthsT Null          = Null
+depthsT (Node x t u)  = Node (x,0)  (mapI (id *** Suc) (depthsT t))
+                                    (mapI (id *** Suc) (depthsT u)) {-"~~."-}
+```
 
 ```haskell
 depths :: ITree a -> List (a :* Nat)
 depths Null          =  []
 depths (Node x t u)  =  map (id *** (Suc)) (depths t) ++ [(x,0)] ++
                         map (id *** (Suc)) (depths u) {-"~~."-}
+```
+
+```haskell
+depthsAcc t k = map (id *** (k +:)) (depths t) {-"~~."-}
 ```
 
 ```spec
