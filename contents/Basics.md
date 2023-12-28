@@ -745,7 +745,7 @@ compute = lift2 (*) (+1) (+2) {-"~~."-}
 ```
 :::
 ::: {.mcol width="0.4\\textwidth"}
-```
+```spec
    (double . square) x
 =    {- |(.)| 的定義 -}
    double (square x)

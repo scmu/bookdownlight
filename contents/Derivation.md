@@ -1078,6 +1078,52 @@ repTail (Bin t u)  xs =  let  (t', xs')   = repTail t xs
 @BurstallDarlington:77:Transformation
 
 :::{.exlist}
+:::{.exer #ex:ascendingTuple}
+下述函數 |ascending :: List Int -> Bool| 判斷一個串列是否由左到右遞增：
+```haskell
+ascending :: List Int -> Bool
+ascending []      = True
+ascending (x:xs)  = x <= minimum xs && ascending xs {-"~~."-}
+```
+{.nobreak}當輸入串列長度為 |n|, 這個函數需要 $O(n^2)$ 個基本運算。請用組對的方式將之減少至 $O(n)$.
+:::
+:::{.exans}
+考慮如下的定義：
+```spec
+ascMin :: List Int -> (Bool :* Int)
+ascMin = fork ascending minimum {-"~~."-}
+```
+{.nobreak}如果 |ascMin| 有更快的實作，我們可定義 |ascending = fst . ascMin|.
+
+當輸入為 |[]|, 我們有 |ascMin [] = (True, maxBound)|. 考慮當輸入為 |x:xs| 的情況：
+```{.haskell .invisible}
+ascMinDerInd :: Int -> List Int -> (Bool, Int)
+ascMinDerInd x xs =
+```
+```haskell
+      ascMin (x:xs)
+ ===   {- |ascMin| 之定義 -}
+      (ascending (x:xs), minimum (x:xs))
+ ===   {- |ascending| 與 |minimum| 之定義 -}
+      (x <= minimum xs && ascending xs, x `min` minimum xs)
+ ===   {- 引入區域變數 -}
+      let (b, y) = (ascending xs, minimum xs)
+      in (x <= y && b, x `min` y)
+ ===   {- |ascMin| 之定義 -}
+      let (b, y) = ascMin xs
+      in (x <= y && b, x `min` y) {-"~~."-}
+```
+{.nobreak}如此，我們已導出：
+```haskell
+ascMin :: List Int -> (Bool, Int)
+ascMin []      = (True, maxBound)
+ascMin (x:xs)  =  let (b, y) = ascMin xs
+                  in (x <= y && b, x `min` y) {-"~~."-}
+```
+:::
+:::
+
+:::{.exlist}
 :::{.exer}
 回顧第 \@ref{sec:user-defined-data} 節中談到的 |ITree|:
 ```spec
