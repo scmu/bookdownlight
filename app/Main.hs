@@ -12,6 +12,7 @@ import Control.Monad (forM_)
 import Cheapskate
 import LHs.LHsRender
 import Html.HtmlRender
+import Html.HtmlLabel
 
 import Development.Shake
 import Development.Shake.Command
@@ -100,6 +101,7 @@ chapters :: [String]
 chapters = [ "Introduction"
            , "Basics"
            , "Induction"
+           , "SearchTrees"
            , "Semantics"
            , "Derivation"
            , "Folds"

@@ -312,7 +312,7 @@ rld ((n,x):xs)  = repeatN (n,x) ++ rld xs {-"~~."-}
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:delete-select}
 下列函數 |delete| 將輸入串列中的每個元素輪流刪除：
 ```haskell
 delete         ::  List a -> List (List a)
@@ -353,7 +353,7 @@ select (x:xs)  = (x, xs) : map (id *** (x:)) (select xs) {-"~~."-}
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:delete-take-drop}
 函數 |delete| 有另一個可能定義：
 ```spec
 delete xs = map (del xs) [0..length xs-1]
@@ -453,7 +453,7 @@ data List a = [] | a : List a {-"~~."-}
 函數 |last| 的情況也類似。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:last-bigO}
 回顧 |last| 的定義，試著展開 |last [1,2,3,4]| 並確認 |last xs| 需要的時間是否為 $O(|length xs|)$。
 :::
 :::
@@ -740,13 +740,13 @@ roll b (c:cs)  = if c then b * square (exp2 b cs) else square (exp2 b cs){-"~~."
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #binary-termination}
 如何得知 |binary| 會終止？它的定義用的是什麼歸納方式？
 :::
-:::{.exer}
+:::{.exer #ex:decimal-binary-id}
 證明 |decimal . binary = id|.
 :::
-:::{.exer}
+:::{.exer #ex:exp-roll-binary}
 展開 |exp b = roll b . binary| 以導出一個不產生中間串列的 |exp| 定義。
 這個定義用的是什麼歸納方式呢？
 :::
@@ -766,7 +766,7 @@ exp b n  | even n  = square (exp b (n `div` 2))
 %} % for tt and ff
 ```
 
-### 小結與提醒
+### 小結與提醒 {#sec:wrap-reminder}
 
 如果回顧本節發生了什麼，該說：我們為 |poly| 和 |roll . decimal| 找出了歸納定義。
 它們的效率因此提升了，但這只能說是*湊巧*：兩個演算中，都有些代數性質可運用，使得推導出的歸納定義在每一步需要做的工作不多，剛好是有效率的。
@@ -781,7 +781,7 @@ exp b n  | even n  = square (exp b (n `div` 2))
 某些演算法適合快取，等等。
 我們在之後的章節中將看到一些歸納定義程式走訪資料結構的次數雖較少，但反而執行得慢的例子。
 
-## 變數換常數
+## 變數換常數 {#sec:var-cons}
 
 接下來的幾節中，我們將介紹幾種常見的程式推導技巧。
 \todo{generalize}
@@ -849,7 +849,7 @@ posFrom z i (x:xs)  =  if x==z then i : posFrom z (1+i) xs
 如同第\@ref{sec:using-hints-from-symbols}節中提及的原則，該把哪些常數換掉仍應由計算中發現，只用在必要之處。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:index-positioning}
 函數 |index| 為串列中的每個元素標上位置。
 ```haskell
 index :: List a -> List (Nat :* a)
@@ -968,7 +968,7 @@ steepsum = fork steep sum {-"~~."-}
 
 在這一節以及下一節中，我們都會看到許多如此的例子。
 
-### 以串列標記樹狀結構
+### 以串列標記樹狀結構 {#sec:repl-tree}
 
 我們再舉一個組對的好例子。回顧第 \@ref{sec:user-defined-data}與\@ref{sec:other-inductive-datatypes}節中提及的外標籤二元樹：
 ```spec
@@ -1078,7 +1078,53 @@ repTail (Bin t u)  xs =  let  (t', xs')   = repTail t xs
 @BurstallDarlington:77:Transformation
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:ascendingTuple}
+下述函數 |ascending :: List Int -> Bool| 判斷一個串列是否由左到右遞增：
+```haskell
+ascending :: List Int -> Bool
+ascending []      = True
+ascending (x:xs)  = x <= minimum xs && ascending xs {-"~~."-}
+```
+{.nobreak}當輸入串列長度為 |n|, 這個函數需要 $O(n^2)$ 個基本運算。請用組對的方式將之減少至 $O(n)$.
+:::
+:::{.exans}
+考慮如下的定義：
+```spec
+ascMin :: List Int -> (Bool :* Int)
+ascMin = fork ascending minimum {-"~~."-}
+```
+{.nobreak}如果 |ascMin| 有更快的實作，我們可定義 |ascending = fst . ascMin|.
+
+當輸入為 |[]|, 我們有 |ascMin [] = (True, maxBound)|. 考慮當輸入為 |x:xs| 的情況：
+```{.haskell .invisible}
+ascMinDerInd :: Int -> List Int -> (Bool, Int)
+ascMinDerInd x xs =
+```
+```haskell
+      ascMin (x:xs)
+ ===   {- |ascMin| 之定義 -}
+      (ascending (x:xs), minimum (x:xs))
+ ===   {- |ascending| 與 |minimum| 之定義 -}
+      (x <= minimum xs && ascending xs, x `min` minimum xs)
+ ===   {- 引入區域變數 -}
+      let (b, y) = (ascending xs, minimum xs)
+      in (x <= y && b, x `min` y)
+ ===   {- |ascMin| 之定義 -}
+      let (b, y) = ascMin xs
+      in (x <= y && b, x `min` y) {-"~~."-}
+```
+{.nobreak}如此，我們已導出：
+```haskell
+ascMin :: List Int -> (Bool, Int)
+ascMin []      = (True, maxBound)
+ascMin (x:xs)  =  let (b, y) = ascMin xs
+                  in (x <= y && b, x `min` y) {-"~~."-}
+```
+:::
+:::
+
+:::{.exlist}
+:::{.exer #ex:baobab-ITree}
 回顧第 \@ref{sec:user-defined-data} 節中談到的 |ITree|:
 ```spec
 data ITree a = Null | Node a (ITree a) (ITree a) {-"~~."-}
@@ -1200,7 +1246,7 @@ dd (Bin t u)  | m <  n  = (ys, 1 + n)
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:red-black-tree-balanced-linear-time}
 第 \@ref{sec:induction-red-black-tree} 節中的函數 |balanced :: RBTree -> Bool| 檢查一棵紅黑樹是否平衡。由於重複呼叫 |bheight|, 這是一個需要 $O(n^2)$ 時間的函數。請用組對的技巧推導出一個可在線性時間內判斷平衡的版本。
 :::
 :::{.exans}
@@ -1243,7 +1289,7 @@ balHeight (B t x u)  =  let  (bt,  ht)  = balHeight t
 :::
 :::
 
-### 代換為最小標籤 --- 循環程式
+### 代換為最小標籤 --- 循環程式 {#sec:rep-minE}
 
 下列函數 |minE| 曾出現在第 \@ref{sec:other-inductive-datatypes} 節中，找出一棵 |ETree| 中最小的值。
 函數 |rep| 則可視為 |repl| 的簡單版，將樹中的每個標籤都代換成同一個值 |y|。
@@ -1343,7 +1389,7 @@ sumlen (x:xs)  =  let (s,l) = sumlen xs
 @HuIwasaki:97:Tupling 認為需有更有效率的序對實作法，組對才是值得做的轉換。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:allpairs}
 函數 |allpairs| 傳回輸入串列中任兩個元素（依其原本順序）形成的序對。
 例如 |allpairs [1,2,3,4]| 可得到 |[(1,2),(1,3),(1,4),(2,3),(2,4),(3,4)]|。
 ```haskell
@@ -1536,7 +1582,7 @@ tagsAcc (Node x t u)  ys = tagsAcc t (x : tagsAcc u ys) {-"~~."-}
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:tagsAcc}
 由 |tagsAcc t ys = tags t ++ ys| 推導出上述的歸納定義。
 :::
 :::{.exans}
@@ -1559,7 +1605,7 @@ tagsAcc Null          ys = ys
 tagsAcc (Node x t u)  ys = tagsAcc t (x : tagsAcc u ys) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:tagsAcc-2}
 確認 |tagsAcc t ys| 確實是 |1 : (2 : (3 : (4 : (5 : (6 : (7 : (8 : ys)))))))|.
 :::
 :::{.exer #ex:ETree-tipsAcc}
@@ -1899,7 +1945,7 @@ expAcc b n x  | even  n = expAcc (b * b) (n `div` 2) x
 一個操作性的理解法是：|expAcc b n x| 開始執行後，第一個參數中總是存放著 |b| 的「|2| 的某個次方」的乘冪（$b$, $b^2$, $b^4$...）。只在 |n| 是奇數時，當時的 |b| 才會被乘入累積參數 |x| 之中。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:expAcc-loop}
 本節的 |expAcc| 函數相當於怎樣的指令式語言迴圈？其迴圈恆式為何？
 :::
 ```texonly
@@ -1927,13 +1973,13 @@ return x
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:tail-recursion-length}
 請推導出一個尾遞迴版本的 |length| 函數。
 :::
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:tail-recursion-fact}
 第 \@ref{sec:inductive-proof-on-Nat} 節中介紹了經典的階層函數：
 ```spec
 fact :: Nat -> Nat
@@ -1988,7 +2034,7 @@ return y {-"~~."-}
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:mulAcc-Ologm}
 第 \@ref{sec:induction-on-Nat} 節中把乘法定義為連續的加法。
 確實，一些早期、簡單的微電腦中沒有專做乘法的電路，只能以加法實作乘法。
 但如果有乘以二、除以二、以及判斷一個數字是奇數或偶數的指令（都是簡單的位元運算），我們只需 $O(\log m)$ 個加法即可計算 |m * n|. 定義：
@@ -2035,7 +2081,7 @@ mulAcc m n k  | even n  = mulAcc (m `div` 2) (2*n) k
 %{
 %format exp b (n) = b "^{" n "}"
 ```
-:::{.exer}
+:::{.exer #ex:dtoN}
 下述函數 |dtoN| 將一個以串列表達的十進位數字轉成自然數。
 例如 |dtoN [4,1,6,0] = 4160|:
 ```spec
@@ -2175,7 +2221,7 @@ mascAcc n a b  | even  n = mascAcc (n `div` 2) a (2 * b)
 {.nobreak}在推導 |mascAcc| 的過程中使用了各種四則運算的性質，但總之目標是將式子整理回 |a + b * masc n| 的形式，以便收回成為 |mascAcc|。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:tail-recursion-fusc}
 本題來自@Kaldewaij:90:Programming. 給定以下函數：
 ```spec
 fusc :: Nat -> Nat
@@ -2278,7 +2324,7 @@ mapAccDer1 f x xs ys =
 :::
 :::
 
-### 尾遞迴的效率考量
+### 尾遞迴的效率考量 {#sec:tail-recursion-efficiency}
 
 如前一節所述，歸納定義的 |sum| 需用堆疊（或其他功能相當的機制）記下每個遞迴呼叫的結果該怎麼加工。
 這會佔用與輸入串列長度成正比的額外空間，相當不理想 --- 直覺上，「將一個串列加總」應該是只需定量的額外空間即可完成的計算。

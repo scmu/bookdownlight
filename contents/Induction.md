@@ -90,7 +90,7 @@ Haskell 支援無限大的資料結構，也允許我們寫出不會終止的程
 既然對任何 |m|, 都做得出一個 |P m| 的證明，我們就可安心相信 |P| 對任何自然數都成立了。
 
 為了之後討論方便，我們將前述的數學歸納法寫得更形式化些：
-```{.equation title="自然數上之歸納法："}
+```{.equation title="自然數上之歸納法：" #eq:induction-on-Nat}
 |(forall n . P n) {-"~"-}<== {-"~"-} P Zero && (forall n . P (Suc n) <== P n) {-"~~."-}|
 ```
 {.nobreak}這只是把之前的文字描述改寫成二階邏輯，但可清楚看出：給定 |P|, 我們希望證明它對所有自然數都成立，只需要提供 |P Zero| 和 |P (Suc n) <== P n| 兩個證明。
@@ -335,7 +335,7 @@ P m <=> (exp b (m + n) = exp b m * exp b n) {-"~~,"-}
 符號幫助我們，使我們的思考清晰而有方向。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:proof-no-induction}
 證明 |1 * k = k|. 這個證明並不需要歸納。
 :::
 :::{.exer #ex:add-associative}
@@ -360,7 +360,7 @@ fact (Suc n)  = (Suc n) *: fact n {-"~~."-}
 
 ## 串列與其歸納定義 {#sec:induction-lists}
 
-如同第\@ref{sec:lists}所述，「元素型別為|a|的串列」可定義成如下的資料型別：^[Haskell 中「元素型別為|a|的串列」寫成|[a]|. 由於這樣的符號在教學中遇到許多困難，本書中寫成|List a|.]
+如同第\@ref{sec:lists}節所述，「元素型別為|a|的串列」可定義成如下的資料型別：^[Haskell 中「元素型別為|a|的串列」寫成|[a]|. 由於這樣的符號在教學中遇到許多困難，本書中寫成|List a|.]
 ```spec
 data List a = [] | a : List a {-"~~."-}
 ```
@@ -433,7 +433,7 @@ concat [] = []
 concat (xs:xss) = xs ++ concat xss {-"~~."-}
 ```
 
-### 串列上之歸納證明
+### 串列上之歸納證明 {#sec:induction-lists-proof}
 
 如果 |List a| 是一個歸納定義出的資料結構，我們應可以在 |List a| 之上做歸納證明。確實，串列上的歸納法可寫成：
 ```{.equation title="串列上之歸納法："}
@@ -445,7 +445,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 \index{map-fusion map 融合定理@@{|map|-fusion |map| 融合定理}}
 是關於 |map| 極常用的定理之一。所謂「融合」在此處是把兩個 |map| 融合為一。
 我們日後會見到更多的融合定理。
-::: {.theorem title="|map| 融合定理" #thm:map-fusion}
+::: {.theorem #thm:map-fusion title="|map| 融合定理"}
 對任何 |f| 與 |g|,
 |map f . map g = map (f.g)|.
 :::
@@ -550,7 +550,7 @@ concat (xs:xss) = xs ++ concat xss {-"~~."-}
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:append-nil}
 證明對所有 |xs|, |xs ++ [] = xs|. 比較本題與習題\@ref{ex:add-right-id}的證明。
 :::
 :::{.exer #ex:reverse}
@@ -600,7 +600,7 @@ reverse (x:xs)  = reverse xs ++ [x] {-"~~."-}
 :::
 
 討論自然數時，習題\@ref{ex:add-associative}曾請讀者證明加法都滿足結合律。此處示範證明類似定理的串列版：
-::: {.theorem}
+::: {.theorem #thm:append-associative}
 |(++)| 滿足結合律。意即，對任何 |xs|, |ys|, 和|zs|,
 |(xs ++ ys) ++ zs = xs ++ (ys ++ zs)|.
 :::
@@ -807,7 +807,7 @@ sumConcatInd xs xss =
 
 為讓讀者熟悉，本節中我們多看一些自然數或串列上的歸納定義。
 
-### |filter|, |takeWhile|, 與 |dropWhile|
+### |filter|, |takeWhile|, 與 |dropWhile| {#sec:filter-takeWhile-dropWhile}
 
 {title="filter"} 我們曾見過的函數 |filter| 可寫成如下的歸納定義：
 ```spec
@@ -856,7 +856,7 @@ filterMapPf1 p f x xs =
 
 答案是：如果我們假設的世界中有不終止的程式，\@eqref{eq:fn-if-distribute}便不正確了。
 例如，當 |f| 是 |three x = 3|，而 |p| 是個永遠執行、不終止的算式（例：|let b = not b in b|)：
-```equation
+```{.equation #eq:fn-if-three-distribute}
   |three (if p then e1 else e2) {-"~\stackrel{?}{=}~"-} if p then three e1 else three e2| {-"~~."-}
 ```
 {.nobreak}上述式子的左手邊直接化簡成|3|, 但右手邊卻不會終止，因為 |if| 得知道 |p| 的值。
@@ -908,14 +908,14 @@ dropWhile p (x:xs)  = if p x then dropWhile p xs else x:xs {-"~~."-}
 :::{.exer #ex:take-cat-drop}
 證明 |takeWhile p xs ++ dropWhile p xs = xs|.
 :::
-:::{.exer}
+:::{.exer #ex:protect-takeWhile-dropWhile}
 以保護式語法定義 |takeWhile| 與 |dropWhile|, 以此定義做做看習題 \@ref{ex:take-cat-drop}.
 :::
 :::
 
 
 
-### |elem| 與不等式證明
+### |elem| 與不等式證明 {#sec:elem-neq-proof}
 
 {title="不等式證明"} 給定如下的定義，|elem x xs| 判斷 |x| 是否出現在串列 |xs| 中：
 ```spec
@@ -953,7 +953,7 @@ elem x (y:xs)  = (x == y) || elem x xs {-"~~."-}
 {.nobreak}讀者可注意：第1, 2, 4 步使用的邏輯關係都是 |(<=>)| ，第 3 步卻是 |(<==)|，因此整個證明建立了「若|elem z (x:xs)|，則|elem z ((x:xs) ++ ys)|」。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:weaken-not-elem}
 證明 |not (elem z (xs ++ ys)) ==> not (elem z xs)|.
 :::
 :::{.exer #ex:elem-catleft}
@@ -968,7 +968,7 @@ all p []      = True
 all p (x:xs)  = p x && all p xs {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:all-elem}
 證明 |all (`elem` xs) (filter p xs)|. 其中 |x `elem` xs| 是 |elem x xs| 的中序寫法。 我們可能需要習題 \@ref{ex:elem-catleft} 和 \@ref{ex:all-monotonic} 的結果，以及下述性質：
 ```{.equation #eq:ifpxx}
     |if p then x else x| = |x| \mbox{~~.}
@@ -1043,7 +1043,7 @@ inits (x:xs)  = [] : map (x:) (inits xs) {-"~~."-}
 %format initsp = "\Varid{inits}^{+}"
 ```
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:initsp}
 試定義 |initsp :: List a -> List (List a)|, 計算一個串列的所有*非空前段*。例如 |initsp [1,2,3]| 是 |[[1],[1,2],[1,2,3]]|。當然，其中一個定義方式是 |initsp = tail . inits|. 你能以歸納方式定義出 |initsp| 嗎？
 ```spec
 initsp []      = ?
@@ -1057,7 +1057,7 @@ initsp []      = []
 initsp (x:xs)  = [x] : map (x:) (initsp xs) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:inits-upto}
 我們驗證一下 |inits| 在例\@ref{ex:inits} 中的組件定義與本章的歸納定義是相等的。定義 |upto :: Nat -> List Nat|:
 ```haskell
 upto Zero     = [Zero]
@@ -1125,7 +1125,7 @@ segments = concat . map inits . tails {-"~~."-}
 {.nobreak}但 |segments| 無法寫成本章目前這種形式的歸納定義。我們將在以後的章節再討論到 |segments|.
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:segments-pattern}
 試著把 |segments| 寫成如下的歸納定義：
 ```spec
 segments :: List a -> List (List a)
@@ -1224,10 +1224,10 @@ lengthPermsPf1 x xs =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:map-fan}
 證明 |map f . fan x = fan (f x) . map f|.
 :::
-:::{.exer}
+:::{.exer #ex:perm-map}
 證明 |perm . map f = map (map f) . perm|.
 :::
 :::{.exer #ex:length-fan}
@@ -1637,7 +1637,7 @@ minEmapEplusPf1 x t u =
 :::
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:ITree-principle}
 請寫出 |ITree| 的歸納原則？
 :::
 :::{.exans .compact}
@@ -1662,7 +1662,7 @@ tags Null          = []
 tags (Node x t u)  = tags t ++ [x] ++ tags u {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:ITree-size}
 試定義函數 |size :: ITree a -> Int|, 傳回給定的 |ITree| 之標籤數目 --- 例如 |size Null = 0|, |size (Node 3 Null (Node 4 Null Null)) = 2|.
 :::
 :::{.exans .compact}
@@ -1672,7 +1672,7 @@ size Null          = Zero
 size (Node x t u)  = Suc (size t +: size u) {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:ITree-length-size}
 接續前兩題，證明 |length (tags t) = size t|.
 :::
 :::{.exans}
@@ -1689,542 +1689,6 @@ lenLeavesPf1 x t u =
       Suc (size t +: size u)
  ===    {- |size| 之定義 -}
       size (Node x t u) {-"~~."-}
-```
-:::
-:::
-
-
-## 搜尋樹 {#sec:induction-search-trees}
-
-本節以搜尋樹為例，示範樹狀結構上的歸納證明。本節於初次閱讀時可跳過。
-
-許多應用需要將資料收集在某種表達「集合」的資料結構中。
-我們希望能做的操作包括：尋找並判斷某筆資料是否在集合中、加入某筆新資料、刪除某筆資料，等等。
-許多演算法都仰賴這些操作能有效率地被實作。
-
-我們可以用串列表達一個集合，但在一般的簡單實作中，在串列中尋找與刪除都需要與串列長度成正比的時間。若集合中的資料是能比大小的，使用一個陣列並將元素排序好，可用二元搜尋法在對數時間內尋找某筆資料。但在陣列中加入與刪除元素也都需要與陣列長度成正比的時間挪出或消除空位。
-
-因此，許多針對此類應用的樹狀結構被發展出來。
-
-### 二元搜尋樹 {#sec:induction-binary-search-tree}
-
-*二元搜尋樹*(*binary search tree*)\index{binary search tree 二元搜尋樹}是一類樹狀資料結構的統稱。簡單的二元搜尋樹是一種類似 |ITree| 的結構（為說明方便，我們讓樹中的元素皆為 |Int|）：
-```haskell
-data BTree = Nul | Nod BTree Int BTree {-"~~,"-}
-```
-{.nobreak}另有個附加限制：在所有內部節點 |Nod t x u| 中，|t| 之中的所有元素均小於 |x|, |u| 之中的所有元素均大於 |x|.
-以下我們將此限制簡稱為「有序性」。
-給定一個有序的二元搜尋樹 |t|，下述函數 |search k t| 判斷 |k| 是否出現在 |t| 之中：
-```haskell
-search :: Int -> BTree -> Bool
-search k Nul          = False
-search k (Nod t x u)  | k < x   = search k t
-                      | k == x  = True
-                      | x < k   = search k u {-"~~."-}
-```
-{.nobreak}這是一個歸納定義。由於有序性，每遇到一個 |Nod t x u| 節點，我們可比較 |k| 與 |x| 的大小，藉以決定往哪一個子樹做搜尋。
-
-如果二元樹是*平衡*的 --- 意指在樹中的每個 |Nod t x u| 之中，|t| 和 |u| 的元素數目大致相等，或著至少其比例為某個常數，|search k (Nod t x u)| 每次選擇往 |t| 或 |u| 搜尋時都會排除一定比例的元素。如此一來，搜尋一個含 |n| 個元素的樹可在 $O(\log n)$ 的時間內完成。
-然而，維持「平衡」並不容易，也是各種二元搜尋樹各顯神通之處。
-
-以下我們多給一些定義，以便更形式化地描述有序性。我們假設有個抽象的「集合」型別 |Set a|. 含單一元素 |x| 的集合寫成 |singleton x|; 聯集寫作 |(`union`)|, 並具有結合律、交換律等性質。下述函數 |elems| 傳回一個樹中的所有元素（類似練習 \@ref{ex:ITree-tags} 中的 |tags|）：
-```haskell
-elems :: BTree -> Set Int
-elems Nul          = []
-elems (Nod t x u)  = elems t `union` singleton x `union` elems u {-"~~."-}
-```
-{.nobreak}有序性可表示為下列述語 |sorted|:
-```haskell
-sorted :: BTree -> Bool
-sorted Nul          =  True
-sorted (Nod t x u)  =  all (<x) (elems t) && all (x<) (elems u) &&
-                       sorted t && sorted u {-"~~."-}
-```
-{.nobreak}其中 |all :: (a -> Bool) -> Set a -> Bool| 檢查一個集合中的元素是否均滿足某述語。函數 |all| 滿足以下性質：
-```spec
-all p empty          = True
-all p (singleton x)  = p x
-all p (s `union` t)  = all p s && all p t {-"~~."-}
-```
-
-在二元搜尋樹中插入新元素的函數可定義如下：
-```haskell
-insert :: Int -> BTree -> BTree
-insert k Nul          = Nod Nul k Nul
-insert k (Nod t x u)  | k < x   = Nod (insert k t) x u
-                      | k == x  = Nod t x u
-                      | x < k   = Nod t x (insert k u) {-"~~."-}
-```
-{.nobreak}函數 |insert| 和 |search| 的結構很類似：都藉由比較 |k| 與 |x| 決定該往哪兒插入元素；函數 |search| 只在碰到 |Nul| 時才能傳回 |False|, 函數 |insert k| 也只將 |Nod Nul k Nul| 放在原本 |Nul| 出現之處 --- 新插入的節點永遠是最邊緣的葉節點。
-
-我們自然會希望 |insert| 保持有序性：如果 |t| 是有序的，|insert k t| 也應該是。表示為定理如下：
-:::{.theorem}
-對所有 |t| 與 |k|, |sorted t ==> sorted (insert k t)|.
-:::
-:::{.proof}
-在 |t| 之上做歸納證明。
-基底情況 |t := Nul| 之中，|sorted (Nod Nul k Nul)| 顯然成立。
-歸納情況有 |k < x|, |k == x|, |x < k| 三種。
-以下我們只列出第一種。
-
-{.nobreak}**狀況** |t := Nod t x u|, |k < x|:
-```haskell
-     sorted (insert k (Nod t x u))
-<=>   {- |insert| 之定義, |k < x| -}
-     sorted (Nod (insert k t) x u)
-<=>   {- |sorted| 之定義 -}
-     all (<x) (elems (insert k t)) && all (x<) (elems u) &&
-     sorted (insert k t) && sorted u
-<=>   {- 練習 \ref{ex:elems-insert}: |elems (insert k t) = singleton k `union` elems t| -}
-     all (<x) (singleton k `union` elems t) && all (x<) (elems u) &&
-     sorted (insert k t) && sorted u
-<=>   {- |all| 之性質 -}
-     k < x && all (<x) (elems t) && all (x<) (elems u) &&
-     sorted (insert k t) && sorted u
-<==   {- |k < x|, 歸納假設 -}
-     all (<x) (elems t) && all (x<) (elems u) &&
-     sorted t && sorted u
-<=>   {- |sorted| 之定義 -}
-     sorted (Nod t x u) {-"~~."-}
-```
-:::
-
-函數 |insert| 並不保證做出的樹能平衡 --- 恰恰相反，我們一不小心便會做出偏一邊的樹。例如，
-|insert 5 (insert 4 (insert 3 (insert 2 (insert 1 Nul))))|
-得到的結果會是：
-```spec
-  Nod Nul 1 (Nod Nul 2 (Nod Nul 3 (Nod Nul 4 (Nod Nul 5 Nul)))) {-"~~."-}
-```
-{.nobreak}在這個樹中搜尋 |5|, 和在串列 |[1,2,3,4,5]| 之中尋找 |5| 基本上是一樣的。
-
-許多建立在二元搜尋樹的進階資料結構會在插入元素時多做些操作，想辦法維持樹的平衡。
-我們將在第\@ref{sec:induction-red-black-tree}節介紹的紅黑樹就是一個例子。
-
-:::{.exlist}
-:::{.exer #ex:elems-insert}
-證明對所有 |t| 與 |k|, |elems (insert k t) = singleton k `union` elems t|.
-:::
-:::
-
-### 紅黑樹 {#sec:induction-red-black-tree}
-
-在二元搜尋樹的基礎上，*紅黑樹*(*red-black tree*)\index{red-black tree 紅黑樹}多加了個屬性：每個節點都是紅色或黑色之一。
-表示成 Haskell 資料結構如下：
-```hasekell
-data RBTree = E  | R RBTree Int RBTree
-                 | B RBTree Int RBTree {-"~~,"-}
-```
-{.nobreak}其中 |E| 為沒有資料的葉節點，|R| 為紅色內部節點，|B| 為黑色內部節點 --- 葉節點 |E| 被視為黑色的。
-定義 |data Color = Red || Blk|, 下述定義的 |color t| 傳回 |t| 的根部節點的顏色：
-```{.haskell .invisible}
-data Color = Red | Blk {-"~~,"-}
-```
-```haskell
-color :: RBTree -> Color
-color E          = Blk
-color (R _ _ _)  = Red
-color (B _ _ _)  = Blk {-"~~."-}
-```
-{.nobreak}我們要求紅黑樹滿足下列性質：
-
-  1. 紅黑樹也是二元搜尋樹，意即它得是有序的。
-  2. 從根部開始到每個葉節點 |E| 的路徑上的黑節點數目均相同。我們說這樣的一棵樹是*平衡*的。
-  3. 紅節點的兩個子代都必須是黑色的，黑節點則無此限制。為方便說明，我們把滿足此條件的樹稱為*準紅黑樹*。
-  4. 根節點為黑色的。
-
-{.nobreak}其中，關於有序性的討論和前一節原則上相同，此節將之省略。我們假設存在某函數 |sorted :: RBTree -> Bool| 判斷一棵紅黑樹是否有序。
-我們看看其他性質如何形式化。
-
-首先，函數 |bheight| 定義一棵樹的「黑高度」 --- 所有路徑上黑色節點的最多數目：
-```haskell
-bheight :: RBTree -> Nat
-bheight E          = 0
-bheight (R t x u)  = bheight t `max` bheight u
-bheight (B t x u)  = 1 + (bheight t `max` bheight u) {-"~~."-}
-```
-{.nobreak}說一棵樹「平衡」意指每個內節點中，兩個子樹的黑高度均相等。
-```haskell
-balanced :: RBTree -> Bool
-balanced E          =  True
-balanced (R t x u)  =  bheight t == bheight u && balanced t && balanced u
-balanced (B t x u)  =  bheight t == bheight u && balanced t && balanced u {-"~~."-}
-```
-
-函數 |semiRB| 檢查一棵樹是否為準紅黑 --- 紅節點的兩棵子樹均為黑色：
-```haskell
-semiRB :: RBTree -> Bool
-semiRB E          =  True
-semiRB (B t x u)  =  semiRB t && semiRB u
-semiRB (R t x u)  =  color t == Blk && color u == Blk && semiRB t && semiRB u
-```
-{.nobreak}最後，如前所述，紅黑樹需滿足 |sorted|, |balanced|, |semiRB|, 並且根節點須為黑色：
-```spec
-redBlack :: RBTree -> Bool
-redBlack t =  sorted t && balanced t && semiRB t && color t == Blk {-"~~."-}
-```
-
-在這樣一棵二元樹中，由於 |balanced| 被滿足，每條路徑上的黑節點數目均相同；由於 |semiRB| 被滿足，紅節點不會連續出現。因此最長路徑之長度不超過最短路徑的兩倍。在這樣的樹中做二元搜尋，總會在 $O(\log n)$ 的時間內找到資料或走到葉節點。
-
-{title="紅黑樹插入"}
-在紅黑樹中插入元素的方式最初和二元搜尋樹相同：一邊搜尋一邊往下走，如果我們碰到 |E|, 便是插入新元素之處。新元素總在邊緣被插入，而樹的有序性仍保持著。
-
-新加入的節點該是什麼顏色呢？讓新節點為紅色可能是個合理選擇。如此一來，插入新元素不會改變一棵樹的黑高度，也因此如果該樹原本是平衡的，加入新節點後的新樹仍是平衡的。
-
-但這麼做可能破壞準紅黑性質：路徑上有可能出現兩個連續的紅節點。
-因此我們在插入後的*回程*途中適時做*旋轉*，如圖\@ref{fig:red-black-rotate}所示。
-每當我們看到一個黑節點之下有兩個連續的紅節點，必定是圖中四個角落的四種情形之一（我們只插入了一個元素，最多只有一個多出的紅節點。圖中 |s|, |t|, |u|, 與 |v| 仍是平衡的準紅黑樹）。
-我們將每個情形都旋轉成圖中央的情況。
-如此一來圖中央以 |x|, |z| 為根部的兩顆子樹都是黑根部的紅黑樹，|y| 是紅節點。
-於是我們再往上檢查，如果又出現四種情況之一就再旋轉，否則往上重建路徑，直到回到根部。
-如此做出一棵滿足準紅黑性質的樹。
-最後，如果根部節點為紅色，便直接改成黑色。
-
-::: {.figure .top title="在紅黑樹中插入新元素後做的四種旋轉。" #fig:red-black-rotate}
-::: {.center}
-```texonly
-\includegraphics[width=0.6\textwidth]{Pics/red-black-rotate.pdf}
-```
-:::
-:::
-
-我們看看前述的插入演算法可如何表示為 Haskell 程式。
-我們將主要執行插入與旋轉的函數稱為 |ins :: Int -> RBTree -> RBTree|.
-函數 |insert| 則在呼叫 |ins| 之後將樹根改為黑色的：
-```haskell
-insert :: Int -> RBTree -> RBTree
-insert k t = blacken (ins k t) {-"~~,"-}
-  where  blacken (R t x u) = B t x u
-         blacken t = t {-"~~."-}
-```
-
-:::{.infobox title="紅黑樹旋轉只需四種情況"}
-本節的的紅黑樹旋轉方式來自 @Okasaki:99:RedBlack。
-熟悉資料結構的讀者可能發現它們比一般教科書或網路資源中的處理方式簡單許多：
-一般資料中常會分出八種以上的狀況，除了主要路徑上的三個節點，也會考慮其兄弟節點的顏色。
-
-Okasaki 發現只需本節的這四種情況就足夠了。
-讀者也應可發現，採用較簡單的版本，對於證明以及暸解紅黑樹的性質幫助很大。
-
-那麼，為何一般教科書會用上那麼多情況呢？
-Okasaki 認為可能是效率考量。
-一般書中的版本中，有些情況可不需旋轉，只直接改變節點顏色。
-如此一來需要更動的欄位數目較少。
-有些情況中轉出的樹根部已是黑色的。在指令式語言中，此時該程序就可以直接結束。
-
-然而，在函數語言中，我們無論如何都需重建整個路徑上的節點。
-因此上述優點均不明顯。
-另一方面，Okasaki 也認為此種情況較少的版本是比較適合用於教學中的。
-:::
-
-函數 |ins| 在遇上紅節點（|R t x u|）時和第\@ref{sec:induction-binary-search-tree}中的 |insert| 很類似：比較 |k| 與 |x| 以決定該往哪邊插入，
-並在歸納呼叫後以 |R| 重做節點。
-但遇到黑節點 |B t x u| 時，我們不使用 |B|, 而是額外呼叫 |rotate| 函數：
-
-```haskell
-ins :: Int -> RBTree -> RBTree
-ins k E = R E k E
-ins k (R t x u)  | k <  x  = R (ins k t) x u
-                 | k == x  = R t x u
-                 | k >  x  = R t x (ins k u)
-ins k (B t x u)  | k <  x  = rotate (ins k t) x u
-                 | k == x  = B t x u
-                 | k >  x  = rotate t x (ins k u) {-"~~."-}
-```
-{.nobreak}回顧：圖\@ref{fig:red-black-rotate}的四種旋轉都只在根節點為黑色時啟動，因此我們也只在碰上黑節點時呼叫 |rotate|。
-在 |rotate s x t| 之中，|s| 為目前的左子樹，|x| 為目前的（黑色）節點中的標籤，
-|t| 則為目前的右子樹。
-函數 |rotate| 的定義如下：
-```haskell
-rotate :: RBTree a -> a -> RBTree a -> RBTree a
-rotate (R (R s x t) y u) z v  = R (B s x t) y (B u z v)
-rotate (R s x (R t y u)) z v  = R (B s x t) y (B u z v)
-rotate s x (R (R t y u) z v)  = R (B s x t) y (B u z v)
-rotate s x (R t y (R u z v))  = R (B s x t) y (B u z v)
-rotate s x t = B s x t {-"~~."-}
-```
-{.nobreak}其中，前四個情況的左邊分別對應到圖\@ref{fig:red-black-rotate}的四個情況；他們的右手邊都是一樣的，對應到圖\@ref{fig:red-black-rotate}正中央的樹。
-最後的 |rotate s x t| 則是四種情況之外、不用旋轉的情形。
-
-{title="紅黑樹之性質：高度"}
-許多討論紅黑樹的教材在將插入、刪除等等操作的實作呈現讀者看過之後就結束了，
-對於其性質的討論意外地不完整。
-然而，這類資料結構之所以有效，正因為它們需有的性質一直被保持著。
-談資料結構上的操作卻不證明它們怎麼維護資料結構的性質，可說是缺了最重要的一塊。
-本節剩下的篇幅中，我們將描述並證明紅黑樹的一些主要性質。
-
-首先我們談談黑高度。
-讀者稍加嘗試之後會發現，|insert k t| 有時會增加 |t| 的黑高度，有時不會。
-我們怎知道紅黑樹何時會長高呢？
-
-原來，函數 |ins| 其實是不會讓樹長高的！我們有如下的定理 --- |ins k| 前後樹的黑高度不變：
-:::{.theorem #thm:redblack-bheight-ins}
-對所有 |k| 與 |t|, |bheight (ins k t) = bheight t|.
-:::
-{.nobreak}函數 |insert k t| 呼叫 |ins k t|, 得到的樹仍有原來的黑高度。
-如果 |blacken| 把樹由紅轉黑，新樹的黑高度才因此加一。
-否則樹的黑高度仍不變。
-:::{.corollary #thm:redblack-bheight-insert}
-對所有 |k| 與 |t|，如果 |ins k t| 為黑色，
-|bheight (insert k t) = bheight t|.
-否則 |bheight (insert k t) = 1 + bheight t|.
-:::
-
-我們將嘗試證明定理\@ref{thm:redblack-bheight-ins}.
-回顧我們的原則：*證明的結構依循程式的結構*。
-由於 |insert| 呼叫 |ins|, 欲證明關於 |insert| 的系理 \@ref{thm:redblack-bheight-insert}，
-我們需要關於 |ins| 的定理 \@ref{thm:redblack-bheight-ins}.
-同樣地，由於 |ins| 呼叫 |rotate|, 欲證明定理 \@ref{thm:redblack-bheight-ins},
-我們需要一個關於 |rotate| 的引裡：
-:::{.lemma #lma:redblack-bheight-rotate}
-對所有 |t|, |u| 與 |z|,
-|bheight (rotate t z u) = 1 + (bheight t `max` bheight u)|.
-:::
-這也不意外：|rotate| 的兩個參數 |t| 與 |u| 原本在黑節點之下，旋轉後的黑高度不變，仍是 |1 + (bheight t `max` bheight u)|.
-
-以下我們證明定理\@ref{thm:redblack-bheight-ins}.
-:::{.proof}
-在 |t| 之上做歸納。以下只列出幾個代表性狀況。
-
-{.nobreak}**狀況** |t := E|.
-```spec
-   bheight (ins k E)
-=  bheight (R E k E)
-=  0
-=  bheight E {-"~~."-}
-```
-
-{.nobreak}**狀況** |t := R t x u|, |k <  x|:
-```spec
-   bheight (ins k (R t x u))
-=    {- |ins| 之定義；|k < x| -}
-   bheight (R (ins k t) x u)
-=    {- |bheight| 之定義 -}
-   bheight (ins k t) `max` bheight u
-=    {- 歸納假設 -}
-   bheight t `max` bheight u
-=    {- |bheight| 之定義 -}
-   bheight (R t x u) {-"~~."-}
-```
-
-{.nobreak}**狀況** |t := B t x u|, |k <  x|:
-```spec
-   bheight (ins k (B t x u))
-=    {- |ins| 之定義；|k < x| -}
-   bheight (balance (ins k t) x u)
-=    {- 引理 \ref{lma:redblack-bheight-rotate} -}
-   1 + (bheight (ins k t) `max` bheight u)
-=    {- 歸納假設 -}
-   1 + (bheight t `max` bheight u)
-=    {- |bheight| 之定義 -}
-   bheight (B t x u) {-"~~."-}
-```
-:::
-
-為求完整，我們也簡述引理\@ref{lma:redblack-bheight-rotate}之證明：
-:::{.proof}
-由於 |rotate| 沒有遞迴、不呼叫其他函數，但有許多狀況，
-關於 |rotate| 的證明也大都僅是檢查每個情況，雖不難但可能很繁瑣。
-以下只舉一種狀況為例。
-
-{.nobreak}**狀況** |(t,z,u) := (R (R t x u) y v, z, w)|:
-```spec
-   bheight (rotate (R (R t x u) y v) z w)
-=    {- |rotate| 之定義 -}
-   bheight (R (B t x u) y (B v z w))
-=    {- |bheight| 之定義 -}
-   (1+ (bheight t `max` bheight u)) `max` (1+ (bheight v `max` bheight w))
-=    {- 由於 |(k+x) `max` (k+y) = k + (x `max` y)|, |max| 有結合律 -}
-   1 + (((bheight t `max` bheight u) `max` bheight v) `max` bheight w)
-=    {- |bheight| 之定義 -}
-   1 + (bheight ((R (R t x u) y v)) `max` bheight w)
-```
-:::
-
-{title="紅黑樹之性質：平衡"}
-之所以討論黑高度，目的之一當然是要討論平衡。我們可證明函數 |ins k| 維持平衡性：
-
-:::{.theorem #thm:red-black-balanced-ins}
-對所有 |k| 與 |t|, |balanced t ==> balanced (ins k t)|.
-:::
-
-{.nobreak}而由於 |balanced t ==> balanced (blacken t)|, 定理 \@ref{thm:red-black-balanced-ins} 蘊含 |insert k| 也維持輸入樹的平衡： |balanced t ==> balanced (insert k t)|.
-
-同樣地，要證明定理 \@ref{thm:red-black-balanced-ins}，我們也需要一個關於 |rotate| 的引理：
-:::{.lemma #lma:red-black-balanced-rotate}
-對所有 |t| 與 |u|,
-```spec
-balanced t && balanced u &&
-   bheight t = bheight u ==> balanced (rotate t x u) {-"~~."-}
-```
-:::
-{.nobreak}由於這些證明與前面提到的證明類似，我們將它們留給讀者做練習。
-
-:::{.exlist}
-:::{.exer}
-證明定理\@ref{thm:red-black-balanced-ins}.
-你將用得上引理\@ref{lma:red-black-balanced-rotate}與定理 \@ref{thm:redblack-bheight-ins}.
-:::
-:::{.exans}
-在 |t| 之上做歸納。基底情況 |t := E| 很容易建立。
-以下只示範一種歸納情況。
-
-{.nobreak}**狀況** |t := B t x u|, |k < x|:
-```spec
-   balanced (ins k (B t x u))
-=    {- |ins| 之定義；|k < x| -}
-   balanced (rotate (ins k t) x u)
-<==  {- 引理 \ref{lma:red-black-balanced-rotate} -}
-   balanced (ins k t) && balanced u && bheight (ins k t) = bheight u
-=    {- 定理 \ref{thm:redblack-bheight-ins} -}
-   balanced (ins k t) && balanced u && bheight t = bheight u
-<==  {- 歸納假設 -}
-   balanced t && balanced u && bheight t = bheight u
-=    {- |balanced| 之定義 -}
-   balanced (B t x u) {-"~~."-}
-```spec
-:::
-:::{.exer}
-證明引理\@ref{lma:red-black-balanced-rotate}.
-:::
-:::{.exans}
-以下只示範其中一種狀況。
-
-{.nobreak}**狀況**: |(t,x,u) := (R (R t x u) y v, z, w)|.
-```spec
-  balanced (rotate (R (R t x u) y v) z w)
-=    {- |rotate| 之定義 -}
-  balanced (R (B t x u) y (B v z w))
-=    {- |balanced| 之定義 -}
-  bheight (B t x u) = bheight (B v z w) &&
-  balanced (B t x u) && balanced (B v z w)
-=    {- |bheight| 之定義 -}
-  1 + (bheight t `max` bheight u) = 1+ (bheight v `max` beight w) &&
-  bheight t = bheight u && balanced t && balanced u &&
-  bheight v = bheight w && balanced v && balanced w
-<==  {- |balanced| 與 |bheight| 之定義；算數性質 -}
-  bheight (R t x u) = bheight v &&
-  balanced (R t x u) && balanced v && balanced w &&
-  bheight t `max` bheight u `max` bheight v = bheight w
-=    {- |balanced| 與 |bheight| 之定義 -}
-  balanced (R (R t x u) y v) && balanced w &&
-   bheight R (R t x u) y v = bheight w {-"~~."-}
-```
-:::
-:::
-
-{title="紅黑樹之性質：顏色"}
-最後，我們談談紅黑樹插入之後的顏色。我們也許希望函數 |ins k| 能保持準紅黑性，意即 |semiRB t ==> semiRB (ins k t)|.
-但這顯然不成立：我們已經知道 |ins k| 可能在一個路徑上產生連續兩個紅節點。
-
-為描述此時的特殊狀況，我們另外定義一個性質：滿足下列述語的樹被稱作*紅外(infrared)樹* --- 取自比紅色還紅一點之意：
-```haskell
-infrared :: RBTree -> Bool
-infrared (R t x u)  =  (color t == Blk || color u == Blk) &&
-                         semiRB t && semiRB u
-infrared t          =  False {-"~~."-}
-```
-{.nobreak}紅外樹幾乎是一棵根部為紅色的準紅黑樹，但兩個子樹 |t| 與 |u| 之中最多有一個可以是紅色！我們將其表示成 |color t == Blk || color u == Blk|. 此外，|t| 與 |u| 仍必須是準紅黑樹。其他的情形（|E| 或是 |B _ _ _|）是黑色的，都不是紅外樹。
-
-那麼，我們是否能證明：給定 |ins k| 準紅黑樹 |t|， |ins k t| 總是一個紅外樹，意即 |semiRB t ==> infrared (ins k t)|？
-對歸納證明熟悉的讀者可能立刻覺得事有蹊蹺：有二就有三，證明歸納狀況時，如果歸納假設中的子樹有兩個連續的紅節點，在歸納狀況中可能看到三個連續紅節點。如此一來似乎沒完沒了。
-
-這是一個我們必須嘗試證明一個更強的性質才能使歸納證明成立的例子。
-函數 |ins| 真正滿足的是一個更強的性質：
-給定準紅黑樹 |t|,
-如果 |t| 是紅色，|ins k t| 則是一棵紅外樹；如果 |t| 是黑色，|ins k t| 也將是一棵準紅黑樹：
-:::{.theorem #thm:red-black-semiRB-ins}
-對所有 |t|:
-
-  1. |semiRB t && color t = Red ==> infrared (ins k t)|,
-  2. |semiRB t && color t = Blk ==> semiRB (ins k t)|.
-
-
-
-:::
-{.nobreak}為證明定理\@ref{thm:red-black-semiRB-ins}，我們也需要一個與 |rotate| 相關的引理：
-只要 |t| 與 |u| 之中有一個是準紅黑樹，另一個是準紅黑樹或紅外樹，|rotate t x u| 就會是準紅黑樹：
-:::{.lemma #lma:red-black-semiRB-rotate}
-對所有 |t| 與 |u|,
-
-  1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)|;
-  2. |semiRB t && (infrared u |||| semiRB u) ==> semiRB (rotate t x u)|.
-
-
-
-
-:::
-{.nobreak}有了定理\@ref{thm:red-black-semiRB-ins}，由於 |infrared t ==> semiRB (blacken t)|，
-我們立刻得知 |insert k| 保持準紅黑性：
-:::{.corollary}
-|semiRB t ==> semiRB (insert k t)|.
-:::
-
-
-以下證明定理\@ref{thm:red-black-semiRB-ins}:
-:::{.proof}
-定理\@ref{thm:red-black-semiRB-ins}的 1, 2 兩個小性質需在同一個歸納中證明。
-注意： 1 與 2 的合取蘊含了
-```{.equation #eq:red-black-semiRB-ins-infrared}
-|semiRB t ==> (infrared (ins k t) |||| semiRB (ins k t))| \mbox{~~.}
-```
-{.nobreak}我們將用到此性質。
-
-在 |t| 之上做歸納。我們只舉出兩個具代表性的例子：
-
-{.nobreak}**狀況**: |t := B t x u|, |k < x|:
-```spec
-   semiRB (ins k (B t x u))
-=    {- |ins| 之定義, |k < x| -}
-   semiRB (rotate (ins k t) x u)
-<==  {- 引理 \ref{lma:red-black-semiRB-rotate} -}
-   (infrared (ins k t) || semiRB (ins k t)) && semiRB u
-<==  {- 歸納假設，\eqref{eq:red-black-semiRB-ins-infrared} -}
-   semiRB t && semiRB u
-=    {- |semiRB| 之定義 -}
-   semiRB (B t x u) {-"~~."-}
-```
-
-{.nobreak}**狀況**:  |t := R t x u|, |k < x|:
-```spec
-   infrared (ins k (R t x u))
-=    {- |ins| 之定義 -}
-   infrared (R (ins k t) x u)
-=    {- |infrared| 之定義 -}
-   (color (ins k t) = Blk || color u = Blk) && semiRB (ins k t) && semiRB u
-=    {- 歸納假設 -}
-   (color (ins k t) = Blk || color u = Blk) && semiRB t && color t = Blk && semiRB u
-<==  {- 命題邏輯: |((P |||| Q) && R) <== (Q && R)| -}
-   color t = color u = Blk && semiRB t && semiRB u
-=   {- |semiRB| 之定義 -}
-   semiRB (R t x u) {-"~~."-}
-```
-:::
-
-:::{.exlist}
-:::{.exer}
-證明引理 \@ref{lma:red-black-semiRB-rotate}.
-:::
-:::{.exans}
-本證明只是一一檢查每個狀況。
-以 1. |(infrared t |||| semiRB t) && semiRB u ==> semiRB (rotate t x u)| 為例，由於有 |semiRB u|, 我們只需檢查 |rotate| 的第一、第二、與最後一個狀況。
-以第一個狀況為例：
-
-{.nobreak}**狀況**: |(t,x,u) := (R (R t x u) y v, z, w)|:
-```spec
-   semiRB (rotate (R (R t x u) y v) z w)
-=    {- |rotate| 之定義 -}
-   semiRB (R (B t x u) y (B v z w))
-=    {- |semiRB| 與 |color| 之定義 -}
-   color t = color u = color v = color w = Blk &&
-   semiRB t && semiRB u && semiRB v && semiRB w
-=    {- |semiRB| 之定義 -}
-   color v = color w = Blk &&
-   semiRB (R t x u) && semiRB v && semiRB w
-=    {- |infrared| 之定義 -}
-   infrared (R (R t x u) y v) && semiRB w
-=    {- 命題邏輯，|semiRB (R (R t x u) y v) = False| -}
-   (infrared (R (R t x u) y v) || semiRB (R (R t x u) y v)) && semiRB w  {-"~~."-}
-
 ```
 :::
 :::
@@ -2256,7 +1720,7 @@ infrared t          =  False {-"~~."-}
 
 :::
 
-:::{.definition title="最小上界、最大下界"}
+:::{.definition title="最小上界、最大下界" #def:min-max-bound}
 給定偏序集合 $(S,(\leq))$，考慮其子集 $T \subseteq S$:
 
   * 如果 $x \in S$ 滿足 $(\forall y \in T: y \leq x)$, 則 $x$ 是 $T$ 的一個*上界*(*upper bound*).
@@ -2276,7 +1740,7 @@ infrared t          =  False {-"~~."-}
 
 :::
 
-:::{.definition title="格、完全格"}
+:::{.definition title="格、完全格" #def:lattice}
 考慮偏序集合 $(S,(\leq))$:
 
   * 如果對任何 $x, y \in S$, |sup {x,y}| 和 |inf {x,y}| 均存在且都在 $S$ 之中，則 $(S,(\leq))$ 是一個格 (lattice)。
@@ -2291,7 +1755,7 @@ infrared t          =  False {-"~~."-}
 
 
 {title="定點"} 再回顧一些與*定點*相關的理論。
-:::{.definition title="定點"}
+:::{.definition title="定點" #def:fixed-point}
 給定完全格 |(A, (<=))| 和函數 |f :: A -> A|,
 
   1. 如果 |f x <= x|, 我們說 |x| 是 |f| 的一個*前定點* (*prefixed point*).
@@ -2316,7 +1780,7 @@ infrared t          =  False {-"~~."-}
 
 :::
 
-:::{.theorem}
+:::{.theorem #thm:f-muf}
 給定完全格 |(A, (<=))| 和函數 |f :: A -> A|,
 
   * |f| 的最小前定點 |mu f| 也是最小的定點，
@@ -2435,7 +1899,7 @@ data List a {-"~\,"-}={-"~\,"-} [] {-"~"-}|{-"~"-} a : List a {-"~~,"-}
 餘歸納和歸納的相關理論剛好是漂亮的對偶。我們將在 \todo{where} 介紹餘歸納。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:ITree-ETree-mu}
 回顧第\@ref{sec:user-defined-data}節中介紹的兩種樹狀結構：
 ```spec
 data ITree a  = Null | Node a (ITree a) (ITree a) {-"~~,"-}
@@ -2546,7 +2010,7 @@ drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 |take|/|drop| 的證明，一種可能做法是也依循著它們的結構：
 先拆解自然數，在 |n := Suc n| 的情況中再分析串列的值。
 作為例子，我們來驗證第\@pageref{eq:taken-dropn}頁提到的這個性質：
-:::{.theorem}
+:::{.theorem #thm:take-drop-id}
 對所有 |n| 與 |xs|, |take n xs ++ drop n xs = xs|.
 :::
 :::{.proof}
@@ -2571,11 +2035,11 @@ drop (Suc n)  (x:xs)  = drop n xs {-"~~."-}
 如果我們的世界中有不終止程式存在，上式便不見得成立了。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:take-drop-non-termination}
 請舉一個在允許不終止程式的 Haskell 中，
 |take n xs ++ drop n xs = xs| 不成立的例子。
 :::
-:::{.exer}
+:::{.exer #ex:head-tail-id-neg}
 對任何串列 |xs|，|head xs : tail xs = xs| 都成立嗎？請舉一個反例。
 :::
 :::{.exans}
@@ -2662,7 +2126,7 @@ zip (x:xs)  (y:yz)  = (x,y) : zip xs ys {-"~~."-}
 ```
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:zipWith-map-uncurry-zip}
 試定義 |zipWith :: (a -> b -> c) -> List a -> List b -> List c|,
 並證明 |zipWith f xs ys = map (uncurry f) (zip xs ys)|.
 :::
@@ -2695,7 +2159,7 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 > 則我們可得知 |P| 對所有自然數皆成立。
 
 {.nobreak}以更形式化的方式可寫成：
-```{.equation title="完全歸納："}
+```{.equation title="完全歸納：" #eq:complete-induction}
   |(forall n . P n) {-"~"-} <==  (forall n . P n  <== (forall i < n . P i)) {-"~~."-}|
 ```
 {.nobreak}請注意：前提 |P n  <== (forall i < n . P i)| 隱含 |P 0| 成立，因為當 |n := 0|, 由於沒有自然數 |i| 滿足 |i < n|, 算式 |(forall i < n . P i)| 可化簡為 |True|.
@@ -2703,7 +2167,7 @@ fib (2+n)  = fib (1+n) + fib n {-"~~."-}
 在完全歸納法之中，證明 |P n| 時，我們可假設 |P| 對*所有*小於 |n| 的值都已成立了。
 對寫程式的人來說，有了完全歸納法，表示我們日後定義自然數上的函數 |f :: Nat -> a| 時，每個 |f n| 都可以自由使用 |f| 在*所有*小於 |n| 的輸入之上的值。因此 |fib (2+n)| 可以用到 |fib (1+n)| 與 |fib n|, 因為 |n < 1+n < 2+n|.
 
-:::{.example}
+:::{.example #eg:complete-induction-example}
 關於完全歸納，離散數學教科書中的一個常見例子是「試證明所有自然數都可寫成不相同的二的乘冪的和」，例如 $50 = 2^5 + 2^4 + 2$.
 這可用完全歸納證明。我們以半形式的方式論述如下：
 令 |P n| 為「$n$可寫成一串不相同的二的乘冪的和」. 對所有 |n|, 我們想要證明 |P n  <== (forall i < n . P i)|. 當 |n| 為 |Zero|, 這一串數字即是空串列。
@@ -2738,7 +2202,7 @@ f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 計算 |fib 2 = fib 1 + fib 0| 時便會出錯。
 
 :::{.exlist}
-:::{.exer}
+:::{.exer #ex:sum-binary}
 證明 |sum (binary n) = n|.
 :::
 :::{.exans}
@@ -2757,7 +2221,7 @@ f n = ... f m ... f k ...  {- 如果 |m < n| 且 |k < n| -}
 =  n {-"~~."-}
 ```
 :::
-:::{.exer}
+:::{.exer #ex:fib-alpha}
 證明當 |n >= 1|, |fib (2+n) > {-"\alpha^n"-}|, 其中
 $\alpha = (1+\sqrt{5})/2$. 這個證明可用 |n := 1| 和 |n := 2| 當基底狀況。
 :::
@@ -2915,7 +2379,7 @@ ys <: xs {-"~"-}<=>{-"~"-} length ys < length xs {-"~~,"-}
 {.nobreak}在 |qsort (x:xs)| 子句中，|ys <: xs| 和 |zs <: xs| 均被滿足，而 |(<:)| 是一個良基序。因此 |qsort| 是一個奠立在 |(<:)| 之上的良基歸納定義。
 :::
 
-:::{.example title="合併排序"}
+:::{.example title="合併排序" #eg:mergesort}
 在串列上，合併排序\index{merge sort 合併排序}也是很常使用的排序方式。
 我們在第\@ref{sec:wholemeal}節中示範過以全麥編程方式寫成、由下往上的合併排序。
 此處的寫法則更接近大家一般的認知：拿到一個長度為 |n| 的串列，將之分割為長度大致為 |n/2| 的兩段，分別排序之後合併。
@@ -2937,7 +2401,7 @@ msort xs   = merge (msort ys) (msort zs) {-"~~,"-}
 這是為何我們需要 |msort [x]| 這個子句把 |length xs = 1| 的情況分開處理。如果沒有這個子句，|msort| 將有可能不終止 --- 讀者不妨試試看。
 :::
 
-:::{.example title="最大公因數"}
+:::{.example title="最大公因數" #eg:gcd}
 歐幾里得(Euclid)的《幾何原本》成書於西元前三百年，其中描述「計算最大公因數」\index{greatest common divisor 最大公因數}的做法可能是世界上最古老的演算法。
 以下函數計算兩個自然數 |(m,n)| 的最大公因數。
 如果兩數相等，它們的最大公因數也是自身。
@@ -3018,7 +2482,7 @@ interleave' (x:xs,  ys)  = x : interleave' (ys,xs) {-"~~."-}
 因此我們也會比較寬鬆地說 |interleave| 也是 |(<:)| 之上的良基歸納定義。
 :::
 
-:::{.example}
+:::{.example #eg:McCarthy91}
 下列函數被稱作「McCarthy 91 函數」：
 ```haskell
 mc91 :: Nat -> Nat
@@ -3063,7 +2527,7 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
 {.nobreak}如前所述，先比較 |x1| 與 |x2|, 如果相等，再比較 |y1| 與 |y2|.
 
 我們可以再稍微擴充一些，考慮 $x_i$ 與 $y_i$ 型別不同的情況：
-:::{.definition}
+:::{.definition #def:lhd-prec}
 給定義在型別 |A| 之上的序 $(\lhd)$ 和型別 |B| 之上的序 $(\prec)$, 它們的*詞典序*(*lexicographic ordering*)，寫做 $(\lhd;\prec)$，是 |(A :* B)| 上的一個序，定義為：
 ```equation
     (x_1, y_1) (\lhd;\prec) (x_2,y_2) ~~\equiv~~
@@ -3073,7 +2537,7 @@ merge (x:xs)  (y:ys)  = if x <= y  then x : merge xs (y:ys)
 {.nobreak}上述定義也可擴充到三個、四個... 元素的序對上。此處便不把他們寫出來了。
 
 關於詞典序的有趣性質相當多，此處僅用到下述性質
-:::{.theorem}
+:::{.theorem #thm:lhd-prec}
 如果 $(\lhd)$ 與 $(\prec)$ 均為良基序，$(\lhd;\prec)$ 也是良基序。
 :::
 {.nobreak}因此，$(\lhd;\prec)$ 也可用來做歸納定義。
@@ -3097,7 +2561,7 @@ merge' (x:xs,  y:ys)  = if x <= y  then  x : merge' (xs, y:ys)
 如前所述，函數 |merge| 的定義不一定得看成辭典序歸納 --- 它也可和 |interleave| 一樣看成另一種較簡單的良基歸納 --- 比較兩參數的長度之和。
 接下來的例子就得倚靠辭典序歸納了。
 
-:::{.example}
+:::{.example #eg:Ackermann-function}
 知名的 Ackermann 函數 (Ackermann's function)
 \index{Ackermann's function Ackermann 函數}
 是一個遞增得相當快的函數。
@@ -3117,7 +2581,7 @@ ack (Suc m)  (Suc n)  = ack m (ack (Suc m) n) {-"~~."-}
 
 :::
 
-## 交互歸納
+## 交互歸納 {#sec:mutual-induction}
 
 許多工作無法由一個函數獨立完成，而需要許多函數彼此呼叫。本章最後談談這類的*交互歸納*(mutual induction)定義。\index{induction 歸納!mutual 交互}
 下列函數定義中，|even| 判斷其輸入是否為偶數。第二個子句告訴我們：如果 |n| 是奇數， |Suc n| 便是偶數。但如何判斷一個數字是否為奇數？如果 |n| 是偶數，|Suc n| 便是奇數：
@@ -3181,7 +2645,7 @@ evenOdd = (  \n -> case n of{-"~~"-}  Zero   -> True
 :::
 :::
 
-## 參考資料
+## 參考資料 {#sec:induction-ref}
 
 快速排序\index{quicksort 快速排序}最初由 Hoare 在 Communications of the ACM 的演算法專欄中發表為兩個獨立的演算法：
 將陣列分割為大、小兩塊的「演算法63: PARTITION」[@Hoare:61:Partition]，

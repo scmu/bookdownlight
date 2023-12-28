@@ -1,13 +1,40 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 module Html.HtmlRender where
 
-import System.IO (hPutChar, hPutStr, Handle)
+import System.IO (hPutChar, hPutStr, Handle, hPrint)
 import Data.Sequence (Seq(..))
 import Data.Text (Text, head)
 import qualified Data.Text.IO as T
 import Control.Monad (when)
+import Control.Monad.State
 import Cheapskate
 import Syntax.Util
+import Data.List (intersperse, find, intercalate)
+import Html.Dict
+
+{-
+type DictState = [([Int], Text)]
+addDict :: Int -> String -> State DictState String
+addDict id label = do
+  dict <- get
+  let ids = case dict of
+                     []                      -> [1, 0, 0, 0]
+                     (([a, b, c, d], _) : _) -> case id of
+                                                    --0 -> dictState
+                                                1 -> [a + 1, 0, 0, 0]
+                                                2 -> [a, b + 1, 0, 0]
+                                                3 -> [a, b, c + 1, 0]
+                                                4 -> [a, b, c, d + 1]
+  put ((ids, label) : dict)
+  return (concat . intersperse "." . map show $ ids)
+
+
+getDict :: State DictState String
+getDict = do
+  (nums, _) <- gets Prelude.head
+  return (concat . intersperse "." . map show $ nums)
+-}
 
 htmlRender :: Handle -> Doc -> IO ()
 htmlRender h (Doc _ blocks) = renderBlocks h blocks
@@ -19,7 +46,7 @@ renderBlock :: Handle -> Block -> IO ()
 renderBlock h (Para (Attrs attrs :<| is)) = do
   hdParaHeader h attrs
   renderInlines h is
-  hPutStr h "<br>\n"
+  hPutStr h "\n"
 renderBlock h (Para is) = do
   hPutStr h "<p>"
   renderInlines h is
@@ -57,39 +84,51 @@ renderBlock h (DIV attrs bs)
 
 renderDIV :: Handle -> Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> IO ()
 renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
-   envBegin h c
-   case lookup "title" avs of
-     Nothing -> return ()
-     Just title -> hPutChar h '[' >> T.hPutStr h title >> hPutChar h ']'
-   mapM_ (renderLabel h) ids
-   hPutStr h "<br>\n"
-   renderBlocks h bs
-   envEnd h c
- where thmEnvs :: [Text]
-       thmEnvs = ["theorem", "lemma", "definition", "example"]
+  envBegin h c ids
+  hPutStr h "<b>" >> T.hPutStr h env
+  if not $ null ids then do latexCmd h c $ Prelude.head ids else do hPutStr h " 0.0"
+  case lookup "title" avs of
+    Nothing -> return ()
+    Just title -> hPutStr h "<b>" >> T.hPutStr h title >> hPutStr h "</b>"
+  --mapM_ (renderLabel h) ids
+  hPutStr h "</b><br>\n"
+  renderBlocks h bs
+  envEnd h "</div>"
+  where thmEnvs :: [Text]
+        thmEnvs = ["theorem", "lemma", "definition", "example", "corollary"]
+        env = case c of
+              "theorem" -> "定理"
+              "lemma" -> "引理"
+              "definition" -> "定義"
+              "example" -> "範例"
+              "corollary" -> "推論"
 
 renderDIV h "figure" cs ids avs bs = do
-   T.hPutStr h "<img src='"
-   printPositions cs
-   hPutStr h "<br>5\n"
-   renderBlocks h bs
-   printCaption avs
-   mapM_ (renderLabel h) ids
-   hPutStr h "<br>6\n"
-   T.hPutStr h "'><br>7\n"
- where printPositions cs
-         | [] <- ps = return ()
-         | otherwise = hPutChar h '[' >> mapM_ (hPutChar h . Data.Text.head) ps >>
+  hPutStr h "<div id='"
+  mapM_ (renderLabel h) ids
+  hPutStr h ">\n<img src=''"
+  printPositions cs
+  hPutStr h ">\n"
+  renderBlocks h bs
+  printCaption avs
+  hPutStr h "</div>\n"
+  where printPositions cs
+          | [] <- ps = return ()
+          | otherwise = hPutChar h '[' >> mapM_ (hPutChar h . Data.Text.head) ps >>
                        hPutChar h ']'
-        where poses = ["here", "top", "bottom", "page"]
-              ps = filter (\c -> c `elem` poses) cs
-       printCaption avs =
-         case lookup "title" avs of
-           Just cap -> T.hPutStr h "\\caption{" >> T.hPutStr h cap >> T.hPutStr h "}<br>8\n"
-           Nothing -> return ()
+        ps = filter (`elem` poses) cs
+          where poses = ["here", "top", "bottom", "page"]
+        printCaption avs =
+          case lookup "title" avs of
+            Just cap -> do
+              hPutStr h "<figcaption>圖"
+              if not $ null ids then do latexCmd h "figure" $ Prelude.head ids else do hPutStr h " 0.0"
+              T.hPutStr h cap
+              hPutStr h "</figcaption>\n"
+            Nothing -> return ()
 
 renderDIV h "texonly" _ _ _ bs = mapM_ renderTexOnly bs
-  where renderTexOnly (CodeBlock _ code) = T.hPutStr h code >> hPutStr h "\n"
+  where renderTexOnly (CodeBlock _ code) = T.hPutStr h code >> hPutStr h "<br>\n"
         renderTexOnly b = renderBlock h b
 
 renderDIV h "infobox" _ _ avs bs = do
@@ -99,7 +138,7 @@ renderDIV h "infobox" _ _ avs bs = do
    renderBlocks h (fmap infoindent bs)
    T.hPutStr h "</div>"
  where printTitle avs = case lookup "title" avs of
-         Just cap -> T.hPutStr h "{" >> T.hPutStr h cap >> T.hPutStr h "}<br>11\n"
+         Just cap -> T.hPutStr h "<b>" >> T.hPutStr h cap >> T.hPutStr h "</b><br>\n"
          Nothing -> return ()
        infoindent (Para is) = Para (Str " " :<| is )
        infoindent b = b
@@ -112,27 +151,29 @@ renderDIV h "multicols" _ _ avs bs = do
 renderDIV h "mcol" _ _ avs bs = do
   case lookup "width" avs of
     Just w -> do T.hPutStr h "<tr>\n"
-                 T.hPutStr h w
+                 --T.hPutStr h w
                  T.hPutStr h "<td>\n"
                  renderBlocks h bs
                  T.hPutStr h "</td>\n</tr>\n"
     Nothing -> renderBlocks h bs
 
 renderDIV h "exlist" _ _ _ bs = do
-  T.hPutStr h "<div class = 'exlist'>\n"
+  hPutStr h "<div class='exlist'>\n"
   hPutStr h "\n"
   renderBlocks h bs
   T.hPutStr h "</div>\n"
 
 renderDIV h "exer" _ ids _ bs = do
-  T.hPutStr h "<div class = 'Exercise'>\n<b>練習:</b>"
+  hPutStr h "<div class='exercise'"
   mapM_ (renderLabel h) ids
-  hPutStr h "\n"
+  hPutStr h ">\n<b>練習"
+  if not $ null ids then do latexCmd h "exer" $ Prelude.head ids else do hPutStr h " 0.0"
+  hPutStr h "</b><br>\n"
   renderBlocks h bs
   hPutStr h "</div>\n"
 
 renderDIV h "exans" cs _ _ bs = do
-  T.hPutStr h "<div class = 'Answer'>\n<b>答:</b>"
+  hPutStr h "<div class='answer'>\n<b>答案</b>"
   printCompact
   hPutStr h "\n"
   renderBlocks h bs
@@ -140,78 +181,129 @@ renderDIV h "exans" cs _ _ bs = do
  where printCompact | "compact" `elem` cs = T.hPutStr h " "
                     | otherwise = return ()
 
+renderDIV h "answer" _ ids _ bs = do
+  hPutStr h "<div class='answer'"
+  mapM_ (renderLabel h) ids
+  hPutStr h ">\n<b>答案</b><br>\n"
+  renderBlocks h bs
+  hPutStr h "</div>\n"
+
+renderDIV h "center" cs ids avs bs = do
+  hPutStr h "<center>"
+  renderBlocks h bs
+  envEnd h "</center>"
+
+renderDIV h "proof" _ ids _ bs = do
+  hPutStr h "<div class='proof'"
+  mapM_ (renderLabel h) ids
+  hPutStr h ">\n<b>證明</b><br>\n"
+  renderBlocks h bs
+  hPutStr h "</div>\n"
+
  -- catch-all case.
  -- possible instances: example, answer.
 renderDIV h c cs ids avs bs = do
-  envBegin h c >> mapM_ (renderLabel h) ids >> hPutStr h "\n"
+  envBegin h c ids
+  T.hPutStr h c >> hPutChar h ':'
   renderBlocks h bs
-  envEnd h c
+  envEnd h "</div>"
 
 renderHeader :: Handle -> Int -> [Attr] -> Inlines -> IO ()
-renderHeader h hd attrs is =
-  do hPutStr h (seclevel hd)
-     renderInlines h is
-     mapM_ (renderLabel h) (attrsId attrs)
-     hPutStr h (seclevel_end hd)
- where seclevel 1 = "<h1 class='chapter'>"
-       seclevel 2 = "<h2 class='section' >"
-       seclevel 3 = "<h3 class='subsection' >"
-       seclevel 4 = "<h4 class='subsubsection' >"
-       seclevel_end 1 = "</h1>"
-       seclevel_end 2 = "</h2>"
-       seclevel_end 3 = "</h3>"
-       seclevel_end 4 = "</h4>"
+renderHeader h hd attrs is = do
+  hPutStr h (seclevel hd)
+  if null (attrsId attrs)
+    then do hPutStr h "'>"
+    else do
+      hPutStr h hasId
+      mapM_ (renderLabel' h) (attrsId attrs)
+      latexCmd h "header" $ Prelude.head ids
+  renderInlines h is
+  hPutStr h (seclevel_end hd)
+     --addDict hd "label"
+  where seclevel 1 = "<h1 class='chapter"
+        seclevel 2 = "<h2 class='section"
+        seclevel 3 = "<h3 class='subsection"
+        seclevel 4 = "<h4 class='subsubsection"
+        hasId = "' id='"
+        seclevel_end 1 = "</h1>\n"
+        seclevel_end 2 = "</h2>\n"
+        seclevel_end 3 = "</h3>\n"
+        seclevel_end 4 = "</h4>\n"
+        ids = attrsId attrs
 
-renderLabel h xs = T.hPutStr h "<id='" >> T.hPutStr h xs >> hPutStr h "'>"
+renderLabel h xs = hPutStr h " id='" >> T.hPutStr h xs >> hPutStr h "'"
+--renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
+renderLabel' h xs = do
+  T.hPutStr h xs
+  T.hPutStr h "'>"
+
+
 
 renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
 renderCode h cls ids _ txt | "spec" `elem` cls =
-  do envBegin h "<pre class='spec'>"
-     mapM_ (renderLabel h) ids
-     hPutStr h "\n"
+  do envBegin h "<pre class='spec'" ids
+     --mapM_ (renderLabel h) ids
+     --hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "\n"
-     envEnd h "</pre>"
-renderCode h ("haskell" : cs) ids _ txt  =
+     --hPutStr h "\n"
+     envEnd h "</pre><br>"
+renderCode h ("haskell" : cs) ids _ txt =
   do when invisible (T.hPutStr h "\n")
-     envBegin h "<pre style='display:none'>"
-     mapM_ (renderLabel h) ids
+     envBegin h "<pre style='display:none'" ids
+     --mapM_ (renderLabel h) ids
      hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "\n"
-     envEnd h "</pre>"
+     hPutStr h "\n<br>"
+     envEnd h "</pre><br>"
      when invisible (T.hPutStr h " ")
  where invisible = "invisible" `elem` cs
-renderCode h ("texonly" : _) _ _ txt =
-  T.hPutStr h txt >> hPutStr h "<br>22\n"
+renderCode h ("texonly" : _) ids _ txt = do
+  envBegin h "<pre class='texonly'" ids
+  T.hPutStr h txt
+  envEnd h "</pre><br>"
 renderCode h ("verbatim" : cs) ids _ txt  =
-  do envBegin h "verbatim"
-     hPutStr h "<br>23\n"
+  do envBegin h "<pre class='verbatim'" ids
+     hPutStr h "\n"
      T.hPutStr h txt
-     hPutStr h "<br>\n"
-     envEnd h "verbatim"
+     hPutStr h "\n"
+     envEnd h "</pre><br>"
+
+renderCode h ("equation" : cs) ids _ txt  =
+  do envBegin h "<code class='haskell'" ids
+     hPutStr h "\n"
+     T.hPutStr h txt
+     envEnd h "</code> （式"
+     if not $ null ids then do latexCmd h "eq" $ Prelude.head ids else do hPutStr h " 0.0"
+     hPutStr h "）<br>"
+
 renderCode h _ ids _ txt = do
-  do envBegin h "<code class='haskell'>"
-     mapM_ (renderLabel h) ids
+  do envBegin h "<code class='haskell'" ids
+     --mapM_ (renderLabel h) ids
      hPutStr h "\n"
      T.hPutStr h txt
      hPutStr h "\n"
      envEnd h "</code>"
 
-envBegin :: Handle -> Text -> IO ()
-envBegin h env = hPutStr h "<div>" >> T.hPutStr h env >> hPutStr h ""
+envBegin :: Handle -> Text -> [Text] -> IO ()
+envBegin h env ids = do
+  if env `elem` thmEnvs
+    then hPutStr h "<div class='" >> T.hPutStr h env >> hPutStr h "'"
+    else T.hPutStr h env
+  mapM_ (renderLabel h) ids >> hPutStr h ">\n"
+  where thmEnvs = ["theorem", "lemma", "definition", "example", "answer", "proof", "corollary"]
+
 
 envEnd :: Handle -> Text -> IO ()
-envEnd h env = hPutStr h "" >> T.hPutStr h env >> hPutStr h "</div>\n"
+--envEnd h env = hPutStr h "" >> T.hPutStr h env >> hPutStr h "</div>\n"
+envEnd h env = T.hPutStr h env >> hPutStr h "\n"
 
 hdParaHeader :: Handle -> [Attr] -> IO()
 hdParaHeader h attrs = do
   case lookupAttrs "title" attrs of
-    Just title -> T.hPutStr h ("") >> T.hPutStr h title >> hPutStr h " "
-    _ | hasClass "noindent" attrs -> T.hPutStr h ""
-    _ | hasClass "nobreak"  attrs -> return ()
-    _ -> return ()
-  mapM_ (renderLabel h) (attrsId attrs)
+    Just title -> hPutStr h "<br>\n<b class='title'" >> mapM_ (renderLabel h) (attrsId attrs) >> hPutStr h ">" >> T.hPutStr h title >> hPutStr h "</b> &emsp;"
+    _ | hasClass "noindent" attrs -> T.hPutStr h "" >> mapM_ (renderLabel h) (attrsId attrs)
+    _ | hasClass "nobreak"  attrs -> mapM_ (renderLabel h) (attrsId attrs)
+    _ -> mapM_ (renderLabel h) (attrsId attrs)
 
 {-
 
@@ -235,29 +327,29 @@ renderInline h Space = hPutStr h " "
 renderInline h SoftBreak = hPutStr h ""
 renderInline h LineBreak = hPutStr h "<br>27\n"
 renderInline h (Emph inlines) =
-  do hPutStr h "<em>"
+  do hPutStr h "<em> "
      renderInlines h inlines
-     hPutStr h "</em>"
+     hPutStr h " </em>"
 renderInline h (Strong inlines) =
   do hPutStr h "<b>"
      renderInlines h inlines
      hPutStr h "</b>"
-renderInline h (Code txt) = hPutStr h "<code>" >> T.hPutStr h txt >> hPutStr h "<code>"
+renderInline h (Code txt) = hPutStr h "<code>" >> T.hPutStr h txt >> hPutStr h "</code>"
 renderInline h (HsCode txt) = hPutStr h "<code class='haskell'>" >> T.hPutStr h txt >> hPutStr h "</code>"
 renderInline h (Tex txt) = hPutChar h '$' >> T.hPutStr h txt >> hPutChar h '$'
-renderInline h (Entity txt) = T.hPutStr h txt
+renderInline h (Entity txt) = T.hPutStr h txt >> T.hPutStr h " Entity "
 renderInline h (RawHtml txt) = T.hPutStr h txt
 renderInline h (Attrs attrs) = mapM_ (renderLabel h) (attrsId attrs)
 renderInline h (Footnote is) =
-  do hPutStr h "<p class='footer'>"
+  do hPutStr h "\n<p class='footnote'>\n註："
      renderInlines h is
-     hPutStr h "</p>"
+     hPutStr h "</p>\n"
 renderInline h (Ref txt)   = latexCmd h "ref" txt
-renderInline h (EqRef txt) = latexCmd h "eqref" txt
+renderInline h (EqRef txt) = hPutStr h "式" >> latexCmd h "eqref" txt
 renderInline h (PageRef txt) = latexCmd h "pageref" txt
 renderInline h (Index idx) = latexCmd h "index" idx
-renderInline h (CiteT ref Nothing) = latexCmd h "citet" ref
-renderInline h (CiteT ref (Just opt)) = latexCmdOpt h "citet" opt ref
+renderInline h (CiteT ref Nothing) = latexCmd h "citet1" ref
+renderInline h (CiteT ref (Just opt)) = latexCmdOpt h "citet2" opt ref
 renderInline h (CiteP [(ref, Just opt)]) = latexCmdOpt h "citep" opt ref
 renderInline h (CiteP cites) = -- with multiple citation we ignore options.
   do hPutStr h "\\citep{"
@@ -269,9 +361,32 @@ renderInline h (CiteP cites) = -- with multiple citation we ignore options.
                                  putRefs cites
 
 latexCmd :: Handle -> Text -> Text -> IO ()
-latexCmd h cmd arg =
-  hPutChar h ' ' >> T.hPutStr h cmd >>
-  hPutChar h ' ' >> T.hPutStr h arg >> hPutChar h ' '
+latexCmd h cmd arg = if cmd == "index" then return () else do
+  --hPutChar h ' '
+  when (cmd `elem` citeList) $ T.hPutStr h cmd
+  hPutChar h ' '
+  --T.hPutStr h arg
+  let output = find (\(l, v, _, _) -> l == arg) dict
+  case output of
+    Nothing -> do hPutStr h "MISSED"
+    Just (l, v, _, _) -> do
+      hPutStr h "<a href='"
+      T.hPutStr h root
+      hPutStr h ".html#"
+      T.hPutStr h l
+      hPutStr h "'>"
+      hPutStr h $ intercalate "." . map show $ v
+      hPutStr h " </a>"
+      where root = case Prelude.head v of
+              1 -> "Introduction"
+              2 -> "Basics"
+              3 -> "Induction"
+              4 -> "Semantics"
+              5 -> "Derivation"
+              6 -> "Folds"
+              7 -> "SegProblems"
+  where citeList = ["citet1", "citet2", "citep"]
+
 
 latexCmdOpt :: Handle -> Text -> Text -> Text -> IO ()
 latexCmdOpt h cmd opt arg =
