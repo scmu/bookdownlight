@@ -362,7 +362,7 @@ f x1 = d1
 算式中只能用 |let|. 相對地，也有些只能使用 |where| 的場合。我們來看
 我們來看一個只能使用 |where| 的例子：
 ::: {.example #eg:payment2}
-延續例 \@ref{ex:payment}。
+延續例 \@ref{eg:payment}。
 今年起，新勞動法規規定工作超過 19 週的工讀生必須視為正式雇員，
 學校除了薪資外，也必須付給勞保、健保費用。
 學校需負擔的勞健保金額為雇員薪資的百分之六。請更新函數 |payment|,
@@ -1252,6 +1252,15 @@ fork :: (a -> b) -> (a -> c) -> a -> (b :* c)
 {.nobreak}函數|(f *** g)| 將 |f| 和 |g| 分別作用在序對 |(x,y)| 的兩個元素上。
 這個操作稱作「|f| 和 |g| 的乘績(product)」，同樣是借用範疇論的詞彙。
 \index{pair 序對!product 乘績}
+
+關於分裂與乘積，有兩條重要的性質，將會在之後用到：
+:::{.equations}
+  * {title="吸收律" #eq:prod-split-absorb} |(f *** g) . fork h k| |= fork (f . h) (g . k)|
+  * {title="融合律" #eq:prod-fusion} |(f *** g) . (h *** k)| |= ((f . h) *** (g . k))|
+
+
+
+:::
 
 目前 Haskell 的標準階層函式庫將分裂與乘積收錄在 \texttt{Control.Arrow} 中，
 |fork f g| 寫作：\texttt{f \&\&\& g}, |(f *** g)| 則寫作 \texttt{f *** g}.

@@ -1639,6 +1639,159 @@ tipsAcc (Bin t u)  ys = tipsAcc t (tipsAcc u ys) {-"~~."-}
 :::
 :::
 
+### 由上到下的資訊流
+
+前一節之中，我們用累積參數改變 |(++)| 結合的順序。
+更廣泛說來，累積參數常有「增加一個由上到下的資訊流」的效果。
+
+{title="遞增串列"} 下述函數 |ascending| 判斷一個串列是否為遞增：
+```spec
+ascending :: List Int -> Bool
+ascending []      = True
+ascending (x:xs)  = all (x <=) xs && ascending xs {-"~~."-}
+```
+{.nobreak}當輸入串列長度為 |n|, 這個定義需做 $O(n^2)$ 次比較。
+習題 \@ref{ex:ascendingTuple} 曾考慮過一個定義類似的 |ascending|，並用組對的技巧得到一個時間複雜度為 $O(n)$ 的程式。本節則試試看改用累積參數！
+
+這次我們使用如下的定義：
+```spec
+ascendBnd xs z = all (z<=) xs && ascending xs {-"~~."-}
+```
+{.nobreak}在嘗試推導 |ascendBnd| 之前，我們得先確定它是有用的 --- |ascending| 可以用 |ascendBnd| 定義出來。確實如此：|ascending xs = ascendBnd xs minBound|.
+
+現在我們可以推導 |ascendBnd| 的歸納定義了。基底狀況如下：
+```{.haskell .invisible}
+ascendBndDerBase z =
+```
+```haskell
+      ascendBnd z []
+ ===   {- |ascendBnd| 之定義 -}
+      all (z<=) [] && ascending []
+ ===   {- |all| 與 |ascending| 之定義 -}
+      True
+```
+
+歸納狀況的推導則會需要下述性質：
+```{.equation #eq:lowerbound-strengthen}
+  |z <= x && all (z <=) xs && all (x <=) xs {-"~~"-} ==> {-"~~"-} z <= x && all (x <=) xs {-"~~."-}|
+```
+{.nobreak}回顧起來，我們之所以那麼定義 |ascendBnd|, 正是希望利用 \@eqref{eq:lowerbound-strengthen} 將程式中的 |all (z<=) xs| 吸收掉。推導如下：
+```{.haskell .invisible}
+ascendBndDerInd z x xs =
+```
+```haskell
+      ascendBnd z (x:xs)
+ ===    {- |ascendBnd| 與 |ascending| 之定義 -}
+      all (z<=) (x:xs) && all (x <=) xs && ascending xs
+ ===    {- |all| 之定義 -}
+      z <= x && all (z <=) xs && all (x <=) xs && ascending xs
+ ===    {- 性質 \eqref{eq:lowerbound-strengthen} -}
+      z <= x && all (x <=) xs && ascending xs
+ ===    {- |ascendBnd| 之定義 -}
+      z <= x && ascendBnd x xs {-"~~."-}
+```
+
+總結之，我們導出了下述定義：
+```haskell
+ascendBnd :: Int -> List Int -> Bool
+ascendBnd z []      = True
+ascendBnd z (x:xs)  = z <= x && ascendBnd x xs {-"~~."-}
+```
+{.nobreak}讀者可將之與最初的 |ascending| 比較。函數 |ascending| 的資訊流動只從串列尾到頭 --- |ascending (x:xs)| 的值需等待 |ascending xs| 的結果。但 |ascendBnd| 多了一個 \emph{由上到下}的資訊流動：如果 |ascendBnd z xs| 成立，參數 |z| 是 |xs| 所有元素的下界 (lower bound)，而該參數的值在每次遞迴呼叫時更新。
+
+{title="深度標記"} 給定 |t :: ITree a|（型別 |ITree| 定義於第 \@ref{sec:user-defined-data} 節）, 下述函數 |depthsT t| 由左至右傳回樹中所有的元素，並標記其深度 --- 根部節點的深度為 |0|, 左右子樹中的節點的深度則是其原本深度加一：
+```haskell
+depths :: ITree a -> List (a :* Nat)
+depths Null          =  []
+depths (Node x t u)  =  map (id *** (Suc)) (depths t) ++ [(x,0)] ++
+                        map (id *** (Suc)) (depths u) {-"~~."-}
+```
+{.nobreak}由於反覆使用 |map|, 當輸入樹有 |n| 個節點時，|depths| 最壞情況下需使用 $O(n^2)$ 個 |(Suc)|. 是否可能用累積參數讓它快一點呢？
+
+和各種程式堆導與證明技巧一樣，使用累積參數的技巧時，最難的一步是如何設計那個通用版的函數。
+我們的答案仍是\emph{讓符號為你工作}：許多時候我們可以藉由觀察算式、展開定義看出有哪些部分是可以取出、吸收、或累積的。在 |ascending| 的例子中，我們希望把 |all (x<=) xs| 吸收掉。
+至於此處，如果試圖展開 |depths|, 我們會看到許多層 |map (id *** (Suc))| 被堆積在算式中等待被畫減。
+如果我們在最外面套一個 |map (id *** (k +:))|:
+```spec
+depthsAcc t k = map (id *** (k +:)) (depths t) {-"~~."-}
+```
+也許有機會改變括號的順序，並將 |map (id *** (Suc))| 吸收到
+|map (id *** (k +:))| 之中。
+
+同樣地，在推導 |depthsAcc| 之前，我們得先確認 |depths| 是 |depthsAcc| 的特例。
+確實，|depths t = depthsAcc t 0|.
+
+然後我們可以開始推導 |depthsAcc| 了。基底狀況中，|depthsAcc Null k = []|.
+考慮歸納狀況：
+```{.haskell .invisible}
+depthsAccDerInd x t u k =  
+```
+```haskell
+      depthsAcc (Node x t u) k
+ ===    {- |depthsAcc| 與 |depths| 之定義 -}
+      map (id *** (k +:)) (  map (id *** (Suc)) (depths t) ++ [(x,0)] ++
+                             map (id *** (Suc)) (depths u))
+ ===    {- |map| 分配入 |(++)|, |map| 之定義 -}
+      map (id *** (k +:)) (map (id *** (Suc)) (depths t)) ++ [(x,k)] ++
+      map (id *** (k +:)) (map (id *** (Suc)) (depths u))
+ ===    {- |map| 融合， |(***)| 融合 \eqref{eq:prod-fusion} -}
+      map (id *** ((k +:) . (Suc))) (depths t) ++ [(x,k)] ++
+      map (id *** ((k +:) . (Suc))) (depths u)
+ ===    {- 對所有 |n|, 我們有 |k +: (Suc n) = Suc (k +: n)| -}
+      map (id *** ((Suc k) +:)) (depths t) ++ [(x,k)] ++
+      map (id *** ((Suc k) +:)) (depths u)
+ ===    {- |depthsAcc| 與 |depths| 之定義 -}
+      depthsAcc t (Suc k) ++ [(x,k)] ++ depthsAcc u (Suc k) {-"~~."-}
+```
+{.nobreak}因此我們得到
+```haskell
+depthsAcc :: ITree a -> Nat -> List (a :* Nat)
+depthsAcc Null          k =  []
+depthsAcc (Node x t u)  k =  depthsAcc t (Suc k) ++ [(x,k)] ++
+                             depthsAcc u (Suc k) {-"~~."-}
+```
+
+同樣地，|depthsAcc| 的參數 |k| 是從上往下傳遞的資訊：它記錄著目前的深度，每往下一層就遞增一次。
+
+:::{.exlist}
+:::{.exer}
+下述函數 |depthsT| 將一個 |ITree| 的深度標記在樹中：
+```haskell
+depthsT :: ITree a -> ITree (a :* Nat)
+depthsT Null          = Null
+depthsT (Node x t u)  = Node (x,0)  (mapI (id *** (Suc)) (depthsT t))
+                                    (mapI (id *** (Suc)) (depthsT u)) {-"~~."-}
+```
+{.nobreak}其中 |mapI :: (a -> b) -> ITree a -> ITree b| 將函數作用在樹中的每個元素上（見習題 \@ref{ex:ITree-mapI}）。
+同樣地，反覆使用 |mapI| 使得本程式需用 $O(n^2)$ 個 |(Suc)|.
+請推導出一個只用 $O(n)$ 個 |(Suc)| 的程式。
+:::
+:::{.exans}
+採用這個定義：
+```spec
+depthsTAcc t k = mapI (id *** (k +:)) (depthsT t) {-"~~."-}
+```
+我們可重定義 |depthsT t = depthsTAcc t 0|. 其餘的推導與 |depthsAcc| 類似。
+:::
+:::
+
+
+:::{.exlist}
+:::{.exer}
+由於 |(++)| 的使用方式，本節導出的 |depthsAcc| 在最壞情況下的時間複雜度仍是 $O(n^2)$.
+請再使用累積參數，導出一個時間複雜度為 $O(n)$ 的程式。
+:::
+:::{.exans}
+採用這個定義：
+```spec
+depthsAcc' t k ys = depthsAcc t k ++ ys {-"~~."-}
+```
+:::
+:::
+
+
+
+
 ### 尾遞迴 {#sec:tail-recursion}
 
 關於第 \@ref{sec:reversal-append} 節的 |revcat| 有許多面向可談。
@@ -2524,62 +2677,3 @@ ddD (Bin t u)  | m <  n  = (f, 1 + n)
 ```
 :::
 :::
-
-### 如何設計累積參數？
-
-和各種程式堆導與證明技巧一樣，使用累積參數的技巧時，最難的一步是決定怎麼設計擴充版的函數：找到那個適當的、更通用的定義？一但找到了適當的定義，剩下的都是機械性的例行公事。但如何找到那個正確的開頭呢？
-
-我們的答案仍一樣：讓符號為你許多時候，我們
-
-```haskell
-depthsT :: ITree a -> ITree (a :* Nat)
-depthsT Null          = Null
-depthsT (Node x t u)  = Node (x,0)  (mapI (id *** Suc) (depthsT t))
-                                    (mapI (id *** Suc) (depthsT u)) {-"~~."-}
-```
-
-```haskell
-depths :: ITree a -> List (a :* Nat)
-depths Null          =  []
-depths (Node x t u)  =  map (id *** (Suc)) (depths t) ++ [(x,0)] ++
-                        map (id *** (Suc)) (depths u) {-"~~."-}
-```
-
-```haskell
-depthsAcc t k = map (id *** (k +:)) (depths t) {-"~~."-}
-```
-
-```spec
-ascending :: List Int -> Bool
-ascending []      = True
-ascending (x:xs)  = all (x <=) xs && ascending xs {-"~~."-}
-```
-
-```spec
-ascendBnd z xs = all (z<=) xs && ascending xs {-"~~."-}
-```
-
-```{.equation #eq:gen-split}
-  |z <= x && all (z <=) xs && all (x <=) xs|
-```
-
-```{.haskell .invisible}
-ascendBndDerInd z x xs =
-```
-```haskell
-      ascendBnd z (x:xs)
- ===    {- |ascendBnd| 與 |ascending| 之定義 -}
-      all (z<=) (x:xs) && all (x <=) xs && ascending xs
- ===    {- |all| 之定義 -}
-      z <= x && all (z <=) xs && all (x <=) xs && ascending xs
- ===    {-  -}
-      z <= x && all (x <=) xs && ascending xs
- ===    {- |ascendBnd| 之定義 -}
-      z <= x && ascendBnd x xs {-"~~."-}
-```
-
-```haskell
-ascendBnd :: Int -> List Int -> Bool
-ascendBnd z []      = True
-ascendBnd z (x:xs)  = z <= x && ascendBnd x xs {-"~~."-}
-```

@@ -1321,7 +1321,7 @@ splits :: List a -> List (List a :* List a)
 splits []      = [([],[])]
 splits (x:xs)  = ([],x:xs) : map ((x:)***id) (splits xs) {-"~~."-}
 ```
-{.nobreak}其中 |(f *** g) (x,y) = (f x, g y)|.
+{.nobreak}其中 |(f *** g) (x,y) = (f x, g y)|, 定義於第 \@ref{sec:pairs} 節。
 :::
 :::{.exer #ex:length-sublists}
 證明 |length . sublists = exp 2 . length|. 也就是說，長度為 |n| 的串列的子串列數目為 $2^n$. 你會需要的性質可能包括 \@eqref{eq:length-append} (|length (xs++ys) = length xs + length ys|), 以及 |length . map f = length|.
@@ -1645,8 +1645,9 @@ minEmapEplusPf1 x t u =
   |(forall t :: ITree a . P t) {-"~"-}<== {-"~\\\qquad"-}|
     |(P Null && (forall x t u . P (Node x t u) <== P t && P u) {-"~~."-}|
 ```
+:::
 :::{.exer #ex:ITree-mapI}
-定義函數 |mapT :: (a -> b) -> ITree a -> ITree b|, 使得 |mapT f| 則將函數 |f| 作用在樹中的每個元素上。
+定義函數 |mapI :: (a -> b) -> ITree a -> ITree b|, 使得 |mapI f| 則將函數 |f| 作用在樹中的每個元素上。
 :::
 :::{.exans .compact}
 ```haskell
