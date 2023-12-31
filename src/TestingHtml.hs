@@ -18,27 +18,27 @@ import Cheapskate.Util
 import Cheapskate.Inlines
 import Cheapskate.Types
 
-import LHs.LHsRender
-import Html.HtmlLabel
+import Html.Counter
+import Html.CollectLabels
 
-handle :: Handle -> Text -> IO ()
-handle h = lhsRender h . markdown def
+-- handle :: Handle -> Text -> IO ()
+-- handle h = lhsRender h . markdown def
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
 
-textstF :: String -> IO ()
-textstF file = readFile file >>= handle stdout
+-- textstF :: String -> IO ()
+-- textstF file = readFile file >>= handle stdout
             -- T.getContents >>= handle
             -- T.getContents >>= (print . markdown def)
 
-mdtstF :: String -> IO ()
-mdtstF file =
+dictstF :: String -> IO ()
+dictstF file =
   do contents <- readFile file
      let doc = markdown def $ contents
-     let initState = ([1,0,0,0], [0,0,0,0,0,0,0,0,0], [0,0])
-     print (runState (htmlTest doc) initState)
-
+     let initState = Counter 0 0 0 0 0 0 0 0
+     print (runState (labelDoc doc) initState)
+{-
 mdtStr :: String -> StateT ([Int], [Int], [Int]) IO [DictState]
 mdtStr file = do
   currState <- get
@@ -76,6 +76,7 @@ processChapter (dicts, s) chapter = do
   return (dicts ++ chapterDict, newState)
 
 
+-}
 
 pltstF :: String -> IO ()
 pltstF file =

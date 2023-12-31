@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Cheapskate
 import LHs.LHsRender
 import Html.HtmlRender
-import Html.HtmlLabel
+-- import Html.HtmlLabel
 
 import Development.Shake
 import Development.Shake.Command
