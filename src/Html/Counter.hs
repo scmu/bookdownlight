@@ -1,4 +1,5 @@
 module Html.Counter where
+import Data.Text (Text)
 
 data Counter = Counter
       { chC :: !Int
@@ -12,6 +13,9 @@ data Counter = Counter
       , footnoteC :: !Int
      }
   deriving Show
+
+initCounter :: Int -> Counter
+initCounter i = Counter i 0 0 0 0 0 0 0
 
 newChap :: Counter -> ([Int], Counter)
 newChap cnt = ([chC cnt + 1],
@@ -42,7 +46,8 @@ newExer cnt = ([chC cnt', exerC cnt'] , cnt')
 ------
 
 data Rose a = RNode a [Rose a]
-type TOC = Rose ( [Int]   -- section number
-                , Text    -- title
-                , Text    -- label
-                )
+type TOCItem = ( [Int]   -- section number
+               , Text    -- title
+               , Text    -- label
+               )
+type TOC = Rose TOCItem

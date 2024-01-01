@@ -30,9 +30,6 @@ library
       Cheapskate.ParserCombinators
       Cheapskate.Types
       Cheapskate.Util
-      Html.Dict
-      Html.HtmlLabel
-      Html.HtmlRender
       LHs.LHsRender
       Syntax.Util
       Testing

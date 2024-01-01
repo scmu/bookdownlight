@@ -36,3 +36,5 @@ tex/fpbook.ind
 *.ilg
 
 html/Chapters/
+
+*.haux

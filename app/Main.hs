@@ -2,16 +2,20 @@ module Main where
 
 import Prelude hiding (readFile)
 import System.IO (openFile, hClose, stdout, IOMode(..), Handle)
+import qualified System.IO as IO
 import System.Directory
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import Control.Monad (forM_)
+import Control.Monad.State
 
 import Cheapskate
 import LHs.LHsRender
-import Html.HtmlRender
+import Html.Counter
+import Html.Scanning
+-- import Html.HtmlRender
 -- import Html.HtmlLabel
 
 import Development.Shake
@@ -62,13 +66,19 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
   command_ [Cwd texBase] "xelatex" ["fpbook"]
 
 -- html
+ forM_ (zip [-1..] chapters) (\(i,ch) ->
+  (htmlHaux </> ch <.> "haux") %> \hauxName -> do
+   let mdName = contents </> ch <.> "md"
+   need [mdName]
+   putInfo ("# md->haux (for " ++ hauxName ++ ")")
+   liftIO (genHAux i mdName hauxName))
 
  forM_ chapters (\ch ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtmls mdName htmlName))
+   liftIO (genHtml mdName htmlName))
 
 genLHs :: String -> String -> IO ()
 genLHs mdname lhsname = do
@@ -78,8 +88,17 @@ genLHs mdname lhsname = do
     hClose hdl
   where lhsHeader = tmpls </> "lhsheader.lhs"
 
-genHtmls :: String -> String -> IO ()
-genHtmls mdname htmlname = do
+genHAux :: Int -> String -> String -> IO ()
+genHAux i mdname hauxname = do
+   hdl <- openFile hauxname WriteMode
+   readFile mdname >>= (IO.hPutStr hdl . show . handleHAux)
+   hClose hdl
+ where handleHAux contents =
+        let doc = markdown def $ contents
+        in runState (scanDoc doc) (Counter i 0 0 0 0 0 0 0)
+
+genHtml :: String -> String -> IO ()
+genHtml mdname htmlname = do
     hdl <- openFile htmlname WriteMode
     readFile htmlHeader >>= TIO.hPutStr hdl
     readFile mdname >>= handleHtml hdl
@@ -89,7 +108,7 @@ genHtmls mdname htmlname = do
         htmlFooter = tmpls </> "htmlfooter.html"
 
 handleHtml :: Handle -> Text -> IO ()
-handleHtml h = htmlRender h . markdown def
+handleHtml h = undefined -- htmlRender h . markdown def
 
 handleLHs :: Handle -> Text -> IO ()
 handleLHs h = lhsRender h . markdown def
@@ -112,11 +131,12 @@ chapters = [ "Introduction"
 
 contents = "contents"
 
-texBase  = "tex"
-lhsBase  = "lhs"
-htmlBase = "html"
-lhsChs   = lhsBase  </> "Chapters"
-texChs   = texBase  </> "Chapters"
-htmlChs  = htmlBase </> "Chapters"
+texBase   = "tex"
+lhsBase   = "lhs"
+htmlBase  = "html"
+lhsChs    = lhsBase  </> "Chapters"
+texChs    = texBase  </> "Chapters"
+htmlChs   = htmlBase </> "Chapters"
+htmlHaux  = htmlBase </> "HAux"
 
 tmpls    = "templates"

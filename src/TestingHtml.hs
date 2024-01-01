@@ -19,7 +19,7 @@ import Cheapskate.Inlines
 import Cheapskate.Types
 
 import Html.Counter
-import Html.CollectLabels
+import Html.Scanning
 
 -- handle :: Handle -> Text -> IO ()
 -- handle h = lhsRender h . markdown def
@@ -32,12 +32,12 @@ readFile path = decodeUtf8 <$> BS.readFile path
             -- T.getContents >>= handle
             -- T.getContents >>= (print . markdown def)
 
-dictstF :: String -> IO ()
-dictstF file =
+scantstF :: String -> IO ()
+scantstF file =
   do contents <- readFile file
      let doc = markdown def $ contents
      let initState = Counter 0 0 0 0 0 0 0 0
-     print (runState (labelDoc doc) initState)
+     print (runState (scanDoc doc) initState)
 {-
 mdtStr :: String -> StateT ([Int], [Int], [Int]) IO [DictState]
 mdtStr file = do
