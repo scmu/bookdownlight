@@ -16,7 +16,7 @@ import Cheapskate.Util
 import Cheapskate.Inlines
 import Cheapskate.Types
 
-import LHs.LHsRender
+import LHs.Render
 
 handle :: Handle -> Text -> IO ()
 handle h = lhsRender h . markdown def

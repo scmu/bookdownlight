@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module LHs.LHsRender where
+module LHs.Render where
 
 import System.IO (hPutChar, hPutStr, Handle)
 import Data.Maybe (isJust)

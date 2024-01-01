@@ -9,14 +9,11 @@ import Data.Text.Encoding (decodeUtf8)
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import Control.Monad (forM_)
-import Control.Monad.State
 
 import Cheapskate
-import LHs.LHsRender
-import Html.Counter
-import Html.Scanning
--- import Html.HtmlRender
--- import Html.HtmlLabel
+
+import LHs.Generator
+import Html.Generator
 
 import Development.Shake
 import Development.Shake.Command
@@ -51,7 +48,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->lhs (for " ++ lhsName ++ ")")
-   liftIO (genLHs mdName lhsName))
+   liftIO (genLHs mdName lhsName tmpls))
 
  forM_ chapters (\ch ->
   (texChs </> ch <.> "tex") %> \texName -> do
@@ -78,43 +75,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName))
-
-genLHs :: String -> String -> IO ()
-genLHs mdname lhsname = do
-    hdl <- openFile lhsname WriteMode
-    readFile lhsHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= handleLHs hdl
-    hClose hdl
-  where lhsHeader = tmpls </> "lhsheader.lhs"
-
-genHAux :: Int -> String -> String -> IO ()
-genHAux i mdname hauxname = do
-   hdl <- openFile hauxname WriteMode
-   readFile mdname >>= (IO.hPutStr hdl . show . handleHAux)
-   hClose hdl
- where handleHAux contents =
-        let doc = markdown def $ contents
-        in runState (scanDoc doc) (Counter i 0 0 0 0 0 0 0)
-
-genHtml :: String -> String -> IO ()
-genHtml mdname htmlname = do
-    hdl <- openFile htmlname WriteMode
-    readFile htmlHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= handleHtml hdl
-    readFile htmlFooter >>= TIO.hPutStr hdl
-    hClose hdl
-  where htmlHeader = tmpls </> "htmlheader.html"
-        htmlFooter = tmpls </> "htmlfooter.html"
-
-handleHtml :: Handle -> Text -> IO ()
-handleHtml h = undefined -- htmlRender h . markdown def
-
-handleLHs :: Handle -> Text -> IO ()
-handleLHs h = lhsRender h . markdown def
-
-readFile :: String -> IO Text
-readFile path = decodeUtf8 <$> BS.readFile path
+   liftIO (genHtml mdName htmlName tmpls))
 
 chapters :: [String]
 chapters = [ "Introduction"

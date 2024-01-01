@@ -66,7 +66,7 @@ data Inline = Str Text
             | PageRef Text
             | CiteP [(Text, Maybe Text)]  -- (citation, options)
             | CiteT Text (Maybe Text)     -- Name (year, options)
-            deriving (Show, Data, Typeable)
+            deriving (Show, Read, Data, Typeable)
 
 type Inlines = Seq Inline
 
@@ -92,7 +92,7 @@ instance Default Options where
 data Attr = AtrClass Text    -- .class
           | AtrID Text       -- #id
           | Atr Text Text    -- attr="val"
-  deriving (Show, Data, Typeable, Eq)
+  deriving (Show, Read, Data, Typeable, Eq)
 
 deriving instance Generic Doc
 instance NFData Doc
