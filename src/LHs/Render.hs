@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module LHs.Render where
+module LHs.Render (lhsRender, LHsMonad(..)) where
 
-import System.IO (hPutChar, hPutStr, Handle)
+import System.IO (Handle)
+import qualified System.IO as IO (hPutChar, hPutStr)
 import Data.Maybe (isJust)
 import Data.Sequence (Seq(..))
 import Data.Foldable (toList)
@@ -9,51 +10,58 @@ import Data.Text (Text, head)
 import Data.List (partition)
 import qualified Data.Text.IO as T
 import Control.Monad (when, (<=<))
+import Control.Monad.Reader
 import Control.Arrow ((***))
 import Cheapskate
 import Syntax.Util
 
-lhsRender :: Handle -> Doc -> IO ()
-lhsRender h (Doc _ blocks) = renderBlocks h blocks
+type LHsMonad = ReaderT Handle IO
 
-renderBlocks :: Handle -> Blocks -> IO ()
-renderBlocks h = mapM_ (renderBlock h)
+putStrR   xs = ReaderT (flip IO.hPutStr xs)
+putCharR  c  = ReaderT (flip IO.hPutChar c)
+putStrTR  xs = ReaderT (flip T.hPutStr  xs)
 
-renderBlock :: Handle -> Block -> IO ()
-renderBlock h (Para (Attrs attrs :<| is)) = do
-  hdParaHeader h attrs
-  renderInlines h is
-  hPutStr h "\n"
-renderBlock h (Para is) = do
-  hPutStr h "\n"
-  renderInlines h is
-  hPutStr h "\n"
-renderBlock h (Header hd attrs is) = renderHeader h hd attrs is
-renderBlock h (Blockquote bs) =
-  do envBegin h "quote"
-     hPutStr h "{\\em"
-     renderBlocks h bs
-     hPutStr h "}%\\em\n"
-     envEnd h "quote"
-renderBlock h (List _ lt items) =
-  do hPutStr h ("\\begin{" ++ ltype  ++ "}\n")
+lhsRender :: Doc -> LHsMonad ()
+lhsRender (Doc _ blocks) = renderBlocks blocks
+
+renderBlocks :: Blocks -> LHsMonad ()
+renderBlocks = mapM_ renderBlock
+
+renderBlock :: Block -> LHsMonad ()
+renderBlock (Para (Attrs attrs :<| is)) = do
+  hdParaHeader attrs
+  renderInlines is
+  putStrR "\n"
+renderBlock (Para is) = do
+  putStrR "\n"
+  renderInlines is
+  putStrR "\n"
+renderBlock (Header hd attrs is) = renderHeader hd attrs is
+renderBlock (Blockquote bs) =
+  do envBegin "quote"
+     putStrR "{\\em"
+     renderBlocks bs
+     putStrR "}%\\em\n"
+     envEnd "quote"
+renderBlock (List _ lt items) =
+  do putStrR ("\\begin{" ++ ltype  ++ "}\n")
      mapM_ renderLItem items
-     hPutStr h ("\\end{" ++ ltype ++ "}\n")
+     putStrR ("\\end{" ++ ltype ++ "}\n")
  where ltype = case lt of
          Bullet _     -> "compactitem"
          Numbered _ _ -> "compactenum"
        renderLItem bs = do
-         hPutStr h "\\item "
-         renderBlocks h bs
+         putStrR "\\item "
+         renderBlocks bs
          -- putStr "\n"
-renderBlock h (CodeBlock attrs txt) = renderCode h cls ids avs txt
+renderBlock (CodeBlock attrs txt) = renderCode cls ids avs txt
   where ids = attrsId attrs
         cls = attrsClass attrs
         avs = attrsAVs attrs
 
-renderBlock h (DIV attrs bs)
-     | [] <- cls    = renderBlocks h bs
-     | (c:cs) <- cls = renderDIV h c cs ids avs bs
+renderBlock (DIV attrs bs)
+     | [] <- cls     = renderBlocks bs
+     | (c:cs) <- cls = renderDIV c cs ids avs bs
   where ids = attrsId attrs
         cls = attrsClass attrs
         avs = attrsAVs attrs
@@ -61,177 +69,178 @@ renderBlock h (DIV attrs bs)
 -- renderBlock (DIV attrs bs) = dbegin >> renderBlocks bs >> dend
 --   where (dbegin, dend) = renderDIVBrackets attrs
 
-renderDIV :: Handle -> Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> IO ()
-renderDIV h c cs ids avs bs | c `elem` thmEnvs = do
-   envBegin h c
+renderDIV :: Text -> [Text] -> [Text]
+          -> [(Text, Text)] -> Blocks -> LHsMonad ()
+renderDIV c cs ids avs bs | c `elem` thmEnvs = do
+   envBegin c
    case lookup "title" avs of
      Nothing -> return ()
-     Just title -> hPutChar h '[' >> T.hPutStr h title >> hPutChar h ']'
-   mapM_ (renderLabel h) ids
-   hPutChar h '\n'
-   renderBlocks h bs
-   envEnd h c
+     Just title -> putCharR '[' >> putStrTR title >> putCharR ']'
+   mapM_ renderLabel ids
+   putCharR '\n'
+   renderBlocks bs
+   envEnd c
  where thmEnvs :: [Text]
        thmEnvs = ["theorem", "lemma", "definition", "example",
                   "proof", "corollary"]
 
-renderDIV h "figure" cs ids avs bs = do
-   T.hPutStr h "\\begin{figure}"
+renderDIV "figure" cs ids avs bs = do
+   putStrTR "\\begin{figure}"
    printPositions cs
-   hPutChar h '\n'
-   renderBlocks h bs
+   putCharR '\n'
+   renderBlocks bs
    printCaption avs
-   mapM_ (renderLabel h) ids
-   hPutChar h '\n'
-   T.hPutStr h "\\end{figure}\n"
+   mapM_ renderLabel ids
+   putCharR '\n'
+   putStrTR "\\end{figure}\n"
  where printPositions cs
          | [] <- ps = return ()
-         | otherwise = hPutChar h '[' >> mapM_ (hPutChar h . Data.Text.head) ps >>
-                       hPutChar h ']'
+         | otherwise = putCharR '[' >> mapM_ (putCharR . Data.Text.head) ps >>
+                       putCharR ']'
         where poses = ["here", "top", "bottom", "page"]
               ps = filter (\c -> c `elem` poses) cs
        printCaption avs =
          case lookup "title" avs of
-           Just cap -> T.hPutStr h "\\caption{" >> T.hPutStr h cap >> T.hPutStr h "}\n"
+           Just cap -> putStrTR "\\caption{" >> putStrTR cap >> putStrTR "}\n"
            Nothing -> return ()
 
-renderDIV h "texonly" _ _ _ bs = mapM_ renderTexOnly bs
-  where renderTexOnly (CodeBlock _ code) = T.hPutStr h code >> hPutChar h '\n'
-        renderTexOnly b = renderBlock h b
+renderDIV "texonly" _ _ _ bs = mapM_ renderTexOnly bs
+  where renderTexOnly (CodeBlock _ code) = putStrTR code >> putCharR '\n'
+        renderTexOnly b = renderBlock b
 
-renderDIV h "infobox" _ _ avs bs = do
-   T.hPutStr h "\\begin{infobox}"
+renderDIV "infobox" _ _ avs bs = do
+   putStrTR "\\begin{infobox}"
    printTitle avs
-   hPutChar h '\n'
-   renderBlocks h (fmap infoindent bs)
-   T.hPutStr h "\\end{infobox}"
+   putCharR '\n'
+   renderBlocks (fmap infoindent bs)
+   putStrTR "\\end{infobox}"
  where printTitle avs = case lookup "title" avs of
-         Just cap -> T.hPutStr h "{" >> T.hPutStr h cap >> T.hPutStr h "}\n"
+         Just cap -> putStrTR "{" >> putStrTR cap >> putStrTR "}\n"
          Nothing -> return ()
        infoindent (Para is) = Para (Str "\\quad " :<| is )
        infoindent b = b
 
-renderDIV h "multicols" _ _ avs bs = do
-  T.hPutStr h "\\\\\n"
-  renderBlocks h bs
-  T.hPutStr h "\\\\"
+renderDIV "multicols" _ _ avs bs = do
+  putStrTR "\\\\\n"
+  renderBlocks bs
+  putStrTR "\\\\"
 
-renderDIV h "mcol" _ _ avs bs = do
+renderDIV "mcol" _ _ avs bs = do
   case lookup "width" avs of
-    Just w -> do T.hPutStr h "\\begin{minipage}{"
-                 T.hPutStr h w
-                 T.hPutStr h "}\n"
-                 renderBlocks h bs
-                 T.hPutStr h "\\end{minipage}\n"
-    Nothing -> renderBlocks h bs
+    Just w -> do putStrTR "\\begin{minipage}{"
+                 putStrTR w
+                 putStrTR "}\n"
+                 renderBlocks bs
+                 putStrTR "\\end{minipage}\n"
+    Nothing -> renderBlocks bs
 
-renderDIV h "exlist" _ _ _ bs = do
-  T.hPutStr h "\\begin{exlist}"
-  hPutChar h '\n'
-  renderBlocks h bs
-  T.hPutStr h "\\end{exlist}"
+renderDIV "exlist" _ _ _ bs = do
+  putStrTR "\\begin{exlist}"
+  putCharR '\n'
+  renderBlocks bs
+  putStrTR "\\end{exlist}"
 
-renderDIV h "exer" _ ids _ bs = do
-  T.hPutStr h "\\Exercise"
-  mapM_ (renderLabel h) ids
-  hPutChar h '\n'
-  renderBlocks h bs
+renderDIV "exer" _ ids _ bs = do
+  putStrTR "\\Exercise"
+  mapM_ renderLabel ids
+  putCharR '\n'
+  renderBlocks bs
 
-renderDIV h "exans" cs _ _ bs = do
-  T.hPutStr h "\\Answer"
+renderDIV "exans" cs _ _ bs = do
+  putStrTR "\\Answer"
   printCompact
-  hPutChar h '\n'
-  renderBlocks h bs
- where printCompact | "compact" `elem` cs = T.hPutStr h "~\\\\ \\vspace{-0.5cm}"
+  putCharR '\n'
+  renderBlocks bs
+ where printCompact | "compact" `elem` cs = putStrTR "~\\\\ \\vspace{-0.5cm}"
                     | otherwise = return ()
 
-renderDIV h (c@"equations") cs ids avs bs = do
+renderDIV (c@"equations") cs ids avs bs = do
    case parseEquations bs of
-     Just eqs -> renderEquations h eqs
+     Just eqs -> renderEquations eqs
      Nothing -> do -- falling back to catch-all case
-       envBegin h c >> mapM_ (renderLabel h) ids >> hPutChar h '\n'
-       renderBlocks h bs
-       envEnd h c
+       envBegin c >> mapM_ renderLabel ids >> putCharR '\n'
+       renderBlocks bs
+       envEnd c
 
  -- catch-all case.
  -- possible instances: example, answer.
-renderDIV h c cs ids avs bs = do
-  envBegin h c >> mapM_ (renderLabel h) ids >> hPutChar h '\n'
-  renderBlocks h bs
-  envEnd h c
+renderDIV c cs ids avs bs = do
+  envBegin c >> mapM_ renderLabel ids >> putCharR '\n'
+  renderBlocks bs
+  envEnd c
 
-renderHeader :: Handle -> Int -> [Attr] -> Inlines -> IO ()
-renderHeader h hd attrs is =
-  do hPutChar h '\n'
-     hPutStr h ('\\': seclevel hd ++ "{")
-     renderInlines h is
-     hPutChar h '}'
-     mapM_ (renderLabel h) (attrsId attrs)
-     hPutChar h '\n'
+renderHeader :: Int -> [Attr] -> Inlines -> LHsMonad ()
+renderHeader hd attrs is =
+  do putCharR '\n'
+     putStrR ('\\': seclevel hd ++ "{")
+     renderInlines is
+     putCharR '}'
+     mapM_ renderLabel (attrsId attrs)
+     putCharR '\n'
  where seclevel 1 = "chapter"
        seclevel 2 = "section"
        seclevel 3 = "subsection"
        seclevel 4 = "subsubsection"
 
-renderLabel h xs = T.hPutStr h "\\label{" >> T.hPutStr h xs >> hPutChar h '}'
+renderLabel xs = putStrTR "\\label{" >> putStrTR xs >> putCharR '}'
 
-renderCode :: Handle -> [Text] -> [Text] -> [(Text, Text)] -> Text -> IO ()
-renderCode h cls ids _ txt | "spec" `elem` cls =
+renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> LHsMonad ()
+renderCode cls ids _ txt | "spec" `elem` cls =
   do when (not (null ids))
-        (mapM_ (renderLabel h) ids >> hPutChar h '\n')
-     envBegin h "spec"
-     hPutChar h '\n'
-     T.hPutStr h txt
-     hPutChar h '\n'
-     envEnd h "spec"
-renderCode h cls ids _ txt | "haskell" `elem` cls =
-  do when invisible (T.hPutStr h "%if False\n")
+        (mapM_ renderLabel ids >> putCharR '\n')
+     envBegin "spec"
+     putCharR '\n'
+     putStrTR txt
+     putCharR '\n'
+     envEnd "spec"
+renderCode cls ids _ txt | "haskell" `elem` cls =
+  do when invisible (putStrTR "%if False\n")
      when (not (null ids))
-      (mapM_ (renderLabel h) ids >> hPutChar h '\n')
-     envBegin h "code"
-     hPutChar h '\n'
-     T.hPutStr h txt
-     hPutChar h '\n'
-     envEnd h "code"
-     when invisible (T.hPutStr h "%endif\n")
+      (mapM_ renderLabel ids >> putCharR '\n')
+     envBegin "code"
+     putCharR '\n'
+     putStrTR txt
+     putCharR '\n'
+     envEnd "code"
+     when invisible (putStrTR "%endif\n")
  where invisible = "invisible" `elem` cls
-renderCode h cls ids avs txt | "equation" `elem` cls =
-  do envBegin h alignEnv
-     hPutChar h '\n'
+renderCode cls ids avs txt | "equation" `elem` cls =
+  do envBegin alignEnv
+     putCharR '\n'
      case lookup "title" avs of
        Nothing  -> return ()
-       Just ttl -> T.hPutStr h "\\textbf{" >>
-                   T.hPutStr h ttl >> T.hPutStr h "}~ "
-     T.hPutStr h txt
-     mapM_ (renderLabel h) ids
-     hPutChar h '\n'
-     envEnd h alignEnv
+       Just ttl -> putStrTR "\\textbf{" >>
+                   putStrTR ttl >> putStrTR "}~ "
+     putStrTR txt
+     mapM_ renderLabel ids
+     putCharR '\n'
+     envEnd alignEnv
  where alignEnv | null ids = "align*"
                 | otherwise = "align"
-renderCode h cls _ _ txt | "texonly" `elem` cls =
-  T.hPutStr h txt >> hPutChar h '\n'
-renderCode h ("verbatim" : cs) ids _ txt  =
-  do envBegin h "verbatim"
-     hPutChar h '\n'
-     T.hPutStr h txt
-     hPutChar h '\n'
-     envEnd h "verbatim"
-renderCode h _ ids _ txt = do
+renderCode cls _ _ txt | "texonly" `elem` cls =
+  putStrTR txt >> putCharR '\n'
+renderCode ("verbatim" : cs) ids _ txt  =
+  do envBegin "verbatim"
+     putCharR '\n'
+     putStrTR txt
+     putCharR '\n'
+     envEnd "verbatim"
+renderCode _ ids _ txt = do
   do when (not (null ids))
-       (mapM_ (renderLabel h) ids >> hPutChar h '\n')
-     envBegin h "code"
-     hPutChar h '\n'
-     T.hPutStr h txt
-     hPutChar h '\n'
-     envEnd h "code"
+       (mapM_ renderLabel ids >> putCharR '\n')
+     envBegin "code"
+     putCharR '\n'
+     putStrTR txt
+     putCharR '\n'
+     envEnd "code"
 
-renderEquations :: Handle -> [(Maybe Text, Maybe Text, [Text])] -> IO ()
+renderEquations :: [(Maybe Text, Maybe Text, [Text])] -> LHsMonad ()
                    -- (title, id, formulae)
-renderEquations h eqs = do
-    envBegin h "align"
-    hPutChar h '\n'
+renderEquations eqs = do
+    envBegin "align"
+    putCharR '\n'
     renderEquations eqs
-    envEnd h "align"
+    envEnd "align"
   where hasTitle  = any (isJust . fst3) eqs
         allSingle = all (isSingle . trd3) eqs
         fst3 (x,_,_) = x
@@ -239,117 +248,104 @@ renderEquations h eqs = do
         isSingle [_] = True
         isSingle _   = False
 
-        renderEquations :: [(Maybe Text, Maybe Text, [Text])] -> IO ()
+        renderEquations :: [(Maybe Text, Maybe Text, [Text])] -> LHsMonad ()
         renderEquations [] = return ()
-        renderEquations [eq] = renderEquation eq >> hPutChar h '\n'
+        renderEquations [eq] = renderEquation eq >> putCharR '\n'
         renderEquations (eq:eqs) = do
            renderEquation eq
-           T.hPutStr h "\\\\\n"
+           putStrTR "\\\\\n"
            renderEquations eqs
 
-        renderEquation :: (Maybe Text, Maybe Text, [Text]) -> IO ()
+        renderEquation :: (Maybe Text, Maybe Text, [Text]) -> LHsMonad ()
         renderEquation (title, iid, fms) = do
           when hasTitle (do
-            case title of Nothing  -> T.hPutStr h " & & "
-                          Just ttl -> do T.hPutStr h " & \\textbf{"
-                                         T.hPutStr h ttl
-                                         T.hPutStr h "} & "
+            case title of Nothing  -> putStrTR " & & "
+                          Just ttl -> do putStrTR " & \\textbf{"
+                                         putStrTR ttl
+                                         putStrTR "} & "
             )
-          when allSingle (T.hPutStr h " & ")
+          when allSingle (putStrTR " & ")
           renderFs fms
-          case iid of Nothing -> T.hPutStr h " \\notag "
-                      Just lbl -> do T.hPutStr h "\\label{"
-                                     T.hPutStr h lbl
-                                     T.hPutStr h "}"
+          case iid of Nothing -> putStrTR " \\notag "
+                      Just lbl -> do putStrTR "\\label{"
+                                     putStrTR lbl
+                                     putStrTR "}"
 
         renderFs []     = return ()
-        renderFs [f]    = hPutChar h '|' >> T.hPutStr h f >> hPutChar h '|'
-        renderFs (f:fs) = do hPutChar h '|'
-                             T.hPutStr h f
-                             T.hPutStr h "| & "
+        renderFs [f]    = putCharR '|' >> putStrTR f >> putCharR '|'
+        renderFs (f:fs) = do putCharR '|'
+                             putStrTR f
+                             putStrTR "| & "
                              renderFs fs
 
 
-envBegin :: Handle -> Text -> IO ()
-envBegin h env = hPutStr h "\\begin{" >> T.hPutStr h env >> hPutStr h "}"
+envBegin :: Text -> LHsMonad ()
+envBegin env = putStrR "\\begin{" >> putStrTR env >> putStrR "}"
 
-envEnd :: Handle -> Text -> IO ()
-envEnd h env = hPutStr h "\\end{" >> T.hPutStr h env >> hPutStr h "}\n"
+envEnd :: Text -> LHsMonad ()
+envEnd env = putStrR "\\end{" >> putStrTR env >> putStrR "}\n"
 
-hdParaHeader :: Handle -> [Attr] -> IO()
-hdParaHeader h attrs = do
+hdParaHeader :: [Attr] -> LHsMonad ()
+hdParaHeader attrs = do
   case lookupAttrs "title" attrs of
-    Just title -> T.hPutStr h ("\n\\paragraph{") >> T.hPutStr h title >> hPutChar h '}'
-    _ | hasClass "noindent" attrs -> T.hPutStr h "\n\\noindent "
-    _ | hasClass "nobreak"  attrs -> T.hPutStr h "\n\\noindent " -- return ()
+    Just title -> putStrTR ("\n\\paragraph{") >> putStrTR title >> putCharR '}'
+    _ | hasClass "noindent" attrs -> putStrTR "\n\\noindent "
+    _ | hasClass "nobreak"  attrs -> putStrTR "\n\\noindent " -- return ()
     _ -> return ()
-  mapM_ (renderLabel h) (attrsId attrs)
+  mapM_ renderLabel (attrsId attrs)
 
-{-
+renderInlines :: Inlines -> LHsMonad ()
+renderInlines = mapM_ renderInline
 
-data Block = Para Inlines
-           | Header Int Inlines
-           | Blockquote Blocks
-           | List Bool ListType [Blocks]
-           | CodeBlock CodeAttr Text
-           | HtmlBlock Text
-           | HRule
-           deriving (Show, Data, Typeable)
-
--}
-
-renderInlines :: Handle -> Inlines -> IO ()
-renderInlines h = mapM_ (renderInline h)
-
-renderInline :: Handle -> Inline -> IO ()
-renderInline h (Str txt) = T.hPutStr h txt
-renderInline h Space = hPutStr h " "
-renderInline h SoftBreak = hPutStr h "\n"
-renderInline h LineBreak = hPutStr h "\n"
-renderInline h (Emph inlines) =
-  do hPutStr h "\\emph{"
-     renderInlines h inlines
-     hPutStr h "}"
-renderInline h (Strong inlines) =
-  do hPutStr h "{\\bf "
-     renderInlines h inlines
-     hPutStr h "}"
-renderInline h (Code txt) = hPutChar h '`' >> T.hPutStr h txt >> hPutChar h '`'
-renderInline h (HsCode txt) = hPutChar h '|' >> T.hPutStr h txt >> hPutChar h '|'
-renderInline h (Tex txt) = hPutChar h '$' >> T.hPutStr h txt >> hPutChar h '$'
-renderInline h (Entity txt) = T.hPutStr h txt
-renderInline h (RawHtml txt) = T.hPutStr h txt
-renderInline h (Attrs attrs) = mapM_ (renderLabel h) (attrsId attrs)
-renderInline h (Footnote is) =
-  do hPutStr h "\\footnote{"
-     renderInlines h is
-     hPutChar h '}'
-renderInline h (Ref txt)   = latexCmd h "ref" txt
-renderInline h (EqRef txt) = latexCmd h "eqref" txt
-renderInline h (PageRef txt) = latexCmd h "pageref" txt
-renderInline h (Index idx) = latexCmd h "index" idx
-renderInline h (CiteT ref Nothing) = latexCmd h "citet" ref
-renderInline h (CiteT ref (Just opt)) = latexCmdOpt h "citet" opt ref
-renderInline h (CiteP [(ref, Just opt)]) = latexCmdOpt h "citep" opt ref
-renderInline h (CiteP cites) = -- with multiple citation we ignore options.
-  do hPutStr h "\\citep{"
+renderInline :: Inline -> LHsMonad ()
+renderInline (Str txt) = putStrTR txt
+renderInline Space = putStrR " "
+renderInline SoftBreak = putStrR "\n"
+renderInline LineBreak = putStrR "\n"
+renderInline (Emph inlines) =
+  do putStrR "\\emph{"
+     renderInlines inlines
+     putStrR "}"
+renderInline (Strong inlines) =
+  do putStrR "{\\bf "
+     renderInlines inlines
+     putStrR "}"
+renderInline (Code txt) = putCharR '`' >> putStrTR txt >> putCharR '`'
+renderInline (HsCode txt) = putCharR '|' >> putStrTR txt >> putCharR '|'
+renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
+renderInline (Entity txt) = putStrTR txt
+renderInline (RawHtml txt) = putStrTR txt
+renderInline (Attrs attrs) = mapM_ renderLabel (attrsId attrs)
+renderInline (Footnote is) =
+  do putStrR "\\footnote{"
+     renderInlines is
+     putCharR '}'
+renderInline (Ref txt)   = latexCmd "ref" txt
+renderInline (EqRef txt) = latexCmd "eqref" txt
+renderInline (PageRef txt) = latexCmd "pageref" txt
+renderInline (Index idx) = latexCmd "index" idx
+renderInline (CiteT ref Nothing) = latexCmd "citet" ref
+renderInline (CiteT ref (Just opt)) = latexCmdOpt "citet" opt ref
+renderInline (CiteP [(ref, Just opt)]) = latexCmdOpt "citep" opt ref
+renderInline (CiteP cites) = -- with multiple citation we ignore options.
+  do putStrR "\\citep{"
      putRefs cites
-     hPutChar h '}'
+     putCharR '}'
  where putRefs [] = return ()
-       putRefs [(ref,_)] = T.hPutStr h ref
-       putRefs ((ref,_):cites) = T.hPutStr h ref >> hPutChar h ',' >>
+       putRefs [(ref,_)] = putStrTR ref
+       putRefs ((ref,_):cites) = putStrTR ref >> putCharR ',' >>
                                  putRefs cites
 
-latexCmd :: Handle -> Text -> Text -> IO ()
-latexCmd h cmd arg =
-  hPutChar h '\\' >> T.hPutStr h cmd >>
-  hPutChar h '{' >> T.hPutStr h arg >> hPutChar h '}'
+latexCmd :: Text -> Text -> LHsMonad ()
+latexCmd cmd arg =
+  putCharR '\\' >> putStrTR cmd >>
+  putCharR '{' >> putStrTR arg >> putCharR '}'
 
-latexCmdOpt :: Handle -> Text -> Text -> Text -> IO ()
-latexCmdOpt h cmd opt arg =
-  hPutChar h '\\' >> T.hPutStr h cmd >>
-  hPutChar h '[' >> T.hPutStr h opt >> hPutChar h ']' >>
-  hPutChar h '{' >> T.hPutStr h arg >> hPutChar h '}'
+latexCmdOpt ::  Text -> Text -> Text -> LHsMonad ()
+latexCmdOpt cmd opt arg =
+  putCharR '\\' >> putStrTR cmd >>
+  putCharR '[' >> putStrTR opt >> putCharR ']' >>
+  putCharR '{' >> putStrTR arg >> putCharR '}'
 
 --
 parseEquations :: Blocks -> Maybe [(Maybe Text, Maybe Text, [Text])]

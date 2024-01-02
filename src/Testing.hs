@@ -8,6 +8,8 @@ import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
 
+import Control.Monad.Reader
+
 import Cheapskate
 import Control.Monad.RWS
 import Cheapskate.Parse
@@ -18,14 +20,14 @@ import Cheapskate.Types
 
 import LHs.Render
 
-handle :: Handle -> Text -> IO ()
-handle h = lhsRender h . markdown def
+printLHs :: Handle -> Text -> IO ()
+printLHs h content = (runReaderT . lhsRender . markdown def $ content) h
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
 
 textstF :: String -> IO ()
-textstF file = readFile file >>= handle stdout
+textstF file = readFile file >>= printLHs stdout
             -- T.getContents >>= handle
             -- T.getContents >>= (print . markdown def)
 

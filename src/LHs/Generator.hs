@@ -7,6 +7,7 @@ import qualified Data.ByteString as BS (ByteString, readFile)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text.IO as TIO
+import Control.Monad.Reader
 import Cheapskate
 import LHs.Render
 
@@ -16,7 +17,7 @@ readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
 
 printLHs :: Handle -> Text -> IO ()
-printLHs h = lhsRender h . markdown def
+printLHs h content = (runReaderT . lhsRender . markdown def $ content) h
 
 genLHs :: String -> String -> String -> IO ()
 genLHs mdname lhsname tmpls = do

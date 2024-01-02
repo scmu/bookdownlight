@@ -44,6 +44,7 @@ library
     , bytestring
     , containers >=0.4 && <0.7
     , data-default
+    , deepseq
     , directory
     , hashable
     , mtl >=2.1 && <2.3
