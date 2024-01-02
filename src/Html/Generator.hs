@@ -10,12 +10,18 @@ import qualified Data.ByteString as BS (ByteString, readFile)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text.IO as TIO
+
+import Data.Map (Map)
+import qualified Data.Map as Map
+
 import Cheapskate
 
 import Html.Counter
 import Html.Scanning
 
 import Development.Shake.FilePath
+
+type LblMap = Map Text [Int]
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
@@ -33,9 +39,16 @@ mkHAux i contents =
         let doc = markdown def $ contents
         in runState (scanDoc doc) (initChCounter i)
 
-
 readHAux :: String -> IO (TOCIs, Dict)
 readHAux hauxname = IO.readFile hauxname >>= (return . read)
+
+genLblMap :: String -> IO LblMap
+genLblMap hauxname = do
+    (_, dict) <- readHAux hauxname
+    return (Map.fromList dict)
+
+genLblMaps :: [String] -> IO LblMap
+genLblMaps hauxnames = Map.unions <$> (mapM genLblMap hauxnames)
 
 genHtml :: String -> String -> String -> IO ()
 genHtml mdname htmlname tmpls = do
