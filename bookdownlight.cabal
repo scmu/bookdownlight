@@ -30,7 +30,7 @@ library
       Cheapskate.ParserCombinators
       Cheapskate.Types
       Cheapskate.Util
-      LHs.LHsRender
+      LHs.Render
       Syntax.Util
       Testing
       TestingHtml
@@ -41,11 +41,9 @@ library
   build-depends:
       base >=4.9 && <5
     , blaze-html >=0.6 && <0.10
-    , binary
     , bytestring
     , containers >=0.4 && <0.7
     , data-default
-    , deepseq
     , directory
     , hashable
     , mtl >=2.1 && <2.3

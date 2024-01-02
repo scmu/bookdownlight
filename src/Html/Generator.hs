@@ -1,4 +1,7 @@
-module Html.Generator where
+module Html.Generator (
+    module Html.Generator
+  , LblMap
+  ) where
 
 import Prelude hiding (readFile)
 import System.IO (openFile, hClose, stdout, IOMode(..), Handle)
@@ -20,8 +23,6 @@ import Html.Counter
 import Html.Scanning
 
 import Development.Shake.FilePath
-
-type LblMap = Map Text [Int]
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path

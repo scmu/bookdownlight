@@ -1,5 +1,6 @@
 module Html.Counter where
 import Data.Text (Text)
+import Data.Map (Map)
 
 data Counter = Counter
       { chC :: !Int
@@ -51,3 +52,7 @@ type TOCItem = ( [Int]   -- section number
                , Text    -- label
                )
 type TOC = Rose TOCItem
+
+------
+
+type LblMap = Map Text [Int]

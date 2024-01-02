@@ -11,10 +11,10 @@ import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import Control.Monad (forM_)
 
-import Data.Binary        -- To use addOracle
-import Data.Typeable
-import Data.Hashable
-import Control.DeepSeq
+-- import Data.Binary        -- To use addOracle
+-- import Data.Typeable
+-- import Data.Hashable
+-- import Control.DeepSeq
 
 import Cheapskate
 
@@ -86,7 +86,7 @@ htmlRules = do
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
 
- buildLblMap <- addOracleCache $ \BuildLblMap{} -> do
+ buildLblMap <- newCache $ \() -> do
    let hauxNames = [ tmp </> ch <.> "haux" | ch <- chapters]
    need hauxNames
    liftIO (genLblMaps hauxNames)
@@ -98,9 +98,9 @@ htmlRules = do
    putInfo ("# md->html (for " ++ htmlName ++ ")")
    liftIO (genHtml mdName htmlName tmpls))
 
-newtype BuildLblMap = BuildLblMap ()
-  deriving (Show, Eq, Binary, NFData, Typeable, Hashable)
-type instance RuleResult BuildLblMap = LblMap
+-- newtype BuildLblMap = BuildLblMap ()
+--   deriving (Show, Eq, Binary, NFData, Typeable, Hashable)
+-- type instance RuleResult BuildLblMap = LblMap
 
 -- configuration info.
 
