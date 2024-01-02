@@ -32,6 +32,8 @@ dependencies:
 - bytestring
 - directory
 - shake
+- binary
+- hashable
 
 library:
   source-dirs: src

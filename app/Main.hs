@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
 module Main where
 
 import Prelude hiding (readFile)
@@ -9,6 +10,11 @@ import Data.Text.Encoding (decodeUtf8)
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import Control.Monad (forM_)
+
+import Data.Binary        -- To use addOracle
+import Data.Typeable
+import Data.Hashable
+import Control.DeepSeq
 
 import Cheapskate
 
@@ -32,8 +38,6 @@ in ghci, where "goal" can be "pdf", "html", or any filename.
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
- -- want [texBase </> "fpbook.pdf"]
- -- want (map (\ch -> htmlChs </> ch <.> "html") chapters)
 
  phony "pdf" $ do
    need [texBase </> "fpbook.pdf"]
@@ -41,7 +45,15 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
  phony "html" $ do
    need (map (\ch -> htmlChs </> ch <.> "html") chapters)
 
+ lhsRules
+
+ htmlRules
+
+
 -- lhs, tex
+
+lhsRules :: Rules ()
+lhsRules = do
 
  forM_ chapters (\ch ->
   (lhsChs </> ch <.> "lhs") %> \lhsName -> do
@@ -63,12 +75,21 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
   command_ [Cwd texBase] "xelatex" ["fpbook"]
 
 -- html
+
+htmlRules :: Rules ()
+htmlRules = do
+
  forM_ (zip [-1..] chapters) (\(i,ch) ->
-  (htmlHaux </> ch <.> "haux") %> \hauxName -> do
+  (tmp </> ch <.> "haux") %> \hauxName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
+
+ buildLblMap <- addOracleCache $ \BuildLblMap{} -> do
+   let hauxNames = [ tmp </> ch <.> "haux" | ch <- chapters]
+   need hauxNames
+   liftIO (genLblMaps hauxNames)
 
  forM_ chapters (\ch ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
@@ -76,6 +97,12 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
    need [mdName]
    putInfo ("# md->html (for " ++ htmlName ++ ")")
    liftIO (genHtml mdName htmlName tmpls))
+
+newtype BuildLblMap = BuildLblMap ()
+  deriving (Show, Eq, Binary, NFData, Typeable, Hashable)
+type instance RuleResult BuildLblMap = LblMap
+
+-- configuration info.
 
 chapters :: [String]
 chapters = [ "Introduction"
@@ -98,6 +125,6 @@ htmlBase  = "html"
 lhsChs    = lhsBase  </> "Chapters"
 texChs    = texBase  </> "Chapters"
 htmlChs   = htmlBase </> "Chapters"
-htmlHaux  = htmlBase </> "HAux"
 
-tmpls    = "templates"
+tmpls     = "templates"
+tmp       = "tmp"
