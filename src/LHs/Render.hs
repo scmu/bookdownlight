@@ -8,7 +8,7 @@ import Data.Sequence (Seq(..))
 import Data.Foldable (toList)
 import Data.Text (Text, head)
 import Data.List (partition)
-import qualified Data.Text.IO as T
+import qualified Data.Text.IO as T (hPutStr)
 import Control.Monad (when, (<=<))
 import Control.Monad.Reader
 import Control.Arrow ((***))
@@ -31,22 +31,18 @@ renderBlock :: Block -> LHsMonad ()
 renderBlock (Para (Attrs attrs :<| is)) = do
   hdParaHeader attrs
   renderInlines is
-  putStrR "\n"
+  putCharR '\n'
 renderBlock (Para is) = do
-  putStrR "\n"
+  putCharR '\n'
   renderInlines is
-  putStrR "\n"
+  putCharR '\n'
 renderBlock (Header hd attrs is) = renderHeader hd attrs is
 renderBlock (Blockquote bs) =
-  do envBegin "quote"
-     putStrR "{\\em"
-     renderBlocks bs
-     putStrR "}%\\em\n"
-     envEnd "quote"
+  mkEnv' "quote" (putStrR "{\\em")
+      (do renderBlocks bs
+          putStrR "}%\\em\n")
 renderBlock (List _ lt items) =
-  do putStrR ("\\begin{" ++ ltype  ++ "}\n")
-     mapM_ renderLItem items
-     putStrR ("\\end{" ++ ltype ++ "}\n")
+  mkEnv "ltype" (mapM_ renderLItem items)
  where ltype = case lt of
          Bullet _     -> "compactitem"
          Numbered _ _ -> "compactenum"
@@ -71,28 +67,23 @@ renderBlock (DIV attrs bs)
 
 renderDIV :: Text -> [Text] -> [Text]
           -> [(Text, Text)] -> Blocks -> LHsMonad ()
-renderDIV c cs ids avs bs | c `elem` thmEnvs = do
-   envBegin c
-   case lookup "title" avs of
-     Nothing -> return ()
-     Just title -> putCharR '[' >> putStrTR title >> putCharR ']'
-   mapM_ renderLabel ids
-   putCharR '\n'
-   renderBlocks bs
-   envEnd c
+renderDIV c cs ids avs bs | c `elem` thmEnvs =
+   mkEnv' c
+    (do case lookup "title" avs of
+          Nothing -> return ()
+          Just title -> putCharR '[' >> putStrTR title >> putCharR ']'
+        mapM_ renderLabel ids)
+    (renderBlocks bs >> putCharR '\n')
  where thmEnvs :: [Text]
        thmEnvs = ["theorem", "lemma", "definition", "example",
                   "proof", "corollary"]
 
-renderDIV "figure" cs ids avs bs = do
-   putStrTR "\\begin{figure}"
-   printPositions cs
-   putCharR '\n'
-   renderBlocks bs
-   printCaption avs
-   mapM_ renderLabel ids
-   putCharR '\n'
-   putStrTR "\\end{figure}\n"
+renderDIV "figure" cs ids avs bs =
+   mkEnv' "figure" (printPositions cs)
+    (do renderBlocks bs
+        printCaption avs
+        mapM_ renderLabel ids
+        putCharR '\n')
  where printPositions cs
          | [] <- ps = return ()
          | otherwise = putCharR '[' >> mapM_ (putCharR . Data.Text.head) ps >>
@@ -157,17 +148,15 @@ renderDIV "exans" cs _ _ bs = do
 renderDIV (c@"equations") cs ids avs bs = do
    case parseEquations bs of
      Just eqs -> renderEquations eqs
-     Nothing -> do -- falling back to catch-all case
-       envBegin c >> mapM_ renderLabel ids >> putCharR '\n'
-       renderBlocks bs
-       envEnd c
+     Nothing ->  -- falling back to catch-all case
+       mkEnv' c (mapM_ renderLabel ids)
+        (renderBlocks bs)
 
  -- catch-all case.
  -- possible instances: example, answer.
-renderDIV c cs ids avs bs = do
-  envBegin c >> mapM_ renderLabel ids >> putCharR '\n'
-  renderBlocks bs
-  envEnd c
+renderDIV c cs ids avs bs =
+  mkEnv c (mapM_ renderLabel ids)
+   (renderBlocks bs)
 
 renderHeader :: Int -> [Attr] -> Inlines -> LHsMonad ()
 renderHeader hd attrs is =
@@ -188,59 +177,39 @@ renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> LHsMonad ()
 renderCode cls ids _ txt | "spec" `elem` cls =
   do when (not (null ids))
         (mapM_ renderLabel ids >> putCharR '\n')
-     envBegin "spec"
-     putCharR '\n'
-     putStrTR txt
-     putCharR '\n'
-     envEnd "spec"
+     mkEnv "spec" (putStrTR txt >> putCharR '\n')
+
 renderCode cls ids _ txt | "haskell" `elem` cls =
   do when invisible (putStrTR "%if False\n")
      when (not (null ids))
       (mapM_ renderLabel ids >> putCharR '\n')
-     envBegin "code"
-     putCharR '\n'
-     putStrTR txt
-     putCharR '\n'
-     envEnd "code"
+     mkEnv "code" (putStrTR txt >> putCharR '\n'))
      when invisible (putStrTR "%endif\n")
  where invisible = "invisible" `elem` cls
 renderCode cls ids avs txt | "equation" `elem` cls =
-  do envBegin alignEnv
-     putCharR '\n'
-     case lookup "title" avs of
-       Nothing  -> return ()
-       Just ttl -> putStrTR "\\textbf{" >>
-                   putStrTR ttl >> putStrTR "}~ "
-     putStrTR txt
-     mapM_ renderLabel ids
-     putCharR '\n'
-     envEnd alignEnv
+     mkEnv alignEnv
+      (do case lookup "title" avs of
+            Nothing  -> return ()
+            Just ttl -> putStrTR "\\textbf{" >>
+                        putStrTR ttl >> putStrTR "}~ "
+          putStrTR txt
+          mapM_ renderLabel ids
+          putCharR '\n')
  where alignEnv | null ids = "align*"
                 | otherwise = "align"
 renderCode cls _ _ txt | "texonly" `elem` cls =
   putStrTR txt >> putCharR '\n'
 renderCode ("verbatim" : cs) ids _ txt  =
-  do envBegin "verbatim"
-     putCharR '\n'
-     putStrTR txt
-     putCharR '\n'
-     envEnd "verbatim"
+  mkEnv "verbatim" (putStrTR txt >> putCharR '\n')
 renderCode _ ids _ txt = do
   do when (not (null ids))
        (mapM_ renderLabel ids >> putCharR '\n')
-     envBegin "code"
-     putCharR '\n'
-     putStrTR txt
-     putCharR '\n'
-     envEnd "code"
+     mkEnv "code"  (putStrTR txt >> putCharR '\n')
 
 renderEquations :: [(Maybe Text, Maybe Text, [Text])] -> LHsMonad ()
                    -- (title, id, formulae)
 renderEquations eqs = do
-    envBegin "align"
-    putCharR '\n'
-    renderEquations eqs
-    envEnd "align"
+    mkEnv "align" (renderEquations eqs)
   where hasTitle  = any (isJust . fst3) eqs
         allSingle = all (isSingle . trd3) eqs
         fst3 (x,_,_) = x
@@ -278,12 +247,20 @@ renderEquations eqs = do
                              putStrTR "| & "
                              renderFs fs
 
+mkEnv' :: Text -> LHsMonad () -> LHsMonad () -> LHsMonad
+mkEnv' env pre body = do
+  putStrTR "\\begin{" >> putStrTR env >> putCharR '}'
+  pre  -- things before the first newline
+  putCharR '\n'
+  body
+  putStrTR "\\end{" >> putStrTR env >> putStrR "}\n"
+  -- \begin{env}pre
+  --   body\end{env}
+  -- let body generate the last newline
 
-envBegin :: Text -> LHsMonad ()
-envBegin env = putStrR "\\begin{" >> putStrTR env >> putStrR "}"
-
-envEnd :: Text -> LHsMonad ()
-envEnd env = putStrR "\\end{" >> putStrTR env >> putStrR "}\n"
+mkEnv :: Text -> LHsMonad () -> LHsMonad ()
+mkEnv env body = mkEnv' (return ()) body
+   -- newline immediately after \begin{env}
 
 hdParaHeader :: [Attr] -> LHsMonad ()
 hdParaHeader attrs = do
@@ -300,8 +277,8 @@ renderInlines = mapM_ renderInline
 renderInline :: Inline -> LHsMonad ()
 renderInline (Str txt) = putStrTR txt
 renderInline Space = putStrR " "
-renderInline SoftBreak = putStrR "\n"
-renderInline LineBreak = putStrR "\n"
+renderInline SoftBreak = putCharR '\n'
+renderInline LineBreak = putCharR '\n'
 renderInline (Emph inlines) =
   do putStrR "\\emph{"
      renderInlines inlines
