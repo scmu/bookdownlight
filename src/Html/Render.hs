@@ -195,7 +195,12 @@ renderLabel' h xs = do
 -}
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
-renderHeader = undefined
+renderHeader hd attrs is =
+  mkTag
+ where seclevel seclevel 1 = "<h1 class='chapter"
+       seclevel 2 = "<h2 class='section"
+       seclevel 3 = "<h3 class='subsection"
+       seclevel 4 = "<h4 class='subsubsection"
 
 renderInlines :: Inlines -> RMonad ()
 renderInlines = undefined
