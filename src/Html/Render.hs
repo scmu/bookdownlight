@@ -30,22 +30,22 @@ renderBlocks = mapM_ renderBlock
 
 renderBlock :: Block -> RMonad ()
 renderBlock (Para (Attrs attrs :<| is)) =
-  mkTag "p" attrs' (do
+  mkTagAttrs "p" attrs' (do
     case lookupAttrs "title" attrs of
-        Just title -> mkTag "b" attrs' (putStrTR title) >> putStrTR " &emsp;"
+        Just title -> mkTagAttrs "b" attrs' (putStrTR title) >> putStrTR " &emsp;"
         _ -> return ()
     renderInlines is)
  where attrs' = filter (\atr -> not (isThisAtr "title"    atr ||
                                      isThisCls "noindent" atr ||
                                      isThisCls "nobreak"  atr))  attrs
-renderBlock (Para is) = mkTag' "p" (renderInlines is)
+renderBlock (Para is) = mkTag "p" (renderInlines is)
 renderBlock (Header hd attrs is) = renderHeader hd attrs is
-renderBlock (Blockquote bs) = mkTag' "blockquote" (renderBlocks bs)
+renderBlock (Blockquote bs) = mkTag "blockquote" (renderBlocks bs)
 renderBlock (List _ lt items) =
-  mkTag' (ltype lt) (mapM_ renderLItem items)
+  mkTag (ltype lt) (mapM_ renderLItem items)
  where ltype (Bullet _)     = "ul"
        ltype (Numbered _ _) = "ol"
-       renderLItem bs = mkTag' "li" (renderBlocks bs)
+       renderLItem bs = mkTag "li" (renderBlocks bs)
 renderBlock (CodeBlock attrs txt) = renderCode cls ids avs txt
   where ids = attrsId attrs
         cls = attrsClass attrs
@@ -58,7 +58,7 @@ renderBlock (DIV attrs bs)
         avs = attrsAVs attrs
 
 renderDIV :: Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> RMonad ()
-renderDIV = undefined
+renderDIV _ _ _ _ _ = return () 
 {-
 renderDIV c cs ids avs bs | c `elem` thmEnvs = do
   envBegin c ids
@@ -196,33 +196,47 @@ renderLabel' h xs = do
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
 renderHeader hd attrs is =
-  mkTag
- where seclevel seclevel 1 = "<h1 class='chapter"
-       seclevel 2 = "<h2 class='section"
-       seclevel 3 = "<h3 class='subsection"
-       seclevel 4 = "<h4 class='subsubsection"
+  let (htag, hcls) = seclevel hd
+  in mkTagAttrs htag (AtrClass hcls : attrs)
+        (renderInlines is)
+ where seclevel 1 = ("h1", "chapter")
+       seclevel 2 = ("h2", "section")
+       seclevel 3 = ("h3", "subsection")
+       seclevel 4 = ("h4", "subsubsection")
 
 renderInlines :: Inlines -> RMonad ()
-renderInlines = undefined
+renderInlines _ = return ()
 
 renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> RMonad ()
-renderCode = undefined
+renderCode _ _ _ _ = return ()
 
-renderAttrs :: [Attr] -> RMonad ()
-renderAttrs = mapM_ renderAttr
-  where renderAttr (AtrClass c) =
-           putStrTR " class=\"" >> putStrTR c >> putCharR '"'
-        renderAttr (AtrID idn) =
-           putStrTR " id=\"" >> putStrTR idn >> putCharR '"'
-        renderAttr (Atr a v) = do
+renderAttrsC :: AttrsC -> RMonad ()
+renderAttrsC (cls, ids, avs) =
+   renderCls cls >> renderIds ids >> renderAVs avs
+ where  -- classes joined together, separated by space
+       renderCls [] = return ()
+       renderCls (c:cs) = putStrTR " class=\"" >> putStrTR c >>
+                          renderCls0 cs
+       renderCls0 [] = putCharR '"'
+       renderCls0 (c:cs) = putCharR ' ' >> putStrTR c >> renderCls0 cs
+        -- there can be at most one id
+       renderIds [] = return ()
+       renderIds (i:_) = putStrTR " id=\"" >> putStrTR i >> putCharR '"'
+
+renderAVs :: [(Text, Text)] -> RMonad ()
+renderAVs = mapM_ renderAttr
+  where renderAttr (a, v) = do
            putCharR ' ' >> putStrTR a >> putStrTR "=\""
            putStrTR v >> putCharR '"'
 
+mkTag tag body = mkTagAttrsC tag ([], [], []) body
 
-mkTag :: Text -> [Attr] -> RMonad () -> RMonad ()
-mkTag tag attrs body = do
-   putCharR '<' >> putStrTR tag >> renderAttrs attrs >> putCharR '>'
+mkTagAttrs :: Text -> [Attr] -> RMonad () -> RMonad ()
+mkTagAttrs tag attrs body =
+  mkTagAttrsC tag (sortAttrs attrs) body
+
+mkTagAttrsC :: Text -> AttrsC -> RMonad () -> RMonad ()
+mkTagAttrsC tag attrs body = do
+   putCharR '<' >> putStrTR tag >> renderAttrsC attrs >> putCharR '>'
    body
    putStrR "</" >> putStrTR tag >> putCharR '>'
-
-mkTag' tag body = mkTag tag [] body

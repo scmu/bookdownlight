@@ -45,7 +45,19 @@ isAttrs (Attrs _) = True
 isAttrs _ = False
 unAttrs (Attrs attrs) = attrs
 
+type AttrsC = ([Text], [Text], [(Text, Text)]) -- (cls, ids, attr-values)
+
+sortAttrs :: [Attr] -> AttrsC
+sortAttrs [] = ([], [], [])
+sortAttrs (AtrClass cls : attrs) = first3 (cls:)   (sortAttrs attrs)
+sortAttrs (AtrID i      : attrs) = second3 (i:)    (sortAttrs attrs)
+sortAttrs (Atr a v      : attrs) = third3 ((a,v):) (sortAttrs attrs)
+
 isHsCode :: Inline -> Bool
 isHsCode (HsCode _) = True
 isHsCode _ = False
 unHsCode (HsCode txt) = txt
+
+first3  f (x,y,z) = (f x, y, z)
+second3 f (x,y,z) = (x, f y, z)
+third3  f (x,y,z) = (x, y, f z)
