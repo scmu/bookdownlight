@@ -5,14 +5,20 @@ import Cheapskate.Types
 
 isAtrId (AtrID _) = True
 isAtrId _         = False
+isThisId id0 (AtrID id1) | id0 == id1 = True
+isThisId _ _      = False
 unAtrID (AtrID xs) = xs
 
 isAtrCls (AtrClass _) = True
 isAtrCls _            = False
+isThisCls cl0 (AtrClass cl1) | cl0 == cl1 = True
+isThisCls _ _         = False
 unAtrClass (AtrClass xs) = xs
 
 isAtrAV (Atr _ _) = True
 isAtrAV _         = False
+isThisAtr at0 (Atr at1 _) | at0 == at1 = True
+isThisAtr _ _     = False
 unAtrAv (Atr atr val) = (atr, val)
 
 attrsId :: [Attr] -> [Text]

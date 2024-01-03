@@ -29,44 +29,37 @@ renderBlocks :: Blocks -> RMonad ()
 renderBlocks = mapM_ renderBlock
 
 renderBlock :: Block -> RMonad ()
--- renderBlock = undefined
-renderBlock (Para (Attrs attrs :<| is)) = do
-  hdParaHeader attrs
-  renderInlines is
-  putCharR \n'
-renderBlock (Para is) = do
-  putStrTR "<p>"
-  renderInlines is
-  putStrTR "</p>\n"
+renderBlock (Para (Attrs attrs :<| is)) =
+  mkTag "p" attrs' (do
+    case lookupAttrs "title" attrs of
+        Just title -> mkTag "b" attrs' (putStrTR title) >> putStrTR " &emsp;"
+        _ -> return ()
+    renderInlines is)
+ where attrs' = filter (\atr -> not (isThisAtr "title"    atr ||
+                                     isThisCls "noindent" atr ||
+                                     isThisCls "nobreak"  atr))  attrs
+renderBlock (Para is) = mkTag' "p" (renderInlines is)
 renderBlock (Header hd attrs is) = renderHeader hd attrs is
-renderBlock (Blockquote bs) =
-  do putStrTR "<blockquote>\n"
-     renderBlocks bs
-     putStrTR "</blockquote>\n"
+renderBlock (Blockquote bs) = mkTag' "blockquote" (renderBlocks bs)
 renderBlock (List _ lt items) =
-  do putStrTR ("<" ++ ltype  )
-     mapM_ renderLItem items
-     putStrTR ("</"++ ltype )
- where ltype = case lt of
-         Bullet _     -> "ul>\n"
-         Numbered _ _ -> "ol>\n"
-       renderLItem bs = do
-         putStrTR "<li>\n"
-         renderBlocks bs
-         putStrTR "</li>\n"
+  mkTag' (ltype lt) (mapM_ renderLItem items)
+ where ltype (Bullet _)     = "ul"
+       ltype (Numbered _ _) = "ol"
+       renderLItem bs = mkTag' "li" (renderBlocks bs)
 renderBlock (CodeBlock attrs txt) = renderCode cls ids avs txt
   where ids = attrsId attrs
         cls = attrsClass attrs
         avs = attrsAVs attrs
-
 renderBlock (DIV attrs bs)
-     | [] <- cls     = renderBlocks bs
+     | []     <- cls = renderBlocks bs
      | (c:cs) <- cls = renderDIV c cs ids avs bs
   where ids = attrsId attrs
         cls = attrsClass attrs
         avs = attrsAVs attrs
 
 renderDIV :: Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> RMonad ()
+renderDIV = undefined
+{-
 renderDIV c cs ids avs bs | c `elem` thmEnvs = do
   envBegin c ids
   putStrTR "<b>" >> putStrTR env
@@ -192,3 +185,39 @@ renderDIV c cs ids avs bs = do
   putStrTR c >> hPutChar h ':'
   renderBlocks bs
   envEnd h "</div>"
+
+renderLabel h xs = hPutStr h " id='" >> T.hPutStr h xs >> hPutStr h "'"
+--renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
+renderLabel' h xs = do
+  T.hPutStr h xs
+  T.hPutStr h "'>"
+
+-}
+
+renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
+renderHeader = undefined
+
+renderInlines :: Inlines -> RMonad ()
+renderInlines = undefined
+
+renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> RMonad ()
+renderCode = undefined
+
+renderAttrs :: [Attr] -> RMonad ()
+renderAttrs = mapM_ renderAttr
+  where renderAttr (AtrClass c) =
+           putStrTR " class=\"" >> putStrTR c >> putCharR '"'
+        renderAttr (AtrID idn) =
+           putStrTR " id=\"" >> putStrTR idn >> putCharR '"'
+        renderAttr (Atr a v) = do
+           putCharR ' ' >> putStrTR a >> putStrTR "=\""
+           putStrTR v >> putCharR '"'
+
+
+mkTag :: Text -> [Attr] -> RMonad () -> RMonad ()
+mkTag tag attrs body = do
+   putCharR '<' >> putStrTR tag >> renderAttrs attrs >> putCharR '>'
+   body
+   putStrR "</" >> putStrTR tag >> putCharR '>'
+
+mkTag' tag body = mkTag tag [] body

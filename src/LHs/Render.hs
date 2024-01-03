@@ -44,10 +44,9 @@ renderBlock (Blockquote bs) =
       (do renderBlocks bs
           putStrR "}%\\em\n")
 renderBlock (List _ lt items) =
-  mkEnv ltype (mapM_ renderLItem items)
- where ltype = case lt of
-         Bullet _     -> "compactitem"
-         Numbered _ _ -> "compactenum"
+  mkEnv (ltype lt) (mapM_ renderLItem items)
+ where ltype (Bullet _)     = "compactitem"
+       ltype (Numbered _ _) = "compactenum"
        renderLItem bs = do
          putStrR "\\item "
          renderBlocks bs
