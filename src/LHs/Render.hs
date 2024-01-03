@@ -21,6 +21,8 @@ putStrR   xs = ReaderT (flip IO.hPutStr xs)
 putCharR  c  = ReaderT (flip IO.hPutChar c)
 putStrTR  xs = ReaderT (flip T.hPutStr  xs)
 
+---
+
 lhsRender :: Doc -> LHsMonad ()
 lhsRender (Doc _ blocks) = renderBlocks blocks
 
@@ -155,7 +157,7 @@ renderDIV (c@"equations") cs ids avs bs = do
  -- catch-all case.
  -- possible instances: example, answer.
 renderDIV c cs ids avs bs =
-  mkEnv c (mapM_ renderLabel ids)
+  mkEnv' c (mapM_ renderLabel ids)
    (renderBlocks bs)
 
 renderHeader :: Int -> [Attr] -> Inlines -> LHsMonad ()
