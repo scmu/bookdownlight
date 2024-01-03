@@ -44,7 +44,7 @@ renderBlock (Blockquote bs) =
       (do renderBlocks bs
           putStrR "}%\\em\n")
 renderBlock (List _ lt items) =
-  mkEnv "ltype" (mapM_ renderLItem items)
+  mkEnv ltype (mapM_ renderLItem items)
  where ltype = case lt of
          Bullet _     -> "compactitem"
          Numbered _ _ -> "compactenum"
@@ -185,7 +185,7 @@ renderCode cls ids _ txt | "haskell" `elem` cls =
   do when invisible (putStrTR "%if False\n")
      when (not (null ids))
       (mapM_ renderLabel ids >> putCharR '\n')
-     mkEnv "code" (putStrTR txt >> putCharR '\n'))
+     mkEnv "code" (putStrTR txt >> putCharR '\n')
      when invisible (putStrTR "%endif\n")
  where invisible = "invisible" `elem` cls
 renderCode cls ids avs txt | "equation" `elem` cls =
@@ -249,7 +249,7 @@ renderEquations eqs = do
                              putStrTR "| & "
                              renderFs fs
 
-mkEnv' :: Text -> LHsMonad () -> LHsMonad () -> LHsMonad
+mkEnv' :: Text -> LHsMonad () -> LHsMonad () -> LHsMonad ()
 mkEnv' env pre body = do
   putStrTR "\\begin{" >> putStrTR env >> putCharR '}'
   pre  -- things before the first newline
@@ -261,7 +261,7 @@ mkEnv' env pre body = do
   -- let body generate the last newline
 
 mkEnv :: Text -> LHsMonad () -> LHsMonad ()
-mkEnv env body = mkEnv' (return ()) body
+mkEnv env body = mkEnv' env (return ()) body
    -- newline immediately after \begin{env}
 
 hdParaHeader :: [Attr] -> LHsMonad ()
