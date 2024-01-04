@@ -59,35 +59,24 @@ renderBlock (CodeBlock attrs txt) = renderCode cls ids avs txt
         avs = attrsAVs attrs
 renderBlock (DIV attrs bs)
      | []     <- cls = renderBlocks bs
-     | (c:cs) <- cls = renderDIV c cs ids avs bs
-  where ids = attrsId attrs
-        cls = attrsClass attrs
-        avs = attrsAVs attrs
+     | (c:cs) <- cls = renderDIV c (cs,ids,avs) bs
+  where (cls, ids, avs) = sortAttrs attrs
 
-renderDIV :: Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> RMonad ()
-renderDIV _ _ _ _ _ = return ()
+renderDIV :: Text -> ([Text], [Text], [(Text, Text)]) -> Blocks -> RMonad ()
+
+renderDIV c (cs,ids,avs) bs | Just zh <- lookup c thmEnvs = do
+  nums <- state newThm
+  mkTagAttrsC "div" (cs,ids,avs)
+   (do mkTag "b" (do putStrTR zh >> printSecNum nums >> putCharR ' '
+                     maybe (return ())
+                       (\title -> putStrTR title >> putCharR ' ')
+                       (lookup "title" avs))
+       mkSCTag "br"
+       renderBlocks bs)
+  where thmEnvs = [("theorem",    "定理 "), ("lemma",      "引理 "),
+                   ("definition", "定義 "), ("example",    "例 "),
+                   ("corollary",  "系理 ")]
 {-
-renderDIV c cs ids avs bs | c `elem` thmEnvs = do
-  envBegin c ids
-  putStrTR "<b>" >> putStrTR env
-  if not (null ids) then latexCmd c $ Prelude.head ids
-                    else putStrTR " 0.0"
-  case lookup "title" avs of
-    Nothing -> return ()
-    Just title -> putStrTR "<b>" >> putStrTR title >> putStrTR "</b>"
-  --mapM_ (renderLabel h) ids
-  putStrTR "</b><br>\n"
-  renderBlocks bs
-  envEnd "</div>"
-  where thmEnvs :: [Text]
-        thmEnvs = ["theorem", "lemma", "definition", "example", "corollary"]
-        env = case c of
-              "theorem" -> "定理"
-              "lemma" -> "引理"
-              "definition" -> "定義"
-              "example" -> "範例"
-              "corollary" -> "推論"
-
 renderDIV "figure" cs ids avs bs = do
   putStrTR "<div id='"
   mapM_ (renderLabel h) ids
@@ -112,11 +101,11 @@ renderDIV "figure" cs ids avs bs = do
               putStrTR "</figcaption>\n"
             Nothing -> return ()
 
-renderDIV "texonly" _ _ _ bs = mapM_ renderTexOnly bs
-  where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br>\n"
-        renderTexOnly b = renderBlock h b
+renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
+  where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br/>\n"
+        renderTexOnly b = renderBlock b
 
-renderDIV "infobox" _ _ avs bs = do
+renderDIV "infobox" (_, _, avs) bs = do
    putStrTR "<div class = 'infobox'>\n"
    printTitle avs
    putStrTR "\n"
@@ -187,19 +176,13 @@ renderDIV "proof" _ ids _ bs = do
 
  -- catch-all case.
  -- possible instances: example, answer.
-renderDIV c cs ids avs bs = do
-  envBegin c ids
-  putStrTR c >> hPutChar h ':'
-  renderBlocks bs
-  envEnd h "</div>"
 
-renderLabel h xs = hPutStr h " id='" >> T.hPutStr h xs >> hPutStr h "'"
---renderLabel h xs = T.hPutStr h xs >> T.hPutStr h "'>" >> T.hPutStr h "1.1"
-renderLabel' h xs = do
-  T.hPutStr h xs
-  T.hPutStr h "'>"
 
 -}
+
+renderDIV c (cls, ids, avs) bs =
+  mkTagAttrsC "div" (c:cls, ids, avs)
+    (renderBlocks bs)
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
 renderHeader hd attrs is = do
@@ -292,3 +275,8 @@ mkTagAttrsC tag attrs body = do
    putCharR '<' >> putStrTR tag >> renderAttrsC attrs >> putCharR '>'
    body
    putStrR "</" >> putStrTR tag >> putCharR '>'
+
+ -- self-closing tags
+
+mkSCTag :: Text -> RMonad ()
+mkSCTag tag = putCharR '<' >> putStrTR tag >> putStrTR "/>"
