@@ -38,17 +38,20 @@ in ghci, where "goal" can be "pdf", "html", or any filename.
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
+  phonies
+  lhsRules
+  htmlRules
 
- phony "pdf" $ do
-   need [texBase </> "fpbook.pdf"]
-
- phony "html" $ do
-   need (map (\ch -> htmlChs </> ch <.> "html") chapters)
-
- lhsRules
-
- htmlRules
-
+phonies :: Rules ()
+phonies = do
+  phony "lhs" $
+    need (map (\ch -> lhsChs </> ch <.> "lhs") chapters)
+  phony "tex" $
+    need (map (\ch -> texChs </> ch <.> "tex") chapters)
+  phony "pdf" $
+    need [texBase </> "fpcr.pdf"]
+  phony "html" $
+    need (map (\ch -> htmlChs </> ch <.> "html") chapters)
 
 -- lhs, tex
 
@@ -60,19 +63,19 @@ lhsRules = do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->lhs (for " ++ lhsName ++ ")")
-   liftIO (genLHs mdName lhsName tmpls))
+   liftIO (genLHs mdName lhsName (tmpls </> "lhs")))
 
  forM_ chapters (\ch ->
   (texChs </> ch <.> "tex") %> \texName -> do
    let lhsName = lhsChs </> ch <.> "lhs"
    need [lhsName]
    command_ [Cwd texBase, FileStdout texName]
-     "lhs2TeX" [".." </> lhsName])
+     "lhs2TeX" [".." </> ".." </> lhsName])
 
- (texBase </> "fpbook.pdf") %> \out -> do
+ (texBase </> "fpcr.pdf") %> \out -> do
   need (map (\ch -> texChs </> ch <.> "tex") chapters)
-  need [texBase </> "fpbook.tex"]
-  command_ [Cwd texBase] "xelatex" ["fpbook"]
+  need [texBase </> "fpcr.tex"]
+  command_ [Cwd texBase] "xelatex" ["fpcr"]
 
 -- html
 
@@ -96,7 +99,7 @@ htmlRules = do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName tmpls))
+   liftIO (genHtml mdName htmlName (tmpls </> "html")))
 
 -- newtype BuildLblMap = BuildLblMap ()
 --   deriving (Show, Eq, Binary, NFData, Typeable, Hashable)
@@ -117,14 +120,15 @@ chapters = [ "Introduction"
            ]
 -- paths
 
-contents = "contents"
+root      = "fpcr"
+contents  = root </> "contents"
 
-texBase   = "tex"
-lhsBase   = "lhs"
-htmlBase  = "html"
+texBase   = root </> "tex"
+lhsBase   = root </> "lhs"
+htmlBase  = root </> "html"
 lhsChs    = lhsBase  </> "Chapters"
 texChs    = texBase  </> "Chapters"
 htmlChs   = htmlBase </> "Chapters"
 
-tmpls     = "templates"
-tmp       = "tmp"
+tmpls     = root </> "templates"
+tmp       = root </> "tmp"
