@@ -8,6 +8,7 @@ import System.IO (openFile, hClose, stdout, IOMode(..), Handle)
 import qualified System.IO as IO
 
 import Control.Monad.State
+import Control.Monad.Reader
 
 import qualified Data.ByteString as BS (ByteString, readFile)
 import Data.Text (Text)
@@ -21,6 +22,7 @@ import Cheapskate
 
 import Html.Counter
 import Html.Scanning
+import Html.Render
 
 import Development.Shake.FilePath
 
@@ -51,15 +53,19 @@ genLblMap hauxname = do
 genLblMaps :: [String] -> IO LblMap
 genLblMaps hauxnames = Map.unions <$> (mapM genLblMap hauxnames)
 
-genHtml :: String -> String -> String -> IO ()
-genHtml mdname htmlname tmpls = do
+genHtml :: String -> String -> String -> LblMap -> IO ()
+genHtml mdname htmlname tmpls lmap = do
     hdl <- openFile htmlname WriteMode
     readFile htmlHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= handleHtml hdl
+    readFile mdname >>= printHtml hdl lmap
     readFile htmlFooter >>= TIO.hPutStr hdl
     hClose hdl
   where htmlHeader = tmpls </> "htmlheader.html"
         htmlFooter = tmpls </> "htmlfooter.html"
 
-handleHtml :: Handle -> Text -> IO ()
-handleHtml h = undefined -- htmlRender h . markdown def
+printHtml :: Handle -> LblMap -> Text -> IO ()
+printHtml h lmap content =
+    evalStateT
+      (runReaderT (htmlRender . markdown def $ content)
+                  (h, lmap))
+      (initChCounter 0)

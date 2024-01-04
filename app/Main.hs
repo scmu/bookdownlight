@@ -7,6 +7,7 @@ import qualified System.IO as IO
 import System.Directory
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+import qualified Data.Map as Map
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
 import Control.Monad (forM_)
@@ -83,23 +84,26 @@ htmlRules :: Rules ()
 htmlRules = do
 
  forM_ (zip [-1..] chapters) (\(i,ch) ->
-  (tmp </> ch <.> "haux") %> \hauxName -> do
+  (tmp </> "html" </> ch <.> "haux") %> \hauxName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
 
  buildLblMap <- newCache $ \() -> do
-   let hauxNames = [ tmp </> ch <.> "haux" | ch <- chapters]
+   let hauxNames = [ tmp </> "html" </> ch <.> "haux" | ch <- chapters]
    need hauxNames
+   putInfo ("# building label map from " ++ show hauxNames)
    liftIO (genLblMaps hauxNames)
 
  forM_ chapters (\ch ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
+   lblMap <- buildLblMap ()
+   putInfo ("# size of lmap: " ++ show (Map.size lblMap))
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName (tmpls </> "html")))
+   liftIO (genHtml mdName htmlName (tmpls </> "html") lblMap))
 
 -- newtype BuildLblMap = BuildLblMap ()
 --   deriving (Show, Eq, Binary, NFData, Typeable, Hashable)

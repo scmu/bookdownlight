@@ -7,6 +7,7 @@ import Data.Sequence (Seq(..))
 import Data.Text (Text, head)
 import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
+import qualified Data.Map as Map
 import Control.Monad.State
 import Control.Monad.Reader
 
@@ -16,11 +17,17 @@ import Syntax.Util
 
 import Html.Counter
 
+---- types and methods
+
 type RMonad = ReaderT (Handle, LblMap) (StateT Counter IO)
 
 putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . fst)
 putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . fst)
 putStrTR  xs = ReaderT (liftIO . flip T.hPutStr  xs . fst)
+
+lookupLbl lbl = ReaderT (return . maybe [] id . Map.lookup lbl . snd)
+
+---- rendering
 
 htmlRender :: Doc -> RMonad ()
 htmlRender (Doc _ blocks) = renderBlocks blocks
@@ -32,7 +39,7 @@ renderBlock :: Block -> RMonad ()
 renderBlock (Para (Attrs attrs :<| is)) =
   mkTagAttrs "p" attrs' (do
     case lookupAttrs "title" attrs of
-        Just title -> mkTagAttrs "b" attrs' (putStrTR title) >> putStrTR " &emsp;"
+        Just title -> mkTag "b" (putStrTR title) >> putStrTR " &emsp;"
         _ -> return ()
     renderInlines is)
  where attrs' = filter (\atr -> not (isThisAtr "title"    atr ||
@@ -58,7 +65,7 @@ renderBlock (DIV attrs bs)
         avs = attrsAVs attrs
 
 renderDIV :: Text -> [Text] -> [Text] -> [(Text, Text)] -> Blocks -> RMonad ()
-renderDIV _ _ _ _ _ = return () 
+renderDIV _ _ _ _ _ = return ()
 {-
 renderDIV c cs ids avs bs | c `elem` thmEnvs = do
   envBegin c ids
@@ -195,17 +202,62 @@ renderLabel' h xs = do
 -}
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
-renderHeader hd attrs is =
+renderHeader hd attrs is = do
+  nums <- state (newHeader hd)
   let (htag, hcls) = seclevel hd
-  in mkTagAttrs htag (AtrClass hcls : attrs)
-        (renderInlines is)
+  mkTagAttrs htag (AtrClass hcls : attrs)
+      (do printSecNum nums
+          renderInlines is)
  where seclevel 1 = ("h1", "chapter")
        seclevel 2 = ("h2", "section")
        seclevel 3 = ("h3", "subsection")
        seclevel 4 = ("h4", "subsubsection")
 
+printSecNum :: [Int] -> RMonad ()
+printSecNum []     = return ()
+printSecNum [i]    = putStrR (show i) >> putCharR ' '
+printSecNum (i:is) = putStrR (show i) >> putCharR '.' >> printSecNum is
+
+
 renderInlines :: Inlines -> RMonad ()
-renderInlines _ = return ()
+renderInlines = mapM_ renderInline
+
+renderInline :: Inline -> RMonad ()
+renderInline (Str txt) = putStrTR txt
+renderInline Space     = putCharR ' '
+renderInline SoftBreak = putStrTR "&shy;"
+renderInline LineBreak = putStrTR "<br/>\n"
+renderInline (Emph inlines) =
+  mkTag "em" (renderInlines inlines)
+renderInline (Strong inlines) =
+  mkTag "b" (renderInlines inlines)
+renderInline (Code txt) =
+  mkTag "code" (putStrTR txt)
+renderInline (HsCode txt) =
+  mkTagAttrsC "code" (["haskell"], [], []) (putStrTR txt)
+renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
+renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
+renderInline (RawHtml txt) = putStrTR txt
+renderInline (Attrs attrs) = return () -- deal with this later
+renderInline (Footnote is) = do
+     (i:_) <- state newFNote
+     mkTagAttrsC "span" (["footnote"], [], [])
+      (do putStrTR "註" >> putStrR (show i) >> putStrTR ": "
+          renderInlines is)
+renderInline (Ref txt)   = renderRef txt
+renderInline (EqRef txt) = putCharR '(' >> renderRef txt >> putCharR ')'
+renderInline (PageRef txt) = return () -- deal with this later
+renderInline (Index idx) = return () -- deal with this later
+renderInline (CiteT ref Nothing) = return () -- deal with this later
+renderInline (CiteT ref (Just opt)) = return () -- deal with this later
+renderInline (CiteP [(ref, Just opt)]) = return () -- deal with this later
+renderInline (CiteP cites) = return () -- deal with this later
+
+renderRef :: Text -> RMonad ()
+renderRef lbl = do
+    nums <- lookupLbl lbl
+    mkTagAttrsC "a" ([], [], [href]) (printSecNum nums)
+  where href = ("href", lbl)
 
 renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> RMonad ()
 renderCode _ _ _ _ = return ()

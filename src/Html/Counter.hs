@@ -3,15 +3,15 @@ import Data.Text (Text)
 import Data.Map (Map)
 
 data Counter = Counter
-      { chC :: !Int
-      , secC :: !Int
+      { chC     :: !Int
+      , secC    :: !Int
       , subsecC :: !Int
       -- , subsubsecC :: !Int
-      , thmC  :: !Int  -- shared by theorem, lemma, definition, example
-      , figC  :: !Int
-      , eqC   :: !Int
-      , exerC :: !Int
-      , footnoteC :: !Int
+      , thmC    :: !Int  -- shared by theorem, lemma, definition, example
+      , figC    :: !Int
+      , eqC     :: !Int
+      , exerC   :: !Int
+      , fnoteC  :: !Int
      }
   deriving Show
 
@@ -37,12 +37,16 @@ newHeader 2 = newSec
 newHeader 3 = newSubSec
 
 newThm :: Counter -> ([Int], Counter)
-newThm cnt = ([chC cnt', thmC cnt'] , cnt')
+newThm cnt = ([chC cnt', thmC cnt'], cnt')
   where cnt' = cnt { thmC = thmC cnt + 1 }
 
 newExer :: Counter -> ([Int], Counter)
-newExer cnt = ([chC cnt', exerC cnt'] , cnt')
+newExer cnt = ([chC cnt', exerC cnt'], cnt')
   where cnt' = cnt { exerC = exerC cnt + 1 }
+
+newFNote :: Counter -> ([Int], Counter)
+newFNote cnt = ([fnoteC cnt'], cnt')
+  where cnt' = cnt { fnoteC = fnoteC cnt + 1 }
 
 ------
 
