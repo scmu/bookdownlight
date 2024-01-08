@@ -16,11 +16,11 @@ import Html.Counter
 
 type LMonad a = State Counter a
 
-type TOCIs = [(Int, ( [Int]   -- section number
+type TOCIs = [(Int, ( RefNum     -- section number
                     , Inlines    -- title
-                    , Text    -- label
+                    , Text       -- label
                     ))]
-type Dict  = [(Text, [Int])]
+type Dict  = [(Text, RefNum)]
 
 scanDoc :: Doc -> LMonad (TOCIs, Dict)
 scanDoc (Doc _ bs) = scanBlocks bs

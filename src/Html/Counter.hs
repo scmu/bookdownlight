@@ -15,38 +15,50 @@ data Counter = Counter
      }
   deriving Show
 
+type RefNum = ([Int]    -- file identifier. non-empty
+              ,[Int])   -- actual displayed number. non-empty
+
 initCounter :: Int -> Counter
 initCounter i = Counter i 0 0 0 0 0 0 0
 
-newChap :: Counter -> ([Int], Counter)
-newChap cnt = ([chC cnt + 1],
-               Counter (chC cnt + 1) 0 0 0 0 0 0 0)
+newChap :: Counter -> (RefNum, Counter)
+newChap cnt = (([ch],[ch]), Counter ch 0 0 0 0 0 0 0)
+     where ch = chC cnt + 1
 
-newSec :: Counter -> ([Int], Counter)
-newSec cnt = ([chC cnt', secC cnt'], cnt')
-  where cnt' = cnt { secC = secC cnt + 1
-                   , subsecC = 0}
+newSec :: Counter -> (RefNum, Counter)
+newSec cnt = (([ch, sec], [ch, sec]), cnt')
+  where cnt' = cnt { secC = sec, subsecC = 0}
+        (ch, sec) = (chC cnt, secC cnt + 1)
 
-newSubSec :: Counter -> ([Int], Counter)
-newSubSec cnt = ([chC cnt', secC cnt', subsecC cnt'], cnt')
-  where cnt' = cnt { subsecC = subsecC cnt + 1 }
+newSubSec :: Counter -> (RefNum, Counter)
+newSubSec cnt = (([ch, sec], [ch, sec, subsec]), cnt')
+  where cnt' = cnt { subsecC = subsec }
+        (ch, sec, subsec) = (chC cnt, secC cnt, subsecC cnt + 1)
 
-newHeader :: Int -> Counter -> ([Int], Counter)
+newHeader :: Int -> Counter -> (RefNum, Counter)
 newHeader 1 = newChap
 newHeader 2 = newSec
 newHeader 3 = newSubSec
 
-newThm :: Counter -> ([Int], Counter)
-newThm cnt = ([chC cnt', thmC cnt'], cnt')
+newThm :: Counter -> (RefNum, Counter)
+newThm cnt = (([ch, sec], [ch, thmC cnt']), cnt')
   where cnt' = cnt { thmC = thmC cnt + 1 }
+        (ch, sec) = (chC cnt, secC cnt)
 
-newExer :: Counter -> ([Int], Counter)
-newExer cnt = ([chC cnt', exerC cnt'], cnt')
+newExer :: Counter -> (RefNum, Counter)
+newExer cnt = (([ch, sec], [ch, exerC cnt']), cnt')
   where cnt' = cnt { exerC = exerC cnt + 1 }
+        (ch, sec) = (chC cnt, secC cnt)
 
-newFNote :: Counter -> ([Int], Counter)
-newFNote cnt = ([fnoteC cnt'], cnt')
+newFNote :: Counter -> (RefNum, Counter)
+newFNote cnt = (([ch, sec], [fnoteC cnt']), cnt')
   where cnt' = cnt { fnoteC = fnoteC cnt + 1 }
+        (ch, sec) = (chC cnt, secC cnt)
+
+newEq :: Counter -> (RefNum, Counter)
+newEq cnt = (([ch, sec], [ch, eqC cnt']), cnt')
+  where cnt' = cnt { eqC = eqC cnt + 1 }
+        (ch, sec) = (chC cnt, secC cnt)
 
 ------
 
@@ -59,4 +71,4 @@ type TOC = Rose TOCItem
 
 ------
 
-type LblMap = Map Text [Int]
+type LblMap = Map Text RefNum

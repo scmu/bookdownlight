@@ -40,7 +40,7 @@ genHAux i mdname hauxname = do
 mkHAux :: Int -> Text -> ((TOCIs, Dict), Counter)
 mkHAux i contents =
         let doc = markdown def $ contents
-        in runState (scanDoc doc) (initChCounter i)
+        in runState (scanDoc doc) (initChCounter (i-1))
 
 readHAux :: String -> IO (TOCIs, Dict)
 readHAux hauxname = IO.readFile hauxname >>= (return . read)
@@ -53,19 +53,22 @@ genLblMap hauxname = do
 genLblMaps :: [String] -> IO LblMap
 genLblMaps hauxnames = Map.unions <$> (mapM genLblMap hauxnames)
 
-genHtml :: String -> String -> String -> LblMap -> IO ()
-genHtml mdname htmlname tmpls lmap = do
+genHtml :: String -> String -> String
+         -> (Int, [String], LblMap) -> IO ()
+genHtml mdname htmlname tmpls (this, allFileNames, lmap) = do
     hdl <- openFile htmlname WriteMode
     readFile htmlHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= printHtml hdl lmap
+    readFile mdname >>= printHtml hdl (this, allFileNames, lmap)
     readFile htmlFooter >>= TIO.hPutStr hdl
     hClose hdl
   where htmlHeader = tmpls </> "htmlheader.html"
         htmlFooter = tmpls </> "htmlfooter.html"
 
-printHtml :: Handle -> LblMap -> Text -> IO ()
-printHtml h lmap content =
+printHtml :: Handle -> (Int, [String], LblMap)
+          -> Text -> IO ()
+printHtml h (this, allFileNames, lmap) content =
     evalStateT
       (runReaderT (htmlRender . markdown def $ content)
-                  (h, lmap))
-      (initChCounter 0)
+                  renv)
+      (initChCounter (this-1))
+  where renv = REnv [this] allFileNames h lmap

@@ -83,7 +83,7 @@ lhsRules = do
 htmlRules :: Rules ()
 htmlRules = do
 
- forM_ (zip [-1..] chapters) (\(i,ch) ->
+ forM_ (zip [0..] chapters) (\(i,ch) ->
   (tmp </> "html" </> ch <.> "haux") %> \hauxName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
@@ -96,14 +96,15 @@ htmlRules = do
    putInfo ("# building label map from " ++ show hauxNames)
    liftIO (genLblMaps hauxNames)
 
- forM_ chapters (\ch ->
+ forM_ (zip [0..] chapters) (\(i,ch) ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    lblMap <- buildLblMap ()
    putInfo ("# size of lmap: " ++ show (Map.size lblMap))
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName (tmpls </> "html") lblMap))
+   liftIO (genHtml mdName htmlName (tmpls </> "html")
+             (i, chapters, lblMap)))
 
 -- newtype BuildLblMap = BuildLblMap ()
 --   deriving (Show, Eq, Binary, NFData, Typeable, Hashable)

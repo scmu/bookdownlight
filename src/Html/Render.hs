@@ -4,7 +4,8 @@ module Html.Render where
 import System.IO (Handle)
 import qualified System.IO as IO (hPutChar, hPutStr)
 import Data.Sequence (Seq(..))
-import Data.Text (Text, head)
+import Data.Text (Text)
+import qualified Data.Text as Text (cons, append, pack)
 import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -19,13 +20,28 @@ import Html.Counter
 
 ---- types and methods
 
-type RMonad = ReaderT (Handle, LblMap) (StateT Counter IO)
+data REnv = REnv { thisFileR     :: [Int]
+                 , allFileNamesR :: [String]
+                 , outHdlR       :: Handle
+                 , lMapR         :: LblMap
+                 }
 
-putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . fst)
-putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . fst)
-putStrTR  xs = ReaderT (liftIO . flip T.hPutStr  xs . fst)
+type RMonad = ReaderT REnv (StateT Counter IO)
 
-lookupLbl lbl = ReaderT (return . maybe [] id . Map.lookup lbl . snd)
+putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . outHdlR)
+putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . outHdlR)
+putStrTR  xs = ReaderT (liftIO . flip T.hPutStr  xs . outHdlR)
+
+lookupLbl :: Text -> RMonad (Maybe RefNum)
+lookupLbl lbl = reader (Map.lookup lbl . lMapR)
+
+isThisFile :: Int -> RMonad Bool
+isThisFile i = reader ((i==) . head . thisFileR)
+
+chToFileName :: Int -> RMonad String
+chToFileName i = reader (pick i . allFileNamesR)
+   where pick i chs | i < length chs = chs !! i
+                    | otherwise = ""
 
 ---- rendering
 
@@ -53,10 +69,7 @@ renderBlock (List _ lt items) =
  where ltype (Bullet _)     = "ul"
        ltype (Numbered _ _) = "ol"
        renderLItem bs = mkTag "li" (renderBlocks bs)
-renderBlock (CodeBlock attrs txt) = renderCode cls ids avs txt
-  where ids = attrsId attrs
-        cls = attrsClass attrs
-        avs = attrsAVs attrs
+renderBlock (CodeBlock attrs txt) = renderCode (sortAttrs attrs) txt
 renderBlock (DIV attrs bs)
      | []     <- cls = renderBlocks bs
      | (c:cs) <- cls = renderDIV c (cs,ids,avs) bs
@@ -65,7 +78,7 @@ renderBlock (DIV attrs bs)
 renderDIV :: Text -> ([Text], [Text], [(Text, Text)]) -> Blocks -> RMonad ()
 
 renderDIV c (cs,ids,avs) bs | Just zh <- lookup c thmEnvs = do
-  nums <- state newThm
+  (_, nums) <- state newThm
   mkTagAttrsC "div" (cs,ids,avs)
    (do mkTag "b" (do putStrTR zh >> printSecNum nums >> putCharR ' '
                      maybe (return ())
@@ -100,23 +113,20 @@ renderDIV "figure" cs ids avs bs = do
               putStrTR cap
               putStrTR "</figcaption>\n"
             Nothing -> return ()
-
+-}
 renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
   where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br/>\n"
         renderTexOnly b = renderBlock b
 
-renderDIV "infobox" (_, _, avs) bs = do
-   putStrTR "<div class = 'infobox'>\n"
-   printTitle avs
-   putStrTR "\n"
-   renderBlocks (fmap infoindent bs)
-   putStrTR "</div>"
+renderDIV c@"infobox" (cls, ids, avs) bs =
+   mkTagAttrsC "div" (c:cls, ids, avs)
+     (do printTitle avs
+         renderBlocks bs )
  where printTitle avs = case lookup "title" avs of
-         Just cap -> putStrTR "<b>" >> putStrTR cap >> putStrTR "</b><br>\n"
+         Just cap -> mkTag "b" (putStrTR cap) >> mkSCTag "br"
          Nothing -> return ()
-       infoindent (Para is) = Para (Str " " :<| is )
-       infoindent b = b
 
+{-
 renderDIV "multicols" _ _ avs bs = do
   putStrTR "<table>\n"
   renderBlocks bs
@@ -130,55 +140,36 @@ renderDIV "mcol" _ _ avs bs = do
                  renderBlocks bs
                  putStrTR "</td>\n</tr>\n"
     Nothing -> renderBlocks bs
-
-renderDIV "exlist" _ _ _ bs = do
-  putStrTR "<div class='exlist'>\n"
-  putStrTR "\n"
-  renderBlocks bs
-  putStrTR "</div>\n"
-
-renderDIV "exer" _ ids _ bs = do
-  putStrTR "<div class='exercise'"
-  mapM_ (renderLabel h) ids
-  putStrTR ">\n<b>練習"
-  if not $ null ids then do latexCmd h "exer" $ Prelude.head ids else do putStrTR " 0.0"
-  putStrTR "</b><br>\n"
-  renderBlocks bs
-  putStrTR "</div>\n"
-
-renderDIV "exans" cs _ _ bs = do
-  putStrTR "<div class='answer'>\n<b>答案</b>"
-  printCompact
-  putStrTR "\n"
-  renderBlocks bs
-  putStrTR "</div>\n"
- where printCompact | "compact" `elem` cs = putStrTR " "
-                    | otherwise = return ()
-
-renderDIV "answer" _ ids _ bs = do
-  putStrTR "<div class='answer'"
-  mapM_ (renderLabel h) ids
-  putStrTR ">\n<b>答案</b><br>\n"
-  renderBlocks bs
-  putStrTR "</div>\n"
-
-renderDIV "center" cs ids avs bs = do
-  putStrTR "<center>"
-  renderBlocks bs
-  envEnd h "</center>"
-
-renderDIV "proof" _ ids _ bs = do
-  putStrTR "<div class='proof'"
-  mapM_ (renderLabel h) ids
-  putStrTR ">\n<b>證明</b><br>\n"
-  renderBlocks bs
-  putStrTR "</div>\n"
-
- -- catch-all case.
- -- possible instances: example, answer.
-
-
 -}
+
+renderDIV c@"exlist" (cs, ids, avs) bs =
+  mkTagAttrsC "div" (c:cs, ids, avs)
+    (renderBlocks bs)
+
+renderDIV c@"exer" (cs, ids, avs) bs = do
+  (_, nums) <- state newExer
+  mkTagAttrsC "div" (c:cs, ids, avs)
+    (do mkTag "b" (putStrTR "練習 " >> printSecNum nums >> putCharR ' ')
+        renderBlocks bs)
+
+renderDIV c@"exans" (cs, ids, avs) bs =
+  mkTagAttrsC "div" (c:cs, ids, avs)
+    (do mkTag "b" (putStrTR "答案 ")
+        renderBlocks bs)
+
+renderDIV c@"answer" (cs, ids, avs) bs =
+  mkTagAttrsC "div" (c:cs, ids, avs)
+    (do mkTag "b" (putStrTR "答案 ")
+        renderBlocks bs)
+
+renderDIV c@"center" (cs, ids, avs) bs = do
+  mkTagAttrsC "center" (cs, ids, avs)
+    (renderBlocks bs)
+
+renderDIV c@"proof" (cs, ids, avs) bs =
+  mkTagAttrsC "div" (c:cs, ids, avs)
+    (do mkTag "b" (putStrTR "證明 ")
+        renderBlocks bs)
 
 renderDIV c (cls, ids, avs) bs =
   mkTagAttrsC "div" (c:cls, ids, avs)
@@ -186,7 +177,7 @@ renderDIV c (cls, ids, avs) bs =
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
 renderHeader hd attrs is = do
-  nums <- state (newHeader hd)
+  (_, nums) <- state (newHeader hd)
   let (htag, hcls) = seclevel hd
   mkTagAttrs htag (AtrClass hcls : attrs)
       (do printSecNum nums
@@ -213,7 +204,7 @@ renderInline LineBreak = putStrTR "<br/>\n"
 renderInline (Emph inlines) =
   mkTag "em" (renderInlines inlines)
 renderInline (Strong inlines) =
-  mkTag "b" (renderInlines inlines)
+  mkTag "strong" (renderInlines inlines)
 renderInline (Code txt) =
   mkTag "code" (putStrTR txt)
 renderInline (HsCode txt) =
@@ -223,7 +214,7 @@ renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
 renderInline (Attrs attrs) = return () -- deal with this later
 renderInline (Footnote is) = do
-     (i:_) <- state newFNote
+     (_, (i:_)) <- state newFNote
      mkTagAttrsC "span" (["footnote"], [], [])
       (do putStrTR "註" >> putStrR (show i) >> putStrTR ": "
           renderInlines is)
@@ -238,12 +229,48 @@ renderInline (CiteP cites) = return () -- deal with this later
 
 renderRef :: Text -> RMonad ()
 renderRef lbl = do
-    nums <- lookupLbl lbl
-    mkTagAttrsC "a" ([], [], [href]) (printSecNum nums)
-  where href = ("href", lbl)
+    res <- lookupLbl lbl
+    case res of
+      Nothing -> putStrTR "[RefUndefined]"
+      Just (file, nums) -> do
+        href <- showHRef file lbl
+        mkTagAttrsC "a" ([], [], [("href", href)])
+                    (printSecNum nums)
 
-renderCode :: [Text] -> [Text] -> [(Text, Text)] -> Text -> RMonad ()
-renderCode _ _ _ _ = return ()
+showHRef :: [Int] -> Text -> RMonad Text
+showHRef (ch:_) lbl = do
+   b <- isThisFile ch
+   if b then return (Text.cons '#' lbl)
+      else do fname <- chToFileName ch
+              return (Text.append (Text.pack (fname ++ ".html#")) lbl)
+
+
+renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
+-- renderCode (cs,ids,avs) txt = return ()
+renderCode (cs,ids,avs) txt | "texonly" `elem` cs = return ()
+
+renderCode (cs,ids,avs) txt | "equation" `elem` cs =
+  mkTagAttrsC "pre" ([],[],invis) (do
+    (_, nums) <- state newEq
+    mkTagAttrsC "code" (cs', ids, invis++avs)
+      (putCharR '\n' >> putStrTR txt)
+    putStrTR "    ("
+    printSecNum nums
+    putStrTR ")\n")
+ where invisible = "invisible" `elem` cs
+       cs' = filter ("invisible" /=) cs
+       invis | invisible = [("style", "display:none")]
+             | otherwise = []
+
+renderCode (cs,ids,avs) txt =
+  mkTagAttrsC "pre" ([],[],invis) (
+    mkTagAttrsC "code" (cs', ids, invis++avs)
+      (putCharR '\n' >> putStrTR txt >> putCharR '\n'))
+ where invisible = "invisible" `elem` cs
+       cs' = filter ("invisible" /=) cs
+       invis | invisible = [("style", "display:none")]
+             | otherwise = []
+
 
 renderAttrsC :: AttrsC -> RMonad ()
 renderAttrsC (cls, ids, avs) =
