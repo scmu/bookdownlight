@@ -1,6 +1,9 @@
 module Html.Counter where
+
 import Data.Text (Text)
 import Data.Map (Map)
+
+import Cheapskate (Inlines)
 
 data Counter = Counter
       { chC     :: !Int
@@ -18,8 +21,8 @@ data Counter = Counter
 type RefNum = ([Int]    -- file identifier. non-empty
               ,[Int])   -- actual displayed number. non-empty
 
-initCounter :: Int -> Counter
-initCounter i = Counter i 0 0 0 0 0 0 0
+initChCounter :: Int -> Counter
+initChCounter i = Counter i 0 0 0 0 0 0 0
 
 newChap :: Counter -> (RefNum, Counter)
 newChap cnt = (([ch],[ch]), Counter ch 0 0 0 0 0 0 0)
@@ -59,16 +62,34 @@ newEq :: Counter -> (RefNum, Counter)
 newEq cnt = (([ch, sec], [ch, eqC cnt']), cnt')
   where cnt' = cnt { eqC = eqC cnt + 1 }
         (ch, sec) = (chC cnt, secC cnt)
-
+ 
 ------
 
 data Rose a = RNode a [Rose a]
-type TOCItem = ( [Int]   -- section number
-               , Text    -- title
-               , Text    -- label
-               )
-type TOC = Rose TOCItem
+     deriving Show
 
+type TOCItem = ( RefNum     -- file id and section number
+               , Inlines    -- title
+               , Text       -- label
+               )
+
+type TOC = [Rose TOCItem]
+
+buildRose :: Int -> [(Int, a)] -> [Rose a]
+buildRose i = fst . parseRose i
+
+parseRose :: Int -> [(Int, a)] -> ([Rose a], [(Int, a)])
+parseRose i [] = ([], [])
+parseRose i ((j,x):xs)
+  | i == j = let (ts, ys) = parseRose (i+1) xs
+                 (us, zs) = parseRose i ys
+             in (RNode x ts : us, zs)
+  | i > j  = ([], (j,x):xs)
+  | i < j  = parseRose j ((j,x):xs)
+
+tstL :: [(Int, Char)]
+tstL = zip [1,2,3,3,3,2,3,3,2,2]
+           ['a'..]
 ------
 
 type LblMap = Map Text RefNum

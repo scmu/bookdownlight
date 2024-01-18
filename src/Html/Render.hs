@@ -9,6 +9,7 @@ import qualified Data.Text as Text (cons, append, pack)
 import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Control.Arrow ((***))
 import Control.Monad.State
 import Control.Monad.Reader
 
@@ -17,36 +18,18 @@ import Cheapskate
 import Syntax.Util
 
 import Html.Counter
-
----- types and methods
-
-data REnv = REnv { thisFileR     :: [Int]
-                 , allFileNamesR :: [String]
-                 , outHdlR       :: Handle
-                 , lMapR         :: LblMap
-                 }
-
-type RMonad = ReaderT REnv (StateT Counter IO)
-
-putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . outHdlR)
-putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . outHdlR)
-putStrTR  xs = ReaderT (liftIO . flip T.hPutStr  xs . outHdlR)
-
-lookupLbl :: Text -> RMonad (Maybe RefNum)
-lookupLbl lbl = reader (Map.lookup lbl . lMapR)
-
-isThisFile :: Int -> RMonad Bool
-isThisFile i = reader ((i==) . head . thisFileR)
-
-chToFileName :: Int -> RMonad String
-chToFileName i = reader (pick i . allFileNamesR)
-   where pick i chs | i < length chs = chs !! i
-                    | otherwise = ""
+import Html.RenderMonad
+import Html.Pure
 
 ---- rendering
 
-htmlRender :: Doc -> RMonad ()
-htmlRender (Doc _ blocks) = renderBlocks blocks
+htmlRender :: Doc -> (Maybe (RMonad ()), RMonad ())
+htmlRender (Doc _ blocks) =
+   (fmap (\ (Header _ attrs is) -> renderHeader 1 attrs is) ***
+     renderBlocks) . sepChHeader $ blocks
+
+renderDoc :: Doc -> RMonad ()
+renderDoc (Doc _ blocks) = renderBlocks blocks
 
 renderBlocks :: Blocks -> RMonad ()
 renderBlocks = mapM_ renderBlock
@@ -79,13 +62,12 @@ renderDIV :: Text -> ([Text], [Text], [(Text, Text)]) -> Blocks -> RMonad ()
 
 renderDIV c (cs,ids,avs) bs | Just zh <- lookup c thmEnvs = do
   (_, nums) <- state newThm
-  mkTagAttrsC "div" (cs,ids,avs)
-   (do mkTag "b" (do putStrTR zh >> printSecNum nums >> putCharR ' '
-                     maybe (return ())
+  mkThmBox (cs,ids,avs)
+             (do putStrTR zh >> printSecNum nums >> putCharR ' '
+                 maybe (return ())
                        (\title -> putStrTR title >> putCharR ' ')
-                       (lookup "title" avs))
-       mkSCTag "br"
-       renderBlocks bs)
+                   (lookup "title" avs))
+            (renderBlocks bs)
   where thmEnvs = [("theorem",    "定理 "), ("lemma",      "引理 "),
                    ("definition", "定義 "), ("example",    "例 "),
                    ("corollary",  "系理 ")]
@@ -119,11 +101,10 @@ renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
         renderTexOnly b = renderBlock b
 
 renderDIV c@"infobox" (cls, ids, avs) bs =
-   mkTagAttrsC "div" (c:cls, ids, avs)
-     (do printTitle avs
-         renderBlocks bs )
+   mkInfoBox (c:cls, ids, avs)
+      (printTitle avs) (renderBlocks bs)
  where printTitle avs = case lookup "title" avs of
-         Just cap -> mkTag "b" (putStrTR cap) >> mkSCTag "br"
+         Just cap -> putStrTR cap
          Nothing -> return ()
 
 {-
@@ -148,19 +129,21 @@ renderDIV c@"exlist" (cs, ids, avs) bs =
 
 renderDIV c@"exer" (cs, ids, avs) bs = do
   (_, nums) <- state newExer
-  mkTagAttrsC "div" (c:cs, ids, avs)
-    (do mkTag "b" (putStrTR "練習 " >> printSecNum nums >> putCharR ' ')
-        renderBlocks bs)
+  mkExerBox (c:cs, ids, avs)
+     (putStrTR "練習 " >> printSecNum nums)
+     (renderBlocks bs)
 
-renderDIV c@"exans" (cs, ids, avs) bs =
-  mkTagAttrsC "div" (c:cs, ids, avs)
-    (do mkTag "b" (putStrTR "答案 ")
-        renderBlocks bs)
+renderDIV c@"exans" (cs, ids, avs) bs = do
+  counters <- currentCounters
+  mkAnsBox (c:cs, ids, avs) [chC counters, exerC counters]
+     (putStrTR "答案")
+     (renderBlocks bs)
 
-renderDIV c@"answer" (cs, ids, avs) bs =
-  mkTagAttrsC "div" (c:cs, ids, avs)
-    (do mkTag "b" (putStrTR "答案 ")
-        renderBlocks bs)
+renderDIV c@"answer" (cs, ids, avs) bs = do
+  counters <- currentCounters
+  mkAnsBox (c:cs, ids, avs) [chC counters, exerC counters]
+     (putStrTR "答案")
+     (renderBlocks bs)
 
 renderDIV c@"center" (cs, ids, avs) bs = do
   mkTagAttrsC "center" (cs, ids, avs)
@@ -246,64 +229,47 @@ showHRef (ch:_) lbl = do
 
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
--- renderCode (cs,ids,avs) txt = return ()
+renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
 renderCode (cs,ids,avs) txt | "texonly" `elem` cs = return ()
 
 renderCode (cs,ids,avs) txt | "equation" `elem` cs =
-  mkTagAttrsC "pre" ([],[],invis) (do
+  mkTag "pre" (do
     (_, nums) <- state newEq
-    mkTagAttrsC "code" (cs', ids, invis++avs)
-      (putCharR '\n' >> putStrTR txt)
+    mkTagAttrsC "code" (cs, ids, avs) (putStrTR txt)
     putStrTR "    ("
     printSecNum nums
     putStrTR ")\n")
- where invisible = "invisible" `elem` cs
-       cs' = filter ("invisible" /=) cs
-       invis | invisible = [("style", "display:none")]
-             | otherwise = []
 
 renderCode (cs,ids,avs) txt =
-  mkTagAttrsC "pre" ([],[],invis) (
-    mkTagAttrsC "code" (cs', ids, invis++avs)
-      (putCharR '\n' >> putStrTR txt >> putCharR '\n'))
- where invisible = "invisible" `elem` cs
-       cs' = filter ("invisible" /=) cs
-       invis | invisible = [("style", "display:none")]
-             | otherwise = []
+  mkTag "pre" (
+    mkTagAttrsC "code" (cs, ids, avs)
+      (putStrTR txt >> putCharR '\n'))
 
+--- TOC
 
-renderAttrsC :: AttrsC -> RMonad ()
-renderAttrsC (cls, ids, avs) =
-   renderCls cls >> renderIds ids >> renderAVs avs
- where  -- classes joined together, separated by space
-       renderCls [] = return ()
-       renderCls (c:cs) = putStrTR " class=\"" >> putStrTR c >>
-                          renderCls0 cs
-       renderCls0 [] = putCharR '"'
-       renderCls0 (c:cs) = putCharR ' ' >> putStrTR c >> renderCls0 cs
-        -- there can be at most one id
-       renderIds [] = return ()
-       renderIds (i:_) = putStrTR " id=\"" >> putStrTR i >> putCharR '"'
+renderTOCsList :: TOC -> RMonad ()
+renderTOCsList [] = return ()
+renderTOCsList ts =
+  mkTag "ul" (mapM_ renderTOCList ts)
 
-renderAVs :: [(Text, Text)] -> RMonad ()
-renderAVs = mapM_ renderAttr
-  where renderAttr (a, v) = do
-           putCharR ' ' >> putStrTR a >> putStrTR "=\""
-           putStrTR v >> putCharR '"'
+renderTOCList :: Rose TOCItem -> RMonad ()
+renderTOCList (RNode tocitem ts) = do
+  renderTOCItem tocitem
+  renderTOCsList ts
 
-mkTag tag body = mkTagAttrsC tag ([], [], []) body
+renderTOCItem :: TOCItem -> RMonad ()
+renderTOCItem ((fid, nums), title, lbl) = do
+  href <- showHRef fid lbl
+  mkTag "li"
+   (mkTagAttrsC "a" ([],[],[("href", href)])
+     (do printSecNum nums
+         renderInlines title))
 
-mkTagAttrs :: Text -> [Attr] -> RMonad () -> RMonad ()
-mkTagAttrs tag attrs body =
-  mkTagAttrsC tag (sortAttrs attrs) body
-
-mkTagAttrsC :: Text -> AttrsC -> RMonad () -> RMonad ()
-mkTagAttrsC tag attrs body = do
-   putCharR '<' >> putStrTR tag >> renderAttrsC attrs >> putCharR '>'
-   body
-   putStrR "</" >> putStrTR tag >> putCharR '>'
-
- -- self-closing tags
-
-mkSCTag :: Text -> RMonad ()
-mkSCTag tag = putCharR '<' >> putStrTR tag >> putStrTR "/>"
+sepChHeader :: Blocks -> (Maybe Block, Blocks)
+sepChHeader Empty = (Nothing, Empty)
+sepChHeader (Header 1 attrs is :<| blocks) =
+  (Just (Header 1 attrs is), blocks)
+sepChHeader (Header hd attrs is :<| blocks) =
+  (Nothing, Header hd attrs is :<| blocks)
+sepChHeader (bl :<| blocks) =
+  (id *** (bl :<|)) $ sepChHeader blocks

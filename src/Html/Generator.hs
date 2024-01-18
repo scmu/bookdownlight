@@ -7,6 +7,7 @@ import Prelude hiding (readFile)
 import System.IO (openFile, hClose, stdout, IOMode(..), Handle)
 import qualified System.IO as IO
 
+import Control.Arrow ((***))
 import Control.Monad.State
 import Control.Monad.Reader
 
@@ -22,14 +23,14 @@ import Cheapskate
 
 import Html.Counter
 import Html.Scanning
+import Html.RenderMonad
 import Html.Render
+import Html.Pure
 
 import Development.Shake.FilePath
 
 readFile :: String -> IO Text
 readFile path = decodeUtf8 <$> BS.readFile path
-
-initChCounter i = Counter i 0 0 0 0 0 0 0
 
 genHAux :: Int -> String -> String -> IO ()
 genHAux i mdname hauxname = do
@@ -45,30 +46,30 @@ mkHAux i contents =
 readHAux :: String -> IO (TOCIs, Dict)
 readHAux hauxname = IO.readFile hauxname >>= (return . read)
 
-genLblMap :: String -> IO LblMap
-genLblMap hauxname = do
-    (_, dict) <- readHAux hauxname
-    return (Map.fromList dict)
+genTOCLMap :: String -> IO (TOCIs, LblMap)
+genTOCLMap hauxname =
+    (id *** Map.fromList) <$> readHAux hauxname
 
-genLblMaps :: [String] -> IO LblMap
-genLblMaps hauxnames = Map.unions <$> (mapM genLblMap hauxnames)
+genTOCLMaps :: [String] -> IO (TOCIs, LblMap)
+genTOCLMaps hauxnames =
+     ((concat *** Map.unions) . unzip) <$>
+      (mapM genTOCLMap hauxnames)
 
 genHtml :: String -> String -> String
          -> (Int, [String], LblMap) -> IO ()
 genHtml mdname htmlname tmpls (this, allFileNames, lmap) = do
     hdl <- openFile htmlname WriteMode
-    readFile htmlHeader >>= TIO.hPutStr hdl
-    readFile mdname >>= printHtml hdl (this, allFileNames, lmap)
-    readFile htmlFooter >>= TIO.hPutStr hdl
+    content <- readFile mdname
+    runRMonad [this] allFileNames hdl lmap
+       (mkPage tmpls (htmlRender . markdown def $ content))
     hClose hdl
-  where htmlHeader = tmpls </> "htmlheader.html"
-        htmlFooter = tmpls </> "htmlfooter.html"
 
-printHtml :: Handle -> (Int, [String], LblMap)
-          -> Text -> IO ()
-printHtml h (this, allFileNames, lmap) content =
-    evalStateT
-      (runReaderT (htmlRender . markdown def $ content)
-                  renv)
-      (initChCounter (this-1))
-  where renv = REnv [this] allFileNames h lmap
+genTOC :: String -> TOCIs -> String -> ([String], LblMap) -> IO ()
+genTOC tocFName tocis tmpls (allFileNames, lmap) = do
+  hdl <- openFile tocFName WriteMode
+  runRMonad [-1] allFileNames hdl lmap
+     (mkPage tmpls (Just bookheader,
+                    renderTOCsList (buildRose 1 tocis)))
+  hClose hdl
+ where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
+                       mkTag "h2" (putStrTR "Functional Program Construciton and Reasoning")

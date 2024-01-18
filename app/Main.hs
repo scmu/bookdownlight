@@ -90,25 +90,25 @@ htmlRules = do
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
 
- buildLblMap <- newCache $ \() -> do
+ buildTOCLMap <- newCache $ \() -> do
    let hauxNames = [ tmp </> "html" </> ch <.> "haux" | ch <- chapters]
    need hauxNames
-   putInfo ("# building label map from " ++ show hauxNames)
-   liftIO (genLblMaps hauxNames)
+   putInfo ("# building TOC and label map from " ++ show hauxNames)
+   liftIO (genTOCLMaps hauxNames)
 
  forM_ (zip [0..] chapters) (\(i,ch) ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
-   lblMap <- buildLblMap ()
-   putInfo ("# size of lmap: " ++ show (Map.size lblMap))
+   (_, lblMap) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName (tmpls </> "html")
+   liftIO (genHtml mdName htmlName tmpls
              (i, chapters, lblMap)))
 
--- newtype BuildLblMap = BuildLblMap ()
---   deriving (Show, Eq, Binary, NFData, Typeable, Hashable)
--- type instance RuleResult BuildLblMap = LblMap
+ htmlChs </> "TOC" <.> "html" %> \htmlName -> do
+   (tocis, lblMap) <- buildTOCLMap ()
+   putInfo ("# generating TOC.html")
+   liftIO (genTOC htmlName tocis tmpls (chapters, lblMap))
 
 -- configuration info.
 
