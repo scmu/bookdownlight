@@ -12,6 +12,7 @@ import Control.Arrow ((***), second)
 import Cheapskate
 import Syntax.Util
 
+import Html.Types
 import Html.Counter
 
 type LMonad a = State Counter a

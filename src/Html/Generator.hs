@@ -21,6 +21,7 @@ import qualified Data.Map as Map
 
 import Cheapskate
 
+import Html.Types
 import Html.Counter
 import Html.Scanning
 import Html.RenderMonad
@@ -56,20 +57,21 @@ genTOCLMaps hauxnames =
       (mapM genTOCLMap hauxnames)
 
 genHtml :: String -> String -> String
-         -> (Int, [String], LblMap) -> IO ()
-genHtml mdname htmlname tmpls (this, allFileNames, lmap) = do
+         -> (Int, [String], TOC, LblMap) -> IO ()
+genHtml mdname htmlname tmpls (this, allFileNames, toc, lmap) = do
     hdl <- openFile htmlname WriteMode
     content <- readFile mdname
     runRMonad [this] allFileNames hdl lmap
-       (mkPage tmpls (htmlRender . markdown def $ content))
+       (do toc' <- renderTOCPartial toc
+           mkPage tmpls toc' (htmlRender . markdown def $ content))
     hClose hdl
 
-genTOC :: String -> TOCIs -> String -> ([String], LblMap) -> IO ()
-genTOC tocFName tocis tmpls (allFileNames, lmap) = do
+genTOC :: String -> TOC -> String -> ([String], LblMap) -> IO ()
+genTOC tocFName toc tmpls (allFileNames, lmap) = do
   hdl <- openFile tocFName WriteMode
   runRMonad [-1] allFileNames hdl lmap
-     (mkPage tmpls (Just bookheader,
-                    renderTOCsList (buildRose 1 tocis)))
+     (do toc' <- renderTOCPartial toc
+         mkPage tmpls toc' (Just bookheader, renderTOCsList toc))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construciton and Reasoning")

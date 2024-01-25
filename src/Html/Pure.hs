@@ -7,16 +7,26 @@ import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import Development.Shake.FilePath ((</>))
 
+import Html.Types
 import Html.RenderMonad
 
-mkPage :: String -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
-mkPage tmpls (title, body) = do
+mkPage :: String -> PRTOC -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
+mkPage tmpls toc (title, body) = do
   liftIO (T.readFile htmlHeader) >>= putStrTR
+  mkSideMenu toc
   mkMain (title, body)
   liftIO (T.readFile htmlFooter) >>= putStrTR
  where htmlHeader = tmpls </> "html_pure" </> "pure_header.html"
        htmlFooter = tmpls </> "html_pure" </> "pure_footer.html"
 
+mkSideMenu :: PRTOC -> RMonad ()
+mkSideMenu toc =
+  mkTagAttrsC "div" ([], ["menu"], []) .
+    mkTagAttrsC "div" (["pure-menu"], [], []) $
+     do mkTagAttrsC "h1" (["pure-menu-heading"], [], [])
+           (putStrTR "函數程設與推論")
+        mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
+           (renderTOCsMenu 1 False toc)
 
 mkMain :: (Maybe (RMonad ()), RMonad ()) -> RMonad ()
 mkMain (title, body) =
@@ -25,25 +35,6 @@ mkMain (title, body) =
       (mkTagAttrsC "div" (["header"],[],[]))
       title
     mkTagAttrsC "div" (["content"],[],[]) body)
-
--- mkBreadCrumb :: RMonad ()
--- mkBreadCrumb = putStrTR
---    "<ol class=\"breadcrumb mb-4\"><li class=\"breadcrumb-item\"><a href=\"index.html\">Dashboard</a></li><li class=\"breadcrumb-item active\">Sidenav Light</li></ol>"
-
--- mkFooter :: RMonad ()
--- mkFooter = putStrTR
---   "<footer class=\"py-4 bg-light mt-auto\">\
---   \<div class=\"container-fluid px-4\">\
---   \<div class=\"d-flex align-items-center justify-content-between small\">\
---       \<div class=\"text-muted\">Copyright &copy; Your Website 2023</div>\
---       \<div>\
---           \<a href=\"#\">Privacy Policy</a>\
---           \&middot;\
---           \<a href=\"#\">Terms &amp; Conditions</a>\
---       \</div>\
---   \</div>\
---   \</div></footer>"
-----
 
 mkBox :: Text -> Text ->
          ([Text], [Text], [(Text, Text)]) -> RMonad () -> RMonad () -> RMonad ()
@@ -78,3 +69,28 @@ mkAnsBox (cs,ids,avs) exNum title body =
         showNums [] = []
         showNums [x] = show x
         showNums (x:xs) = show x ++ "-" ++ showNums xs
+
+
+renderTOCsMenu :: Int -> Bool -> PRTOC -> RMonad ()
+renderTOCsMenu i _ [] = return ()
+renderTOCsMenu i c ts =
+   mkTagAttrsC "ul" (["pure-menu-list", levelCls] ++ collapse, [], [])
+     (mapM_ (renderTOCMenu i) ts)
+  where levelCls = pack ("menu-level-"++show i)
+        collapse | c = ["collapsible-menu"]
+                 | otherwise = []
+
+renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
+  mkTagAttrsC "li" (["pure-menu-item"], [], [])
+   (mkTagAttrsC "a" ([],[],[("href", url)]) title)
+renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
+  mkTagAttrsC "li" (["pure-menu-item"], [], [])
+   (do mkTagAttrsC "a" ([],[],[("href", url)]) title
+       mkSCTagAttrsC "input" (["toggle"], [liLabel'], [("type", "checkbox")])
+       mkTagAttrsC "label" (["menu-toggle"],[],[("for", liLabel')])(return ())
+       renderTOCsMenu (i+1) True ts)
+ where liLabel = "menu-li-" ++ showNums nums
+       liLabel' = pack liLabel
+       showNums [] = []
+       showNums [x] = show x
+       showNums (x:xs) = show x ++ "-" ++ showNums xs

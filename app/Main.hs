@@ -10,17 +10,14 @@ import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Map as Map
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
+import Control.Arrow ((***))
 import Control.Monad (forM_)
-
--- import Data.Binary        -- To use addOracle
--- import Data.Typeable
--- import Data.Hashable
--- import Control.DeepSeq
 
 import Cheapskate
 
 import LHs.Generator
 import Html.Generator
+import Html.Counter (buildRose)
 
 import Development.Shake
 import Development.Shake.Command
@@ -94,21 +91,22 @@ htmlRules = do
    let hauxNames = [ tmp </> "html" </> ch <.> "haux" | ch <- chapters]
    need hauxNames
    putInfo ("# building TOC and label map from " ++ show hauxNames)
-   liftIO (genTOCLMaps hauxNames)
+   (buildRose 1 *** id) <$>
+       liftIO (genTOCLMaps hauxNames)
 
  forM_ (zip [0..] chapters) (\(i,ch) ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
-   (_, lblMap) <- buildTOCLMap ()
+   (toc, lblMap) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
    liftIO (genHtml mdName htmlName tmpls
-             (i, chapters, lblMap)))
+             (i, chapters, toc, lblMap)))
 
  htmlChs </> "TOC" <.> "html" %> \htmlName -> do
-   (tocis, lblMap) <- buildTOCLMap ()
+   (toc, lblMap) <- buildTOCLMap ()
    putInfo ("# generating TOC.html")
-   liftIO (genTOC htmlName tocis tmpls (chapters, lblMap))
+   liftIO (genTOC htmlName toc tmpls (chapters, lblMap))
 
 -- configuration info.
 

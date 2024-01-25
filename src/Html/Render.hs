@@ -17,6 +17,7 @@ import Cheapskate
 
 import Syntax.Util
 
+import Html.Types
 import Html.Counter
 import Html.RenderMonad
 import Html.Pure
@@ -264,6 +265,19 @@ renderTOCItem ((fid, nums), title, lbl) = do
    (mkTagAttrsC "a" ([],[],[("href", href)])
      (do printSecNum nums
          renderInlines title))
+
+renderTOCPartial :: TOC -> RMonad PRTOC
+renderTOCPartial = mapM renderTOCPartialItem
+  where renderTOCPartialItem (RNode ((fid, nums), title, lbl) ts) =
+          do href <- showHRef fid lbl
+             ts' <- renderTOCPartial ts
+             return $
+               RNode ((href, nums),
+                      (printSecNum nums >> renderInlines title),
+                      lbl)
+                     ts'
+
+--
 
 sepChHeader :: Blocks -> (Maybe Block, Blocks)
 sepChHeader Empty = (Nothing, Empty)

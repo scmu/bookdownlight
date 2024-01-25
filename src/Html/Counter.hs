@@ -5,21 +5,7 @@ import Data.Map (Map)
 
 import Cheapskate (Inlines)
 
-data Counter = Counter
-      { chC     :: !Int
-      , secC    :: !Int
-      , subsecC :: !Int
-      -- , subsubsecC :: !Int
-      , thmC    :: !Int  -- shared by theorem, lemma, definition, example
-      , figC    :: !Int
-      , eqC     :: !Int
-      , exerC   :: !Int
-      , fnoteC  :: !Int
-     }
-  deriving Show
-
-type RefNum = ([Int]    -- file identifier. non-empty
-              ,[Int])   -- actual displayed number. non-empty
+import Html.Types
 
 initChCounter :: Int -> Counter
 initChCounter i = Counter i 0 0 0 0 0 0 0
@@ -62,18 +48,7 @@ newEq :: Counter -> (RefNum, Counter)
 newEq cnt = (([ch, sec], [ch, eqC cnt']), cnt')
   where cnt' = cnt { eqC = eqC cnt + 1 }
         (ch, sec) = (chC cnt, secC cnt)
- 
-------
 
-data Rose a = RNode a [Rose a]
-     deriving Show
-
-type TOCItem = ( RefNum     -- file id and section number
-               , Inlines    -- title
-               , Text       -- label
-               )
-
-type TOC = [Rose TOCItem]
 
 buildRose :: Int -> [(Int, a)] -> [Rose a]
 buildRose i = fst . parseRose i
@@ -90,6 +65,3 @@ parseRose i ((j,x):xs)
 tstL :: [(Int, Char)]
 tstL = zip [1,2,3,3,3,2,3,3,2,2]
            ['a'..]
-------
-
-type LblMap = Map Text RefNum

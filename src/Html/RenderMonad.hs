@@ -16,15 +16,8 @@ import Control.Monad.Reader
 import Cheapskate
 import Syntax.Util
 
+import Html.Types
 import Html.Counter
-
-data REnv = REnv { thisFileR     :: [Int]
-                 , allFileNamesR :: [String]
-                 , outHdlR       :: Handle
-                 , lMapR         :: LblMap
-                 }
-
-type RMonad = ReaderT REnv (StateT Counter IO)
 
 runRMonad :: [Int] -> [String] -> Handle -> LblMap -> RMonad a -> IO a
 runRMonad this allFileNames h lmap m =
@@ -86,6 +79,7 @@ renderAttrsC (cls, ids, avs) =
 
 renderAVs :: [(Text, Text)] -> RMonad ()
 renderAVs = mapM_ renderAttr
-  where renderAttr (a, v) = do
-           putCharR ' ' >> putStrTR a >> putStrTR "=\""
-           putStrTR v >> putCharR '"'
+  where renderAttr (a, v)
+         | v == ""   = do putCharR ' ' >> putStrTR a
+         | otherwise = do putCharR ' ' >> putStrTR a >> putStrTR "=\""
+                          putStrTR v >> putCharR '"'
