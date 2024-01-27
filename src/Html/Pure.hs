@@ -3,6 +3,7 @@ module Html.Pure where
 
 import Control.Arrow ((***))
 import Control.Monad.State
+import Control.Monad.Reader
 import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import Development.Shake.FilePath ((</>))
@@ -25,8 +26,19 @@ mkSideMenu toc =
     mkTagAttrsC "div" (["pure-menu"], [], []) $
      do mkTagAttrsC "h1" (["pure-menu-heading"], [], [])
            (putStrTR "函數程設與推論")
+        tocFName <- reader tocFileNameR
+        mkTag "p"
+          (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
+           (putStrTR "目錄"))
         mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
            (renderTOCsMenu 1 False toc)
+        mkTag "p" (putStrTR "索引")
+        mkTag "p" (putStrTR "參考書目")
+        mkTagAttrsC "p" (["author-info"], [], [])
+          (do mkTagAttrsC "a" ([], [], [("href", "https://homepage.iis.sinica.edu.tw/pages/scm/")])
+                (putStrTR "穆信成 Shin-Cheng Mu")
+              mkSCTag "br"
+              putStrTR "中央研究院 資訊科學研究所")
 
 mkMain :: (Maybe (RMonad ()), RMonad ()) -> RMonad ()
 mkMain (title, body) =

@@ -19,10 +19,10 @@ import Syntax.Util
 import Html.Types
 import Html.Counter
 
-runRMonad :: [Int] -> [String] -> Handle -> LblMap -> RMonad a -> IO a
-runRMonad this allFileNames h lmap m =
+runRMonad :: [Int] -> [String] -> String -> Handle -> LblMap -> RMonad a -> IO a
+runRMonad this allFileNames tocFileName h lmap m =
   evalStateT (runReaderT m renv) (initChCounter (head this - 1))
- where renv = REnv this allFileNames h lmap
+ where renv = REnv this allFileNames tocFileName h lmap
 
 putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . outHdlR)
 putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . outHdlR)

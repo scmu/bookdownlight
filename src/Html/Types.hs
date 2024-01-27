@@ -44,6 +44,7 @@ type LblMap = Map Text RefNum
 
 data REnv = REnv { thisFileR     :: [Int]
                  , allFileNamesR :: [String]
+                 , tocFileNameR  :: String
                  , outHdlR       :: Handle
                  , lMapR         :: LblMap
                  }
