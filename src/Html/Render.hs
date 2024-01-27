@@ -21,6 +21,7 @@ import Html.Types
 import Html.Counter
 import Html.RenderMonad
 import Html.Pure
+import Html.Code
 
 ---- rendering
 
@@ -190,9 +191,9 @@ renderInline (Emph inlines) =
 renderInline (Strong inlines) =
   mkTag "strong" (renderInlines inlines)
 renderInline (Code txt) =
-  mkTag "code" (putStrTR txt)
+  mkTag "code" (putStrTR (formatCode txt))
 renderInline (HsCode txt) =
-  mkTagAttrsC "code" (["haskell"], [], []) (putStrTR txt)
+  mkTagAttrsC "code" (["haskell"], [], []) (putStrTR (formatCode txt))
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
@@ -236,7 +237,8 @@ renderCode (cs,ids,avs) txt | "texonly" `elem` cs = return ()
 renderCode (cs,ids,avs) txt | "equation" `elem` cs =
   mkTag "pre" (do
     (_, nums) <- state newEq
-    mkTagAttrsC "code" (cs, ids, avs) (putStrTR txt)
+    mkTagAttrsC "code" (cs, ids, avs)
+      (putStrTR (formatCode txt))
     putStrTR "    ("
     printSecNum nums
     putStrTR ")\n")
@@ -244,7 +246,7 @@ renderCode (cs,ids,avs) txt | "equation" `elem` cs =
 renderCode (cs,ids,avs) txt =
   mkTag "pre" (
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR txt >> putCharR '\n'))
+      (putStrTR (formatCode txt) >> putCharR '\n'))
 
 --- TOC
 
