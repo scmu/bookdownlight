@@ -103,10 +103,10 @@ htmlRules = do
    liftIO (genHtml mdName htmlName tmpls
              (i, chapters, toc, lblMap)))
 
- htmlChs </> "TOC" <.> "html" %> \htmlName -> do
+ htmlChs </> "TOC" <.> "html" %> \tocFName -> do
    (toc, lblMap) <- buildTOCLMap ()
    putInfo ("# generating TOC.html")
-   liftIO (genTOC htmlName toc tmpls (chapters, lblMap))
+   liftIO (genTOC tocFName toc tmpls (chapters, lblMap))
 
 -- configuration info.
 
