@@ -20,11 +20,12 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >=4.9 && <5
+- bytestring
 - containers >=0.4 && <0.7
-- mtl >=2.1 && <2.3
-- text >= 0.9 && < 1.3
-- blaze-html >=0.6 && < 0.10
-- xss-sanitize >= 0.3 && < 0.4
+- mtl # >=2.1 && <2.3
+- text # >= 0.9 && < 1.3
+#- blaze-html # >=0.6 && < 0.10
+#- xss-sanitize >= 0.3 && < 0.4
 - data-default # >= 0.5 && < 0.8
 - syb
 - uniplate >= 1.6 && < 1.7
@@ -32,6 +33,16 @@ dependencies:
 - bytestring
 - directory
 - shake
+- time
+#- text-icu
+#- text-regex-replace
+- text-replace
+
+extra-lib-dirs:
+- /opt/homebrew/opt/icu4c/lib/
+
+extra-include-dirs:
+- /opt/homebrew/opt/icu4c/include/
 
 library:
   source-dirs: src

@@ -8,14 +8,14 @@ module Cheapskate (markdown,
                    ) where
 import Cheapskate.Types
 import Cheapskate.Parse
-import Cheapskate.Html
+-- import Cheapskate.Html
 import Data.Default (def)
 import Data.Data
 import Data.Generics.Uniplate.Data
-import Text.Blaze.Html (ToMarkup(..))
+-- import Text.Blaze.Html (ToMarkup(..))
 
-instance ToMarkup Doc
-  where toMarkup = renderDoc
+-- instance ToMarkup Doc
+--  where toMarkup = renderDoc
 
 -- | Apply a transformation bottom-up to every node of a parsed document.
 -- This can be used, for example, to transform specially marked code blocks
