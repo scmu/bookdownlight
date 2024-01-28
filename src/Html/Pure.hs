@@ -96,9 +96,12 @@ renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
   mkTagAttrsC "li" (["pure-menu-item"], [], [])
    (mkTagAttrsC "a" ([],[],[("href", url)]) title)
 renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
+  this <- reader thisFileR
+  let checked = if this == nums then [("checked","")] else []
   mkTagAttrsC "li" (["pure-menu-item"], [], [])
    (do mkTagAttrsC "a" ([],[],[("href", url)]) title
-       mkSCTagAttrsC "input" (["toggle"], [liLabel'], [("type", "checkbox")])
+       mkSCTagAttrsC "input"
+          (["toggle"], [liLabel'], checked++[("type", "checkbox")])
        mkTagAttrsC "label" (["menu-toggle"],[],[("for", liLabel')])(return ())
        renderTOCsMenu (i+1) True ts)
  where liLabel = "menu-li-" ++ showNums nums
