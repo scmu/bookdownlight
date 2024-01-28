@@ -55,6 +55,7 @@ library
     , deepseq
     , directory
     , mtl
+    , regex-tdfa
     , shake
     , syb
     , text
@@ -81,6 +82,7 @@ executable bookdownlight-exe
     , deepseq
     , directory
     , mtl
+    , regex-tdfa
     , shake
     , syb
     , text

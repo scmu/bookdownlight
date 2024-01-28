@@ -37,6 +37,10 @@ dependencies:
 #- text-icu
 #- text-regex-replace
 - text-replace
+#- megaparsec
+#- parser-combinators
+#- replace-megaparsec
+- regex-tdfa
 
 extra-lib-dirs:
 - /opt/homebrew/opt/icu4c/lib/

@@ -191,9 +191,9 @@ renderInline (Emph inlines) =
 renderInline (Strong inlines) =
   mkTag "strong" (renderInlines inlines)
 renderInline (Code txt) =
-  mkTag "code" (putStrTR (formatCode txt))
+  mkTag "code" (putStrTR (formatLineCode txt))
 renderInline (HsCode txt) =
-  mkTagAttrsC "code" (["haskell"], [], []) (putStrTR (formatCode txt))
+  mkTagAttrsC "code" (["haskell"], [], []) (putStrTR (formatLineCode txt))
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
@@ -238,7 +238,7 @@ renderCode (cs,ids,avs) txt | "equation" `elem` cs =
   mkTag "pre" (do
     (_, nums) <- state newEq
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR (formatCode txt))
+      (putStrTR (formatBlockCode txt))
     putStrTR "    ("
     printSecNum nums
     putStrTR ")\n")
@@ -246,7 +246,7 @@ renderCode (cs,ids,avs) txt | "equation" `elem` cs =
 renderCode (cs,ids,avs) txt =
   mkTag "pre" (
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR (formatCode txt) >> putCharR '\n'))
+      (putStrTR (formatBlockCode txt) >> putCharR '\n'))
 
 --- TOC
 
