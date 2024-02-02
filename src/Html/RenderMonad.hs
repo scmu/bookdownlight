@@ -42,18 +42,19 @@ chToFileName i = reader (pick i . allFileNamesR)
    where pick i chs | i < length chs = chs !! i
                     | otherwise = ""
 
-
+mkTag :: Text -> RMonad a -> RMonad a
 mkTag tag body = mkTagAttrsC tag ([], [], []) body
 
-mkTagAttrs :: Text -> [Attr] -> RMonad () -> RMonad ()
+mkTagAttrs :: Text -> [Attr] -> RMonad a -> RMonad a
 mkTagAttrs tag attrs body =
   mkTagAttrsC tag (sortAttrs attrs) body
 
-mkTagAttrsC :: Text -> AttrsC -> RMonad () -> RMonad ()
+mkTagAttrsC :: Text -> AttrsC -> RMonad a -> RMonad a
 mkTagAttrsC tag attrs body = do
    putCharR '<' >> putStrTR tag >> renderAttrsC attrs >> putCharR '>'
-   body
+   res <- body
    putStrR "</" >> putStrTR tag >> putCharR '>'
+   return res
 
  -- self-closing tags
 

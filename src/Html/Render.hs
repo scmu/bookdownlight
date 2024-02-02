@@ -38,15 +38,16 @@ renderBlocks = mapM_ renderBlock
 
 renderBlock :: Block -> RMonad ()
 renderBlock (Para (Attrs attrs :<| is)) =
-  mkTagAttrs "p" attrs' (do
-    case lookupAttrs "title" attrs of
-        Just title -> mkTag "b" (putStrTR title) >> putStrTR " &emsp;"
-        _ -> return ()
-    renderInlines is)
+  mkTagAttrs "p" attrs' (
+    do case lookupAttrs "title" attrs of
+         Just title -> mkTag "b" (putStrTR title) >> putStrTR " &emsp;"
+         _ -> return ()
+       renderInlines is)
  where attrs' = filter (\atr -> not (isThisAtr "title"    atr ||
                                      isThisCls "noindent" atr ||
                                      isThisCls "nobreak"  atr))  attrs
-renderBlock (Para is) = mkTag "p" (renderInlines is)
+renderBlock (Para is) =
+   mkTag "p" (renderInlines is)
 renderBlock (Header hd attrs is) = renderHeader hd attrs is
 renderBlock (Blockquote bs) = mkTag "blockquote" (renderBlocks bs)
 renderBlock (List _ lt items) =
@@ -165,8 +166,7 @@ renderHeader hd attrs is = do
   (_, nums) <- state (newHeader hd)
   let (htag, hcls) = seclevel hd
   mkTagAttrs htag (AtrClass hcls : attrs)
-      (do printSecNum nums
-          renderInlines is)
+             (printSecNum nums >> renderInlines is)
  where seclevel 1 = ("h1", "chapter")
        seclevel 2 = ("h2", "section")
        seclevel 3 = ("h3", "subsection")
@@ -199,10 +199,8 @@ renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
 renderInline (Attrs attrs) = return () -- deal with this later
 renderInline (Footnote is) = do
-     (_, (i:_)) <- state newFNote
-     mkTagAttrsC "span" (["footnote"], [], [])
-      (do putStrTR "註" >> putStrR (show i) >> putStrTR ": "
-          renderInlines is)
+     (chs, (i:_)) <- state newFNote
+     mkFootnote chs i (renderInlines is)
 renderInline (Ref txt)   = renderRef txt
 renderInline (EqRef txt) = putCharR '(' >> renderRef txt >> putCharR ')'
 renderInline (PageRef txt) = return () -- deal with this later
@@ -265,8 +263,7 @@ renderTOCItem ((fid, nums), title, lbl) = do
   href <- showHRef fid lbl
   mkTag "li"
    (mkTagAttrsC "a" ([],[],[("href", href)])
-     (do printSecNum nums
-         renderInlines title))
+     (printSecNum nums >> renderInlines title))
 
 renderTOCPartial :: TOC -> RMonad PRTOC
 renderTOCPartial = mapM renderTOCPartialItem

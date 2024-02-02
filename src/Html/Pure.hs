@@ -26,6 +26,8 @@ mkSideMenu toc =
     mkTagAttrsC "div" (["pure-menu"], [], []) $
      do mkTagAttrsC "h1" (["pure-menu-heading"], [], [])
            (putStrTR "函數程設與推論")
+        mkTagAttrsC "h2" (["pure-menu-heading"], [], [])
+           (putStrR "Functional Program Construction and Reasoning")
         tocFName <- reader tocFileNameR
         mkTag "p"
           (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
@@ -78,10 +80,21 @@ mkAnsBox (cs,ids,avs) exNum title body =
           )
   where ansLabel = "ans-" ++ showNums exNum
         ansLabel' = pack ansLabel
-        showNums [] = []
-        showNums [x] = show x
-        showNums (x:xs) = show x ++ "-" ++ showNums xs
 
+mkFootnote :: [Int] -> Int -> RMonad () -> RMonad ()
+mkFootnote chs i note =
+  do mkSCTagAttrsC "input"
+          (["toggle"], [fnoteLabel'], [("type", "checkbox")])
+     mkTagAttrsC "label"
+         (["fnote-toggle"], [], [("for", fnoteLabel')])
+         (putStrR ("(註"++ show i ++ ") "))
+     mkTagAttrsC "span" (["collapsible-footnote"], [], []) note
+ where fnoteLabel = "footnote-" ++ showNums (chs++[i])
+       fnoteLabel' = pack fnoteLabel
+
+showNums [] = []
+showNums [x] = show x
+showNums (x:xs) = show x ++ "-" ++ showNums xs
 
 renderTOCsMenu :: Int -> Bool -> PRTOC -> RMonad ()
 renderTOCsMenu i _ [] = return ()
@@ -98,7 +111,8 @@ renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
 renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
   this <- reader thisFileR
   let checked = if this == nums then [("checked","")] else []
-  mkTagAttrsC "li" (["pure-menu-item"], [], [])
+  let selected = if this == nums then ["pure-menu-selected"] else []
+  mkTagAttrsC "li" (selected ++ ["pure-menu-item"], [], [])
    (do mkTagAttrsC "a" ([],[],[("href", url)]) title
        mkSCTagAttrsC "input"
           (["toggle"], [liLabel'], checked++[("type", "checkbox")])
