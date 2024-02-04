@@ -49,7 +49,9 @@ phonies = do
   phony "pdf" $
     need [texBase </> "fpcr.pdf"]
   phony "html" $
-    need (map (\ch -> htmlChs </> ch <.> "html") chapters)
+    need ( (htmlChs </> "TOC" <.> "html")
+         : (htmlChs </> "Ix"  <.> "html")
+         : map (\ch -> htmlChs </> ch <.> "html") chapters)
 
 -- lhs, tex
 
@@ -91,22 +93,27 @@ htmlRules = do
    let hauxNames = [ tmp </> "html" </> ch <.> "haux" | ch <- chapters]
    need hauxNames
    putInfo ("# building TOC and label map from " ++ show hauxNames)
-   (buildRose 1 *** id) <$>
+   mapTuple (buildRose 1) id id <$>
        liftIO (genTOCLMaps hauxNames)
 
  forM_ (zip [0..] chapters) (\(i,ch) ->
   (htmlChs </> ch <.> "html") %> \htmlName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
-   (toc, lblMap) <- buildTOCLMap ()
+   (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
    liftIO (genHtml mdName htmlName tmpls
              (i, chapters, toc, lblMap)))
 
  htmlChs </> "TOC" <.> "html" %> \tocFName -> do
-   (toc, lblMap) <- buildTOCLMap ()
+   (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# generating TOC.html")
    liftIO (genTOC tocFName toc tmpls (chapters, lblMap))
+
+ htmlChs </> "Ix" <.> "html" %> \ixFName -> do
+   (toc, lblMap, ix) <- buildTOCLMap ()
+   putInfo ("# generating Ix.html")
+   liftIO (genIx ixFName ix tmpls (chapters, toc, lblMap))
 
 -- configuration info.
 

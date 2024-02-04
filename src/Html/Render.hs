@@ -177,6 +177,10 @@ printSecNum []     = return ()
 printSecNum [i]    = putStrR (show i) >> putCharR ' '
 printSecNum (i:is) = putStrR (show i) >> putCharR '.' >> printSecNum is
 
+printSecNum' :: [Int] -> RMonad ()
+printSecNum' []     = return ()
+printSecNum' [i]    = putStrR (show i)
+printSecNum' (i:is) = putStrR (show i) >> putCharR '.' >> printSecNum' is
 
 renderInlines :: Inlines -> RMonad ()
 renderInlines = mapM_ renderInline
@@ -204,7 +208,9 @@ renderInline (Footnote is) = do
 renderInline (Ref txt)   = renderRef txt
 renderInline (EqRef txt) = putCharR '(' >> renderRef txt >> putCharR ')'
 renderInline (PageRef txt) = return () -- deal with this later
-renderInline (Index idx) = return () -- deal with this later
+renderInline (Index idx) = do
+  (c:_,ix) <- state newIdx
+  mkSCTagAttrsC "span" ([], [Text.pack ("ix-" ++ showNums (c:ix))], [])
 renderInline (CiteT ref Nothing) = return () -- deal with this later
 renderInline (CiteT ref (Just opt)) = return () -- deal with this later
 renderInline (CiteP [(ref, Just opt)]) = return () -- deal with this later
@@ -224,9 +230,12 @@ showHRef :: [Int] -> Text -> RMonad Text
 showHRef (ch:_) lbl = do
    b <- isThisFile ch
    if b then return (Text.cons '#' lbl)
-      else do fname <- chToFileName ch
-              return (Text.append (Text.pack (fname ++ ".html#")) lbl)
+      else showLongHRef ch lbl
 
+showLongHRef :: Int -> Text -> RMonad Text
+showLongHRef ch lbl = do
+  fname <- chToFileName ch
+  return (Text.append (Text.pack (fname ++ ".html#")) lbl)
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
 renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
@@ -286,3 +295,20 @@ sepChHeader (Header hd attrs is :<| blocks) =
   (Nothing, Header hd attrs is :<| blocks)
 sepChHeader (bl :<| blocks) =
   (id *** (bl :<|)) $ sepChHeader blocks
+
+---
+
+renderIx :: [(Text, ([RefNum], [(Text, [RefNum])]))] -> RMonad ()
+renderIx = mkTag "ul" . mapM_ renderIx1
+  where renderIx1 (term, (rfs, subs)) =
+          mkTag "li" (do putStrTR term
+                         putStrTR "&nbsp;"
+                         renderIRefs rfs)
+        renderIRefs [] = return ()
+        renderIRefs [rf] = renderIRef rf
+        renderIRefs (rf:rfs) = renderIRef rf >> putStrTR "&nbsp;" >>
+                               renderIRefs rfs
+        renderIRef (ch:secs, ix) = do
+          href <- showLongHRef ch (Text.pack ("ix-" ++ showNums (ch:ix)))
+          mkTagAttrsC "a" ([], [], [("href", href)])
+             (putStrTR "§" >> printSecNum' (ch:secs))

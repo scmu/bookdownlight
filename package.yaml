@@ -20,6 +20,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >=4.9 && <5
+#- binary
 - bytestring
 - containers >=0.4 && <0.7
 - mtl # >=2.1 && <2.3

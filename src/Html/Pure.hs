@@ -34,7 +34,10 @@ mkSideMenu toc =
            (putStrTR "目錄"))
         mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
            (renderTOCsMenu 1 False toc)
-        mkTag "p" (putStrTR "索引")
+        ixFName <- reader ixFileNameR
+        mkTag "p"
+          (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
+            (putStrTR "索引"))
         mkTag "p" (putStrTR "參考書目")
         mkTagAttrsC "p" (["author-info"], [], [])
           (do mkTagAttrsC "a" ([], [], [("href", "https://homepage.iis.sinica.edu.tw/pages/scm/")])

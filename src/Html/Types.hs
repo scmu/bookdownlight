@@ -19,6 +19,7 @@ data Counter = Counter
       , eqC     :: !Int
       , exerC   :: !Int
       , fnoteC  :: !Int
+      , ixC     :: !Int
      }
   deriving Show
 
@@ -40,11 +41,14 @@ type TOC = [Rose TOCItem]
 type PRTOC = [Rose ((Text, [Int]), RMonad (), Text)]
 
 type LblMap = Map Text RefNum
+
+type IxMap = Map Text ([RefNum], [(Text, [RefNum])])
 ---
 
 data REnv = REnv { thisFileR     :: [Int]
                  , allFileNamesR :: [String]
                  , tocFileNameR  :: String
+                 , ixFileNameR   :: String
                  , outHdlR       :: Handle
                  , lMapR         :: LblMap
                  }

@@ -8,10 +8,10 @@ import Cheapskate (Inlines)
 import Html.Types
 
 initChCounter :: Int -> Counter
-initChCounter i = Counter i 0 0 0 0 0 0 0
+initChCounter i = Counter i 0 0 0 0 0 0 0 0
 
 newChap :: Counter -> (RefNum, Counter)
-newChap cnt = (([ch],[ch]), Counter ch 0 0 0 0 0 0 0)
+newChap cnt = (([ch],[ch]), Counter ch 0 0 0 0 0 0 0 0)
      where ch = chC cnt + 1
 
 newSec :: Counter -> (RefNum, Counter)
@@ -49,6 +49,10 @@ newEq cnt = (([ch, sec], [ch, eqC cnt']), cnt')
   where cnt' = cnt { eqC = eqC cnt + 1 }
         (ch, sec) = (chC cnt, secC cnt)
 
+newIdx :: Counter -> (RefNum, Counter)
+newIdx cnt = (([ch, sec], [ixC cnt']), cnt')
+  where cnt' = cnt { ixC = ixC cnt + 1 }
+        (ch, sec) = (chC cnt, secC cnt)
 
 buildRose :: Int -> [(Int, a)] -> [Rose a]
 buildRose i = fst . parseRose i
@@ -61,7 +65,3 @@ parseRose i ((j,x):xs)
              in (RNode x ts : us, zs)
   | i > j  = ([], (j,x):xs)
   | i < j  = parseRose j ((j,x):xs)
-
-tstL :: [(Int, Char)]
-tstL = zip [1,2,3,3,3,2,3,3,2,2]
-           ['a'..]
