@@ -49,7 +49,6 @@ library
       /opt/homebrew/opt/icu4c/lib/
   build-depends:
       base >=4.9 && <5
-    , binary
     , bytestring
     , containers >=0.4 && <0.7
     , data-default
@@ -76,7 +75,6 @@ executable bookdownlight-exe
       /opt/homebrew/opt/icu4c/lib/
   build-depends:
       base >=4.9 && <5
-    , binary
     , bookdownlight
     , bytestring
     , containers >=0.4 && <0.7

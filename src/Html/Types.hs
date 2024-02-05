@@ -42,7 +42,7 @@ type PRTOC = [Rose ((Text, [Int]), RMonad (), Text)]
 
 type LblMap = Map Text RefNum
 
-type IxMap = Map Text ([RefNum], [(Text, [RefNum])])
+type IxMap = Map Text (Maybe Text, [RefNum], [(Text, [RefNum])])
 ---
 
 data REnv = REnv { thisFileR     :: [Int]

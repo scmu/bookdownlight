@@ -298,12 +298,15 @@ sepChHeader (bl :<| blocks) =
 
 ---
 
-renderIx :: [(Text, ([RefNum], [(Text, [RefNum])]))] -> RMonad ()
+renderIx :: [(Text, (Maybe Text, [RefNum], [(Text, [RefNum])]))] -> RMonad ()
 renderIx = mkTag "ul" . mapM_ renderIx1
-  where renderIx1 (term, (rfs, subs)) =
-          mkTag "li" (do putStrTR term
-                         putStrTR "&nbsp;"
-                         renderIRefs rfs)
+  where renderIx1 (term, (pn, rfs, subs)) =
+           mkTag "li" (do putStrTR name
+                          putStrTR "&nbsp;"
+                          renderIRefs rfs
+                          renderSubs subs
+                          )
+          where name = maybe term handleLineCode pn
         renderIRefs [] = return ()
         renderIRefs [rf] = renderIRef rf
         renderIRefs (rf:rfs) = renderIRef rf >> putStrTR "&nbsp;" >>
@@ -312,3 +315,7 @@ renderIx = mkTag "ul" . mapM_ renderIx1
           href <- showLongHRef ch (Text.pack ("ix-" ++ showNums (ch:ix)))
           mkTagAttrsC "a" ([], [], [("href", href)])
              (putStrTR "§" >> printSecNum' (ch:secs))
+        renderSubs [] = return ()
+        renderSubs subs =
+           mkTag "ul" (mapM_ (\(term, rfs) ->
+                         renderIx1 (term, (Nothing, rfs, []))) subs)

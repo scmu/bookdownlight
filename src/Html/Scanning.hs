@@ -5,11 +5,16 @@ module Html.Scanning where
 import Data.Sequence (Seq(..))
 import Data.Foldable
 import Data.Text (Text)
+import qualified Data.Text as Text
 import qualified Data.Text.IO as T
 import Control.Monad (when)
 import Control.Monad.State
 import Control.Arrow ((***), second)
+import Control.Applicative ((<|>))
 import qualified Data.Map as M (Map(..), empty, alter, unionsWith)
+
+import Text.Regex.TDFA
+import Text.Regex.TDFA.Text
 
 import Cheapskate
 import Syntax.Util
@@ -88,18 +93,29 @@ scanInlines is = do
 scanInline :: Inline -> LMonad IDict
 scanInline (Index idx) = do
   ix <- state newIdx
-  return [(idx, (Nothing, Nothing, ix))]
+  return [(term, (disp, sub, ix))]
+ where (pre, bang, post) = (idx =~ ("[^\\\\](\\\\\\\\)*!" :: Text)) ::
+                              (Text, Text, Text)
+       (main, sub) | Text.null bang = (pre, Nothing)
+                   | otherwise = (pre <> Text.init bang, Just post)
+       (pre2, atat, post2) = main =~ ("@@{" :: Text) :: (Text, Text, Text)
+       (term, disp) | Text.null atat = (main, Nothing)
+                    | not (Text.null post2) =
+                      (pre2, Just (Text.init post2))
+                    | otherwise = (pre2, Just post2)
+
 scanInline _ = return []
 
 ixMapFromList :: IDict -> IxMap
 ixMapFromList = foldl addIx M.empty
   where addIx m (term, (pname, subcat, rnum)) =
           M.alter (addIx' (pname, subcat, rnum)) term m
-        addIx' (_, Nothing, rnum)   Nothing = Just ([rnum], [])
-        addIx' (_, Just subc, rnum) Nothing = Just ([], [(subc, [rnum])])
-        addIx' (_, Nothing, rnum) (Just (rs, subs)) = Just (rnum:rs, subs)
-        addIx' (_, Just subc, rnum) (Just (rs, subs)) =
-          Just (rs, insert (subc, rnum) subs)
+        addIx' (pname, Nothing, rnum)   Nothing = Just (pname, [rnum], [])
+        addIx' (pname, Just subc, rnum) Nothing = Just (pname, [], [(subc, [rnum])])
+        addIx' (pname, Nothing, rnum) (Just (pname', rs, subs)) =
+            Just (pname <|> pname', rnum:rs, subs)
+        addIx' (pname, Just subc, rnum) (Just (pname', rs, subs)) =
+          Just (pname <|> pname', rs, insert (subc, rnum) subs)
         insert (st, r) [] = [(st, [r])]
         insert (st, r) ((s1,rs):rest) = case compare st s1 of
             LT -> (st, [r]) : (s1,rs) : rest
@@ -108,10 +124,11 @@ ixMapFromList = foldl addIx M.empty
 
 unionIxMaps :: [IxMap] -> IxMap
 unionIxMaps = M.unionsWith unionIx
-  where unionIx (rs1, ss1) (rs2, ss2) = (rs1 ++ rs2, merge ss1 ss2)
+  where unionIx (p1, rs1, ss1) (p2, rs2, ss2) =
+           (p1 <|> p2, rs2 ++ rs1, merge ss1 ss2)  -- reverse order
         merge [] ss2 = ss2
         merge ss1 [] = ss1
         merge ((s1,rs1):ss1) ((s2,rs2):ss2) = case compare s1 s2 of
           LT -> (s1,rs1) : merge ss1 ((s2,rs2):ss2)
-          EQ -> (s1,rs1++rs2) : merge ss1 ss2
+          EQ -> (s1,rs2++rs1) : merge ss1 ss2  -- reverse order
           GT -> (s2,rs2) : merge ((s1,rs1):ss1) ss2
