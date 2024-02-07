@@ -42,15 +42,18 @@ mdNamePath i = contents </> (chapters !! i) <.> "md"
 data FileRole = Preface | ToC | Chap [Int] | Ix | Biblio
   deriving Eq
 
-fileNames :: FileRole -> String
-fileNames Preface      = "Preface"
-fileNames ToC          = "ToC"
-fileNames (Chap (c:_)) = chapters !! c
-fileNames Ix           = "Ix"
-fileNames Biblio       = "Biblio"
+fileName :: FileRole -> String
+fileName Preface      = "Preface"
+fileName ToC          = "ToC"
+fileName (Chap (c:_)) = chapters !! c
+fileName Ix           = "Ix"
+fileName Biblio       = "Biblio"
+
+htmlName :: FileRole -> String
+htmlName fr = fileName fr <.> "html"
 
 htmlNamePath :: FileRole -> String
-htmlNamePath fr = htmlChs </> fileNames fr <.> "html"
+htmlNamePath fr = htmlChs </> fileName fr <.> "html"
 
 hauxNamePath :: Int -> String
 hauxNamePath c = tmp </> "html" </> chapters !! c <.> "haux"

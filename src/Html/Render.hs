@@ -235,8 +235,8 @@ showHRef ch lbl = do
 
 showLongHRef :: [Int] -> Text -> Text
 showLongHRef ch lbl =
-   Text.append (Text.pack (fname ++ ".html#")) lbl
-  where fname = fileNames (Chap ch)
+   Text.append (Text.pack (fname ++ "#")) lbl
+  where fname = htmlName (Chap ch)
 
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()

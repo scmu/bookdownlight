@@ -25,26 +25,42 @@ mkSideMenu :: PRTOC -> RMonad ()
 mkSideMenu toc =
   mkTagAttrsC "div" ([], ["menu"], []) .
     mkTagAttrsC "div" (["pure-menu"], [], []) $
-     do mkTagAttrsC "h1" (["pure-menu-heading"], [], [])
-           (putStrTR "函數程設與推論")
-        mkTagAttrsC "h2" (["pure-menu-heading"], [], [])
-           (putStrR "Functional Program Construction and Reasoning")
-        let tocFName = fileNames ToC
-        mkTag "p"
-          (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
-           (putStrTR "目錄"))
-        mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
-           (renderTOCsMenu 1 False toc)
-        let ixFName = fileNames Ix
-        mkTag "p"
-          (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
-            (putStrTR "索引"))
-        mkTag "p" (putStrTR "參考書目")
-        mkTagAttrsC "p" (["author-info"], [], [])
-          (do mkTagAttrsC "a" ([], [], [("href", "https://homepage.iis.sinica.edu.tw/pages/scm/")])
-                (putStrTR "穆信成 Shin-Cheng Mu")
-              mkSCTag "br"
-              putStrTR "中央研究院 資訊科學研究所")
+     do menuHeader
+        menuToCF
+        menuToC
+        menuIx
+        menuBiblio
+        menuFooter
+ where menuHeader = do
+         mkTagAttrsC "h1" (["pure-menu-heading"], [], [])
+            (putStrTR "函數程設與推論")
+         mkTagAttrsC "h2" (["pure-menu-heading"], [], [])
+            (putStrR "Functional Program Construction and Reasoning")
+       menuToCF = do
+         let tocFName = htmlName ToC
+         this <- reader thisFileR
+         let selected = if this == ToC then ["pure-menu-selected"] else []
+         mkTagAttrsC "p" (selected, [], [])
+           (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
+            (putStrTR "目錄"))
+       menuToC = do
+         mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
+            (renderTOCsMenu 1 False toc)
+       menuIx = do
+         let ixFName = htmlName Ix
+         this <- reader thisFileR
+         let selected = if this == Ix then ["pure-menu-selected"] else []
+         mkTagAttrsC "p" (selected, [], [])
+           (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
+             (putStrTR "索引"))
+       menuBiblio = do
+          mkTag "p" (putStrTR "參考書目")
+       menuFooter = do
+          mkTagAttrsC "p" (["author-info"], [], [])
+            (do mkTagAttrsC "a" ([], [], [("href", "https://  homepage.iis.sinica.edu.tw/pages/scm/")])
+                  (putStrTR "穆信成 Shin-Cheng Mu")
+                mkSCTag "br"
+                putStrTR "中央研究院 資訊科學研究所")
 
 mkMain :: (Maybe (RMonad ()), RMonad ()) -> RMonad ()
 mkMain (title, body) =
