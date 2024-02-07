@@ -8,11 +8,12 @@ import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import Development.Shake.FilePath ((</>))
 
+import Config
 import Html.Types
 import Html.RenderMonad
 
-mkPage :: String -> PRTOC -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
-mkPage tmpls toc (title, body) = do
+mkPage :: PRTOC -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
+mkPage toc (title, body) = do
   liftIO (T.readFile htmlHeader) >>= putStrTR
   mkSideMenu toc
   mkMain (title, body)
@@ -28,13 +29,13 @@ mkSideMenu toc =
            (putStrTR "函數程設與推論")
         mkTagAttrsC "h2" (["pure-menu-heading"], [], [])
            (putStrR "Functional Program Construction and Reasoning")
-        tocFName <- reader tocFileNameR
+        let tocFName = fileNames ToC
         mkTag "p"
           (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
            (putStrTR "目錄"))
         mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
            (renderTOCsMenu 1 False toc)
-        ixFName <- reader ixFileNameR
+        let ixFName = fileNames Ix
         mkTag "p"
           (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
             (putStrTR "索引"))
@@ -113,8 +114,9 @@ renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
    (mkTagAttrsC "a" ([],[],[("href", url)]) title)
 renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
   this <- reader thisFileR
-  let checked = if this == nums then [("checked","")] else []
-  let selected = if this == nums then ["pure-menu-selected"] else []
+  let (checked, selected)
+        | this == Chap nums = ([("checked","")], ["pure-menu-selected"])
+        | otherwise         =  ([],[])
   mkTagAttrsC "li" (selected ++ ["pure-menu-item"], [], [])
    (do mkTagAttrsC "a" ([],[],[("href", url)]) title
        mkSCTagAttrsC "input"

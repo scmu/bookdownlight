@@ -13,6 +13,7 @@ import Control.Arrow ((***))
 import Control.Monad.State
 import Control.Monad.Reader
 
+import Config
 import Cheapskate
 
 import Syntax.Util
@@ -227,15 +228,16 @@ renderRef lbl = do
                     (printSecNum nums)
 
 showHRef :: [Int] -> Text -> RMonad Text
-showHRef (ch:_) lbl = do
-   b <- isThisFile ch
+showHRef ch lbl = do
+   b <- isThisFile (Chap ch)
    if b then return (Text.cons '#' lbl)
-      else showLongHRef ch lbl
+      else return (showLongHRef ch lbl)
 
-showLongHRef :: Int -> Text -> RMonad Text
-showLongHRef ch lbl = do
-  fname <- chToFileName ch
-  return (Text.append (Text.pack (fname ++ ".html#")) lbl)
+showLongHRef :: [Int] -> Text -> Text
+showLongHRef ch lbl =
+   Text.append (Text.pack (fname ++ ".html#")) lbl
+  where fname = fileNames (Chap ch)
+
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
 renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
@@ -311,10 +313,11 @@ renderIx = mkTag "ul" . mapM_ renderIx1
         renderIRefs [rf] = renderIRef rf
         renderIRefs (rf:rfs) = renderIRef rf >> putStrTR "&nbsp;" >>
                                renderIRefs rfs
-        renderIRef (ch:secs, ix) = do
-          href <- showLongHRef ch (Text.pack ("ix-" ++ showNums (ch:ix)))
-          mkTagAttrsC "a" ([], [], [("href", href)])
-             (putStrTR "§" >> printSecNum' (ch:secs))
+        renderIRef (ch:secs, ix) =
+           mkTagAttrsC "a" ([], [], [("href", href)])
+              (putStrTR "§" >> printSecNum' (ch:secs))
+          where href = showLongHRef (ch:secs)
+                         (Text.pack ("ix-" ++ showNums (ch:ix)))
         renderSubs [] = return ()
         renderSubs subs =
            mkTag "ul" (mapM_ (\(term, rfs) ->

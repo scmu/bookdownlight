@@ -13,17 +13,20 @@ import qualified Data.Map as Map
 import Control.Monad.State
 import Control.Monad.Reader
 
+import Config
 import Cheapskate
 import Syntax.Util
 
 import Html.Types
 import Html.Counter
 
-runRMonad :: [Int] -> [String] -> (String, String)
-          -> Handle -> LblMap -> RMonad a -> IO a
-runRMonad this allFileNames (tocFileName, ixFileName) h lmap m =
-  evalStateT (runReaderT m renv) (initChCounter (head this - 1))
- where renv = REnv this allFileNames tocFileName ixFileName h lmap
+runRMonad :: FileRole -> LblMap -> Handle -> RMonad a -> IO a
+runRMonad this lmap h m =
+  evalStateT (runReaderT m renv) (initChCounter chcounter)
+ where renv = REnv this lmap h
+       chcounter = case this of
+                     Chap (i:_) -> i - 1
+                     _ -> -1
 
 putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . outHdlR)
 putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . outHdlR)
@@ -35,13 +38,11 @@ currentCounters = get
 lookupLbl :: Text -> RMonad (Maybe RefNum)
 lookupLbl lbl = reader (Map.lookup lbl . lMapR)
 
-isThisFile :: Int -> RMonad Bool
-isThisFile i = reader ((i==) . head . thisFileR)
+isThisFile :: FileRole -> RMonad Bool
+isThisFile fr = reader ((fr ==) . thisFileR)
 
-chToFileName :: Int -> RMonad String
-chToFileName i = reader (pick i . allFileNamesR)
-   where pick i chs | i < length chs = chs !! i
-                    | otherwise = ""
+-- chToFileName :: [Int] -> RMonad String
+-- chToFileName ch = reader (($ Chap ch) . fileNamesR)
 
 mkTag :: Text -> RMonad a -> RMonad a
 mkTag tag body = mkTagAttrsC tag ([], [], []) body

@@ -18,6 +18,7 @@ import qualified Data.Text.IO as TIO
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Config
 import Cheapskate
 
 import Html.Types
@@ -66,43 +67,33 @@ genTOCLMaps hauxnames =
      ((mapTuple concat Map.unions unionIxMaps) . unzip3) <$>
       (mapM genTOCLMap hauxnames)
 
-genHtml :: String -> String -> String
-         -> (Int, [String], TOC, LblMap) -> IO ()
-genHtml mdname htmlname tmpls (this, allFileNames, toc, lmap) = do
-    hdl <- openFile htmlname WriteMode
-    content <- readFile mdname
-    runRMonad [this] allFileNames metaInfoFNames hdl lmap
+genHtml :: Int -> TOC -> LblMap -> IO ()
+genHtml this toc lmap = do
+    hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
+    content <- readFile (mdNamePath this)
+    runRMonad (Chap [this]) lmap hdl
        (do toc' <- renderTOCPartial toc
-           mkPage tmpls toc' (htmlRender . markdown def $ content))
+           mkPage toc' (htmlRender . markdown def $ content))
     hClose hdl
 
-genTOC :: String -> TOC -> String -> ([String], LblMap) -> IO ()
-genTOC tocFName toc tmpls (allFileNames, lmap) = do
-  hdl <- openFile tocFName WriteMode
-  runRMonad [-1] allFileNames metaInfoFNames hdl lmap
+genTOC :: TOC -> LblMap -> IO ()
+genTOC toc lmap = do
+  hdl <- openFile (htmlNamePath ToC) WriteMode
+  runRMonad ToC lmap hdl
      (do toc' <- renderTOCPartial toc
-         mkPage tmpls toc' (Just bookheader, renderTOCsList toc))
+         mkPage toc' (Just bookheader, renderTOCsList toc))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
 
-genIx :: String -> IxMap -> String -> ([String], TOC, LblMap) -> IO ()
-genIx ixFName ixMap tmpls (allFileNames, toc, lmap) = do
-  hdl <- openFile ixFName WriteMode
-  runRMonad [-1] allFileNames metaInfoFNames hdl lmap
+genIx :: IxMap -> TOC -> LblMap -> IO ()
+genIx ixMap toc lmap = do
+  hdl <- openFile (htmlNamePath Ix) WriteMode
+  runRMonad Ix lmap hdl
      (do toc' <- renderTOCPartial toc
-         mkPage tmpls toc' (Just (mkTag "h1" (putStrTR "索引")),
+         mkPage toc' (Just (mkTag "h1" (putStrTR "索引")),
                             renderIx ixList))
   hClose hdl
  where ixList = Map.toAscList ixMap
-
-tocFHtmlName :: String
-tocFHtmlName = "TOC.html"
-
-ixFHtmlName :: String
-ixFHtmlName = "Ix.html"
-
-type MetaInfoFNames = (String, String)
-metaInfoFNames = (tocFHtmlName, ixFHtmlName)
 
 mapTuple f g h (x, y, z) = (f x, g y, h z)

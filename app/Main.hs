@@ -13,6 +13,8 @@ import qualified Data.Text.IO as TIO
 import Control.Arrow ((***))
 import Control.Monad (forM_)
 
+import Config
+
 import Cheapskate
 
 import LHs.Generator
@@ -49,8 +51,8 @@ phonies = do
   phony "pdf" $
     need [texBase </> "fpcr.pdf"]
   phony "html" $
-    need ( (htmlChs </> "TOC" <.> "html")
-         : (htmlChs </> "Ix"  <.> "html")
+    need ( htmlNamePath ToC
+         : htmlNamePath Ix
          : map (\ch -> htmlChs </> ch <.> "html") chapters)
 
 -- lhs, tex
@@ -82,9 +84,9 @@ lhsRules = do
 htmlRules :: Rules ()
 htmlRules = do
 
- forM_ (zip [0..] chapters) (\(i,ch) ->
-  (tmp </> "html" </> ch <.> "haux") %> \hauxName -> do
-   let mdName = contents </> ch <.> "md"
+ forM_ [0..numOfChapters-1] (\i ->
+   hauxNamePath i %> \hauxName -> do
+   let mdName = mdNamePath i
    need [mdName]
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
@@ -96,49 +98,20 @@ htmlRules = do
    mapTuple (buildRose 1) id id <$>
        liftIO (genTOCLMaps hauxNames)
 
- forM_ (zip [0..] chapters) (\(i,ch) ->
-  (htmlChs </> ch <.> "html") %> \htmlName -> do
-   let mdName = contents </> ch <.> "md"
+ forM_ [0.. numOfChapters-1] (\i ->
+  htmlNamePath (Chap [i]) %> \htmlName -> do
+   let mdName = mdNamePath i
    need [mdName]
    (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml mdName htmlName tmpls
-             (i, chapters, toc, lblMap)))
+   liftIO (genHtml i toc lblMap))
 
- htmlChs </> "TOC" <.> "html" %> \tocFName -> do
+ htmlNamePath ToC %> \tocFName -> do
    (toc, lblMap, _) <- buildTOCLMap ()
-   putInfo ("# generating TOC.html")
-   liftIO (genTOC tocFName toc tmpls (chapters, lblMap))
+   putInfo ("# generating ToC.html")
+   liftIO (genTOC toc lblMap)
 
- htmlChs </> "Ix" <.> "html" %> \ixFName -> do
+ htmlNamePath Ix %> \ixFName -> do
    (toc, lblMap, ix) <- buildTOCLMap ()
    putInfo ("# generating Ix.html")
-   liftIO (genIx ixFName ix tmpls (chapters, toc, lblMap))
-
--- configuration info.
-
-chapters :: [String]
-chapters = [ "Introduction"
-           , "Basics"
-           , "Induction"
-           , "SearchTrees"
-           , "Semantics"
-           , "Derivation"
-           , "Folds"
-           , "SegProblems"
-           , "Monads"
-           ]
--- paths
-
-root      = "fpcr"
-contents  = root </> "contents"
-
-texBase   = root </> "tex"
-lhsBase   = root </> "lhs"
-htmlBase  = root </> "html"
-lhsChs    = lhsBase  </> "Chapters"
-texChs    = texBase  </> "Chapters"
-htmlChs   = htmlBase </> "Chapters"
-
-tmpls     = root </> "templates"
-tmp       = root </> "tmp"
+   liftIO (genIx ix toc lblMap)

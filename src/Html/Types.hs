@@ -7,6 +7,7 @@ import Data.Map (Map)
 import Control.Monad.State
 import Control.Monad.Reader
 
+import Config
 import Cheapskate
 
 data Counter = Counter
@@ -45,12 +46,9 @@ type LblMap = Map Text RefNum
 type IxMap = Map Text (Maybe Text, [RefNum], [(Text, [RefNum])])
 ---
 
-data REnv = REnv { thisFileR     :: [Int]
-                 , allFileNamesR :: [String]
-                 , tocFileNameR  :: String
-                 , ixFileNameR   :: String
-                 , outHdlR       :: Handle
+data REnv = REnv { thisFileR     :: FileRole
                  , lMapR         :: LblMap
+                 , outHdlR       :: Handle
                  }
 
 type RMonad = ReaderT REnv (StateT Counter IO)
