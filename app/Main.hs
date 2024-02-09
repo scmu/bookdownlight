@@ -53,6 +53,7 @@ phonies = do
   phony "html" $
     need ( htmlNamePath ToC
          : htmlNamePath Ix
+         : htmlNamePath Biblio
          : map (\ch -> htmlChs </> ch <.> "html") chapters)
 
 -- lhs, tex
@@ -78,6 +79,9 @@ lhsRules = do
   need (map (\ch -> texChs </> ch <.> "tex") chapters)
   need [texBase </> "fpcr.tex"]
   command_ [Cwd texBase] "xelatex" ["fpcr"]
+
+ (texBase </> "fpcr.aux") %> \_ ->
+  need [texBase </> "fpcr.pdf"]
 
 -- html
 
@@ -115,3 +119,29 @@ htmlRules = do
    (toc, lblMap, ix) <- buildTOCLMap ()
    putInfo ("# generating Ix.html")
    liftIO (genIx ix toc lblMap)
+
+ tmp </> "html" </> "reduced_sorted" <.> "bib" %> \_ -> do
+   need [texBase </> "fpcr.aux"]
+   putInfo ("# generating reduced and sorted bibliography file")
+   command_ [Cwd texBase] "bibexport"
+       [ "-n", "-ns"
+       , "-o", (".." </> ".." </> tmp </> "html" </> "reduced_sorted_tmp" <.> "bib")
+       , "fpcr.aux"]
+   command_ [Cwd (tmp </> "html")] "bibtool"
+       [ "reduced_sorted_tmp.bib"
+       , "-s"
+       , "-r", "../../templates/html_pure/fpcr-bibs.rsc"
+       , "-o", "reduced_sorted.bib"]
+   command_ [Cwd (tmp </> "html")] "rm" ["reduced_sorted_tmp.bib"]
+
+ buildBiblioMap <- newCache $ \() -> do
+   let bibFileName = tmp </> "html" </> "reduced_sorted" <.> "bib"
+   need [bibFileName]
+   putInfo ("# parsing bibliography file")
+   liftIO (genBiblioMap bibFileName)
+
+ htmlNamePath Biblio %> \_ -> do
+   bib <- buildBiblioMap ()
+   (toc, _, _) <- buildTOCLMap ()
+   putInfo ("# generating Biblio.html")
+   liftIO (genBiblio bib toc)

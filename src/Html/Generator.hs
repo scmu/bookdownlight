@@ -18,6 +18,8 @@ import qualified Data.Text.IO as TIO
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Text.BibTeX.Entry as BE
+
 import Config
 import Cheapskate
 
@@ -27,6 +29,7 @@ import Html.Scanning
 import Html.RenderMonad
 import Html.Render
 import Html.Pure
+import Html.Bib
 
 import Development.Shake.FilePath
 
@@ -95,5 +98,18 @@ genIx ixMap toc lmap = do
                             renderIx ixList))
   hClose hdl
  where ixList = Map.toAscList ixMap
+
+genBiblioMap :: FilePath -> IO [BE.T]
+genBiblioMap fname =
+  parseBib fname
+
+genBiblio :: [BE.T] -> TOC -> IO ()
+genBiblio bib toc = do
+ hdl <- openFile (htmlNamePath Biblio) WriteMode
+ runRMonad Biblio Map.empty hdl
+    (do toc' <- renderTOCPartial toc
+        mkPage toc' (Just (mkTag "h1" (putStrTR "參考書目")),
+                           renderBib bib))
+ hClose hdl
 
 mapTuple f g h (x, y, z) = (f x, g y, h z)

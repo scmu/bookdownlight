@@ -29,6 +29,8 @@ library
       Cheapskate.ParserCombinators
       Cheapskate.Types
       Cheapskate.Util
+      Config
+      Html.Bib
       Html.Code
       Html.Counter
       Html.Generator
@@ -41,6 +43,9 @@ library
       LHs.Render
       Syntax.Util
       Testing
+      Text.BibTeX.Entry
+      Text.BibTeX.Format
+      Text.BibTeX.Parse
   other-modules:
       Paths_bookdownlight
   hs-source-dirs:
@@ -55,6 +60,7 @@ library
     , deepseq
     , directory
     , mtl
+    , parsec
     , regex-tdfa
     , shake
     , syb
@@ -82,6 +88,7 @@ executable bookdownlight-exe
     , deepseq
     , directory
     , mtl
+    , parsec
     , regex-tdfa
     , shake
     , syb

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TypeSynonymInstances, FlexibleInstances #-}
 module Html.RenderMonad where
 
 import System.IO (Handle)
@@ -86,3 +86,11 @@ renderAVs = mapM_ renderAttr
          | v == ""   = do putCharR ' ' >> putStrTR a
          | otherwise = do putCharR ' ' >> putStrTR a >> putStrTR "=\""
                           putStrTR v >> putCharR '"'
+
+--
+
+instance Semigroup a => Semigroup (RMonad a) where
+  m1 <> m2 = liftM2 (<>) m1 m2
+
+instance Monoid a => Monoid (RMonad a) where
+  mempty = return mempty

@@ -35,13 +35,9 @@ dependencies:
 - directory
 - shake
 - time
-#- text-icu
-#- text-regex-replace
 - text-replace
-#- megaparsec
-#- parser-combinators
-#- replace-megaparsec
 - regex-tdfa
+- parsec
 
 extra-lib-dirs:
 - /opt/homebrew/opt/icu4c/lib/

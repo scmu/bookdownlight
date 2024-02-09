@@ -54,7 +54,12 @@ mkSideMenu toc =
            (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
              (putStrTR "索引"))
        menuBiblio = do
-          mkTag "p" (putStrTR "參考書目")
+         let bibFName = htmlName Biblio
+         this <- reader thisFileR
+         let selected = if this == Biblio then ["pure-menu-selected"] else []
+         mkTagAttrsC "p" (selected, [], [])
+           (mkTagAttrsC "a" ([], [], [("href", pack bibFName)])
+             (putStrTR "參考書目"))         
        menuFooter = do
           mkTagAttrsC "p" (["author-info"], [], [])
             (do mkTagAttrsC "a" ([], [], [("href", "https://  homepage.iis.sinica.edu.tw/pages/scm/")])
