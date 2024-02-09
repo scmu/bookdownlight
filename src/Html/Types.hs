@@ -9,6 +9,7 @@ import Control.Monad.Reader
 
 import Config
 import Cheapskate
+import Text.BibTeX.Entry as BE
 
 data Counter = Counter
       { chC     :: !Int
@@ -44,10 +45,14 @@ type PRTOC = [Rose ((Text, [Int]), RMonad (), Text)]
 type LblMap = Map Text RefNum
 
 type IxMap = Map Text (Maybe Text, [RefNum], [(Text, [RefNum])])
+
+type BibMap = Map Text BE.T
+
 ---
 
 data REnv = REnv { thisFileR     :: FileRole
                  , lMapR         :: LblMap
+                 , bMapR         :: BibMap
                  , outHdlR       :: Handle
                  }
 

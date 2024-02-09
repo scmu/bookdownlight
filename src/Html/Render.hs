@@ -23,6 +23,7 @@ import Html.Counter
 import Html.RenderMonad
 import Html.Pure
 import Html.Code
+import Html.Bib
 
 ---- rendering
 
@@ -212,10 +213,9 @@ renderInline (PageRef txt) = return () -- deal with this later
 renderInline (Index idx) = do
   (c:_,ix) <- state newIdx
   mkSCTagAttrsC "span" ([], [Text.pack ("ix-" ++ showNums (c:ix))], [])
-renderInline (CiteT ref Nothing) = return () -- deal with this later
-renderInline (CiteT ref (Just opt)) = return () -- deal with this later
-renderInline (CiteP [(ref, Just opt)]) = return () -- deal with this later
-renderInline (CiteP cites) = return () -- deal with this later
+renderInline (CiteT ref opt) = renderCiteT ref opt
+renderInline (CiteP [(ref, opt)]) = renderCiteP1 ref opt
+renderInline (CiteP cites) = renderCitePs cites
 
 renderRef :: Text -> RMonad ()
 renderRef lbl = do
@@ -231,13 +231,12 @@ showHRef :: [Int] -> Text -> RMonad Text
 showHRef ch lbl = do
    b <- isThisFile (Chap ch)
    if b then return (Text.cons '#' lbl)
-      else return (showLongHRef ch lbl)
+      else return (showLongHRef (Chap ch) lbl)
 
-showLongHRef :: [Int] -> Text -> Text
-showLongHRef ch lbl =
+showLongHRef :: FileRole -> Text -> Text
+showLongHRef fr lbl =
    Text.append (Text.pack (fname ++ "#")) lbl
-  where fname = htmlName (Chap ch)
-
+  where fname = htmlName fr
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
 renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
@@ -316,7 +315,7 @@ renderIx = mkTag "ul" . mapM_ renderIx1
         renderIRef (ch:secs, ix) =
            mkTagAttrsC "a" ([], [], [("href", href)])
               (putStrTR "§" >> printSecNum' (ch:secs))
-          where href = showLongHRef (ch:secs)
+          where href = showLongHRef (Chap (ch:secs))
                          (Text.pack ("ix-" ++ showNums (ch:ix)))
         renderSubs [] = return ()
         renderSubs subs =

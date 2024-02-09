@@ -11,7 +11,7 @@ import Control.Monad.Reader
 
 -- import Data.Binary (Binary(..), encodeFile, decodeFile)
 import qualified Data.ByteString as BS (ByteString, readFile)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text.IO as TIO
 
@@ -70,11 +70,11 @@ genTOCLMaps hauxnames =
      ((mapTuple concat Map.unions unionIxMaps) . unzip3) <$>
       (mapM genTOCLMap hauxnames)
 
-genHtml :: Int -> TOC -> LblMap -> IO ()
-genHtml this toc lmap = do
+genHtml :: Int -> TOC -> LblMap -> BibMap -> IO ()
+genHtml this toc lmap bmap = do
     hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
     content <- readFile (mdNamePath this)
-    runRMonad (Chap [this]) lmap hdl
+    runRMonad (Chap [this]) lmap bmap hdl
        (do toc' <- renderTOCPartial toc
            mkPage toc' (htmlRender . markdown def $ content))
     hClose hdl
@@ -82,7 +82,7 @@ genHtml this toc lmap = do
 genTOC :: TOC -> LblMap -> IO ()
 genTOC toc lmap = do
   hdl <- openFile (htmlNamePath ToC) WriteMode
-  runRMonad ToC lmap hdl
+  runRMonad ToC lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
          mkPage toc' (Just bookheader, renderTOCsList toc))
   hClose hdl
@@ -92,21 +92,24 @@ genTOC toc lmap = do
 genIx :: IxMap -> TOC -> LblMap -> IO ()
 genIx ixMap toc lmap = do
   hdl <- openFile (htmlNamePath Ix) WriteMode
-  runRMonad Ix lmap hdl
+  runRMonad Ix lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
          mkPage toc' (Just (mkTag "h1" (putStrTR "索引")),
                             renderIx ixList))
   hClose hdl
  where ixList = Map.toAscList ixMap
 
-genBiblioMap :: FilePath -> IO [BE.T]
-genBiblioMap fname =
-  parseBib fname
+genBiblioMap :: FilePath -> IO ([BE.T], BibMap)
+genBiblioMap fname = do
+  bibs <- parseBib fname
+  let bibMap = Map.fromList
+                (map (\e -> (pack (BE.identifier e), e)) bibs)
+  return (bibs, bibMap)
 
 genBiblio :: [BE.T] -> TOC -> IO ()
 genBiblio bib toc = do
  hdl <- openFile (htmlNamePath Biblio) WriteMode
- runRMonad Biblio Map.empty hdl
+ runRMonad Biblio Map.empty Map.empty hdl
     (do toc' <- renderTOCPartial toc
         mkPage toc' (Just (mkTag "h1" (putStrTR "參考書目")),
                            renderBib bib))

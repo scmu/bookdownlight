@@ -102,13 +102,20 @@ htmlRules = do
    mapTuple (buildRose 1) id id <$>
        liftIO (genTOCLMaps hauxNames)
 
+ buildBiblioMap <- newCache $ \() -> do
+   let bibFileName = tmp </> "html" </> "reduced_sorted" <.> "bib"
+   need [bibFileName]
+   putInfo ("# parsing bibliography file")
+   liftIO (genBiblioMap bibFileName)
+
  forM_ [0.. numOfChapters-1] (\i ->
   htmlNamePath (Chap [i]) %> \htmlName -> do
    let mdName = mdNamePath i
    need [mdName]
+   (_, bibMap) <- buildBiblioMap ()
    (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml i toc lblMap))
+   liftIO (genHtml i toc lblMap bibMap))
 
  htmlNamePath ToC %> \tocFName -> do
    (toc, lblMap, _) <- buildTOCLMap ()
@@ -132,16 +139,10 @@ htmlRules = do
        , "-s"
        , "-r", "../../templates/html_pure/fpcr-bibs.rsc"
        , "-o", "reduced_sorted.bib"]
-   command_ [Cwd (tmp </> "html")] "rm" ["reduced_sorted_tmp.bib"]
-
- buildBiblioMap <- newCache $ \() -> do
-   let bibFileName = tmp </> "html" </> "reduced_sorted" <.> "bib"
-   need [bibFileName]
-   putInfo ("# parsing bibliography file")
-   liftIO (genBiblioMap bibFileName)
+  -- command_ [Cwd (tmp </> "html")] "rm" ["reduced_sorted_tmp.bib"]
 
  htmlNamePath Biblio %> \_ -> do
-   bib <- buildBiblioMap ()
+   (bib, _) <- buildBiblioMap ()
    (toc, _, _) <- buildTOCLMap ()
    putInfo ("# generating Biblio.html")
    liftIO (genBiblio bib toc)

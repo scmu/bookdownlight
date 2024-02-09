@@ -15,15 +15,16 @@ import Control.Monad.Reader
 
 import Config
 import Cheapskate
+import qualified Text.BibTeX.Entry as BE
 import Syntax.Util
 
 import Html.Types
 import Html.Counter
 
-runRMonad :: FileRole -> LblMap -> Handle -> RMonad a -> IO a
-runRMonad this lmap h m =
+runRMonad :: FileRole -> LblMap -> BibMap -> Handle -> RMonad a -> IO a
+runRMonad this lmap bmap h m =
   evalStateT (runReaderT m renv) (initChCounter chcounter)
- where renv = REnv this lmap h
+ where renv = REnv this lmap bmap h
        chcounter = case this of
                      Chap (i:_) -> i - 1
                      _ -> -1
@@ -37,6 +38,9 @@ currentCounters = get
 
 lookupLbl :: Text -> RMonad (Maybe RefNum)
 lookupLbl lbl = reader (Map.lookup lbl . lMapR)
+
+lookupBib :: Text -> RMonad (Maybe (BE.T))
+lookupBib idn = reader (Map.lookup idn . bMapR)
 
 isThisFile :: FileRole -> RMonad Bool
 isThisFile fr = reader ((fr ==) . thisFileR)

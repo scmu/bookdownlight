@@ -8,6 +8,10 @@ import qualified Text.BibTeX.Entry as E
 import qualified Text.BibTeX.Parse as P
 import Text.Parsec
 
+import Control.Monad.Reader
+import qualified Data.Map as Map
+
+import Config
 import Html.Types
 import Html.RenderMonad
 
@@ -207,22 +211,57 @@ ifPresent attr action =
   ifPresentElse attr (\val -> EF . const $ action val)
        (EF (const (return mempty)))
 
-{-
+-- Citations
 
-data T =
-   Cons {
-      entryType :: String,
-      identifier :: String,
-      fields :: [(String, String)]
-   }
-   deriving (Show)
--}
+renderCiteT :: Text.Text -> Maybe Text.Text -> RMonad ()
+renderCiteT idn opt = maybe err rCiteT =<< lookupBib idn
+  where err = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
+        rCiteT entry =
+          mkTagAttrsC "a" ([],[],[("href", href)])
+           (renderCAuthors (E.author entry) >> putStrTR " [" >>
+            putStrR (runEF (select "year") entry) >>
+            showOpt opt >>
+            putCharR ']')
+        showOpt Nothing = return ()
+        showOpt (Just txt) = putStrTR ", " >> putStrTR txt
+        href = showLongHRef_ Biblio idn
 
-{-
-@Book{		  abrial:96:b,
-  author	= {Abrial, Jean-Raymond},
-  publisher	= {Cambridge University Press},
-  title		= {The {B}-Book: Assigning Programs to Meanings},
-  year		= {1996}
-}
--}
+renderCiteP1 :: Text.Text -> Maybe Text.Text -> RMonad ()
+renderCiteP1 idn opt = maybe err rCiteP =<< lookupBib idn
+  where err = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
+        rCiteP entry = do
+          putCharR ' '
+          mkTagAttrsC "a" ([],[],[("href", href)])
+           (putStrTR "[" >> renderCAuthors (E.author entry) >> putCharR ' ' >>
+            putStrR (runEF (select "year") entry) >>
+            showOpt opt >>
+            putCharR ']')
+        showOpt Nothing = return ()
+        showOpt (Just txt) = putStrTR ", " >> putStrTR txt
+        href = showLongHRef_ Biblio idn
+
+renderCitePs :: [(Text.Text, Maybe Text.Text)] -> RMonad ()
+renderCitePs [] = return ()
+renderCitePs cites = putCharR '[' >> rCitePs cites >> putCharR ']'
+ where rCitePs [] = return ()
+       rCitePs [(idn,_)] = maybe (err idn) (rCite1 idn) =<< lookupBib idn
+       rCitePs ((idn,_):rest) =
+          (maybe (err idn) (rCite1 idn) =<< lookupBib idn) >>
+          putStrTR ", " >> rCitePs rest
+       err idn = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
+       rCite1 idn entry =
+          mkTagAttrsC "a" ([],[],[("href", href)])
+            (renderCAuthors (E.author entry) >> putCharR ' ' >>
+             putStrR (runEF (select "year") entry))
+         where href = showLongHRef_ Biblio idn
+
+renderCAuthors [] = return ()
+renderCAuthors [(sur,_)] = putStrR sur
+renderCAuthors [(sur1,_), (sur2,_)] =
+  putStrR sur1 >> putStrTR " and " >> putStrR sur2
+renderCAuthors ((sur,_):_) = putStrR sur >> putStrTR " et al."
+
+showLongHRef_ :: FileRole -> Text.Text -> Text.Text
+showLongHRef_ fr lbl =
+   Text.append (Text.pack (fname ++ "#")) lbl
+  where fname = htmlName fr
