@@ -10,6 +10,7 @@ import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Reader
 
