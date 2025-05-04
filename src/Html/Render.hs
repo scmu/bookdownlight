@@ -212,7 +212,7 @@ renderInline (EqRef txt) = putCharR '(' >> renderRef txt >> putCharR ')'
 renderInline (PageRef txt) = return () -- deal with this later
 renderInline (Index idx) = do
   (c:_,ix) <- state newIdx
-  mkSCTagAttrsC "span" ([], [Text.pack ("ix-" ++ showNums (c:ix))], [])
+  mkTagAttrsC "span" ([], [Text.pack ("ix-" ++ showNums (c:ix))], []) (return ())
 renderInline (CiteT ref opt) = renderCiteT ref opt
 renderInline (CiteP [(ref, opt)]) = renderCiteP1 ref opt
 renderInline (CiteP cites) = renderCitePs cites
