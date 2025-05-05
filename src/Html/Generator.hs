@@ -79,6 +79,16 @@ genHtml this toc lmap bmap = do
            mkPage toc' (htmlRender . markdown def $ content))
     hClose hdl
 
+genIndex :: TOC -> LblMap -> IO ()
+genIndex toc lmap = do
+  hdl <- openFile (htmlNamePath Index) WriteMode
+  runRMonad Index lmap Map.empty hdl
+     (do toc' <- renderTOCPartial toc
+         mkPage toc' (Just bookheader, renderTOCsList toc))
+  hClose hdl
+ where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
+                       mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
+
 genTOC :: TOC -> LblMap -> IO ()
 genTOC toc lmap = do
   hdl <- openFile (htmlNamePath ToC) WriteMode

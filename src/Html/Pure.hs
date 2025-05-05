@@ -8,16 +8,20 @@ import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import Development.Shake.FilePath ((</>))
 
+import qualified Data.Text.Lazy as L
+import Text.Replace
+
 import Config
 import Html.Types
 import Html.RenderMonad
 
 mkPage :: PRTOC -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
 mkPage toc (title, body) = do
-  liftIO (T.readFile htmlHeader) >>= putStrTR
+  liftIO (T.readFile htmlHeader) >>= replacePath >>= putStrTR
   mkSideMenu toc
+  putCharR '\n'
   mkMain (title, body)
-  liftIO (T.readFile htmlFooter) >>= putStrTR
+  liftIO (T.readFile htmlFooter) >>= replacePath >>= putStrTR
  where htmlHeader = tmpls </> "html_pure" </> "pure_header.html"
        htmlFooter = tmpls </> "html_pure" </> "pure_footer.html"
 
@@ -37,32 +41,29 @@ mkSideMenu toc =
          mkTagAttrsC "h2" (["pure-menu-heading"], [], [])
             (putStrR "Functional Program Construction and Reasoning")
        menuToCF = do
-         let tocFName = htmlName ToC
          this <- reader thisFileR
          let selected = if this == ToC then ["pure-menu-selected"] else []
          mkTagAttrsC "p" (selected, [], [])
-           (mkTagAttrsC "a" ([], [], [("href", pack tocFName)])
+           (mkTagAttrsC "a" ([], [], [("href", pack (relPathToFile this ToC))])
             (putStrTR "目錄"))
        menuToC = do
          mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
             (renderTOCsMenu 1 False toc)
        menuIx = do
-         let ixFName = htmlName Ix
          this <- reader thisFileR
          let selected = if this == Ix then ["pure-menu-selected"] else []
          mkTagAttrsC "p" (selected, [], [])
-           (mkTagAttrsC "a" ([], [], [("href", pack ixFName)])
+           (mkTagAttrsC "a" ([], [], [("href", pack (relPathToFile this Ix))])
              (putStrTR "索引"))
        menuBiblio = do
-         let bibFName = htmlName Biblio
          this <- reader thisFileR
          let selected = if this == Biblio then ["pure-menu-selected"] else []
          mkTagAttrsC "p" (selected, [], [])
-           (mkTagAttrsC "a" ([], [], [("href", pack bibFName)])
-             (putStrTR "參考書目"))         
+           (mkTagAttrsC "a" ([], [], [("href", pack (relPathToFile this Biblio))])
+             (putStrTR "參考書目"))
        menuFooter = do
           mkTagAttrsC "p" (["author-info"], [], [])
-            (do mkTagAttrsC "a" ([], [], [("href", "https://  homepage.iis.sinica.edu.tw/pages/scm/")])
+            (do mkTagAttrsC "a" ([], [], [("href", "https://homepage.iis.sinica.edu.tw/pages/scm/")])
                   (putStrTR "穆信成 Shin-Cheng Mu")
                 mkSCTag "br"
                 putStrTR "中央研究院 資訊科學研究所")
@@ -133,6 +134,7 @@ renderTOCsMenu i c ts =
 renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
   mkTagAttrsC "li" (["pure-menu-item"], [], [])
    (mkTagAttrsC "a" ([],[],[("href", url)]) title)
+  putCharR '\n'
 renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
   this <- reader thisFileR
   let (checked, selected)
@@ -144,8 +146,18 @@ renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
           (["toggle"], [liLabel'], checked++[("type", "checkbox")])
        mkTagAttrsC "label" (["menu-toggle"],[],[("for", liLabel')])(return ())
        renderTOCsMenu (i+1) True ts)
+  putCharR '\n'
  where liLabel = "menu-li-" ++ showNums nums
        liLabel' = pack liLabel
        showNums [] = []
        showNums [x] = show x
        showNums (x:xs) = show x ++ "-" ++ showNums xs
+
+replacePath :: Text -> RMonad Text
+replacePath txt = do
+  this <- reader thisFileR
+  return (L.toStrict . replaceWithList (sysFileLoc this) . L.fromStrict $ txt)
+ where inRoot     = [Replace "$CSSPATH" "css", Replace "$JSPATH" "js"]
+       inChapters = [Replace "$CSSPATH" "../css", Replace "$JSPATH" "../js"]
+       sysFileLoc (Chap _) = inChapters
+       sysFileLoc _        = inRoot

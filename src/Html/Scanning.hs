@@ -91,7 +91,7 @@ scanInlines is = do
   -- for now, inlines contain indices only
 
 scanInline :: Inline -> LMonad IDict
-scanInline (Index idx) = do
+scanInline (Idx idx) = do
   ix <- state newIdx
   return [(term, (disp, sub, ix))]
  where (pre, bang, post) = (idx =~ ("[^\\\\](\\\\\\\\)*!" :: Text)) ::

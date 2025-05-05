@@ -51,7 +51,8 @@ phonies = do
   phony "pdf" $
     need [texBase </> "fpcr.pdf"]
   phony "html" $
-    need ( htmlNamePath ToC
+    need ( htmlNamePath Index
+         : htmlNamePath ToC
          : htmlNamePath Ix
          : htmlNamePath Biblio
          : map (\ch -> htmlChs </> ch <.> "html") chapters)
@@ -116,6 +117,11 @@ htmlRules = do
    (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
    liftIO (genHtml i toc lblMap bibMap))
+
+ htmlNamePath Index %> \tocFName -> do
+   (toc, lblMap, _) <- buildTOCLMap ()
+   putInfo ("# generating index.html")
+   liftIO (genIndex toc lblMap)
 
  htmlNamePath ToC %> \tocFName -> do
    (toc, lblMap, _) <- buildTOCLMap ()

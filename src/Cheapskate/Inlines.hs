@@ -167,7 +167,7 @@ pInline refmap =
        <|> pRef
        <|> pEqRef
        <|> pPageRef
-       <|> pIndex
+       <|> pIdx
        <|> pEntity
        <|> pSym
 
@@ -462,16 +462,16 @@ pPageRef = do string "\\@pageref{"
               char '}'
               return $ singleton $ PageRef t
 
--- pIndex :: Parser Inlines
--- pIndex = do string "\\index{"
+-- pIdx :: Parser Inlines
+-- pIdx = do string "\\index{"
 --             t <- takeWhile1 (not . ('}'==))
 --             char '}'
 --             return $ singleton $ Index t
 
-pIndex :: Parser Inlines
-pIndex = do string "\\index"
-            txt <- T.concat <$> pNest '{' '}'
-            return $ singleton $ Index txt
+pIdx :: Parser Inlines
+pIdx = do string "\\index"
+          txt <- T.concat <$> pNest '{' '}'
+          return $ singleton $ Idx txt
 
 pNest :: Char -> Char -> Parser [Text]
 pNest open close = do

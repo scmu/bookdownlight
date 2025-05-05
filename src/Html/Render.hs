@@ -190,7 +190,7 @@ renderInlines = mapM_ renderInline
 renderInline :: Inline -> RMonad ()
 renderInline (Str txt) = putStrTR txt
 renderInline Space     = putCharR ' '
-renderInline SoftBreak = putStrTR "&shy;"
+renderInline SoftBreak = putCharR '\n' -- putStrTR "&shy;"
 renderInline LineBreak = putStrTR "<br/>\n"
 renderInline (Emph inlines) =
   mkTag "em" (renderInlines inlines)
@@ -210,7 +210,7 @@ renderInline (Footnote is) = do
 renderInline (Ref txt)   = renderRef txt
 renderInline (EqRef txt) = putCharR '(' >> renderRef txt >> putCharR ')'
 renderInline (PageRef txt) = return () -- deal with this later
-renderInline (Index idx) = do
+renderInline (Idx idx) = do
   (c:_,ix) <- state newIdx
   mkTagAttrsC "span" ([], [Text.pack ("ix-" ++ showNums (c:ix))], []) (return ())
 renderInline (CiteT ref opt) = renderCiteT ref opt
@@ -229,14 +229,14 @@ renderRef lbl = do
 
 showHRef :: [Int] -> Text -> RMonad Text
 showHRef ch lbl = do
-   b <- isThisFile (Chap ch)
-   if b then return (Text.cons '#' lbl)
-      else return (showLongHRef (Chap ch) lbl)
+   this <- reader thisFileR
+   if this == Chap ch then return (Text.cons '#' lbl)
+      else return (showLongHRef this (Chap ch) lbl)
 
-showLongHRef :: FileRole -> Text -> Text
-showLongHRef fr lbl =
+showLongHRef :: FileRole -> FileRole -> Text -> Text
+showLongHRef this fr lbl = do
    Text.append (Text.pack (fname ++ "#")) lbl
-  where fname = htmlName fr
+  where fname = relPathToFile this fr
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
 renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
@@ -274,6 +274,7 @@ renderTOCItem ((fid, nums), title, lbl) = do
   mkTag "li"
    (mkTagAttrsC "a" ([],[],[("href", href)])
      (printSecNum nums >> renderInlines title))
+  putCharR '\n'
 
 renderTOCPartial :: TOC -> RMonad PRTOC
 renderTOCPartial = mapM renderTOCPartialItem
@@ -312,10 +313,11 @@ renderIx = mkTag "ul" . mapM_ renderIx1
         renderIRefs [rf] = renderIRef rf
         renderIRefs (rf:rfs) = renderIRef rf >> putStrTR "&nbsp;" >>
                                renderIRefs rfs
-        renderIRef (ch:secs, ix) =
-           mkTagAttrsC "a" ([], [], [("href", href)])
+        renderIRef (ch:secs, ix) = do
+           this <- reader thisFileR
+           mkTagAttrsC "a" ([], [], [("href", href this)])
               (putStrTR "§" >> printSecNum' (ch:secs))
-          where href = showLongHRef (Chap (ch:secs))
+          where href this = showLongHRef this (Chap (ch:secs))
                          (Text.pack ("ix-" ++ showNums (ch:ix)))
         renderSubs [] = return ()
         renderSubs subs =

@@ -60,7 +60,7 @@ data Inline = Str Text
             | RawHtml Text
             | Attrs [Attr]
             | Footnote Inlines
-            | Index Text
+            | Idx Text  -- index in text
             | Ref Text
             | EqRef Text
             | PageRef Text

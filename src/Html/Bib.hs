@@ -216,29 +216,31 @@ ifPresent attr action =
 renderCiteT :: Text.Text -> Maybe Text.Text -> RMonad ()
 renderCiteT idn opt = maybe err rCiteT =<< lookupBib idn
   where err = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
-        rCiteT entry =
-          mkTagAttrsC "a" ([],[],[("href", href)])
+        rCiteT entry = do
+          this <- reader thisFileR
+          mkTagAttrsC "a" ([],[],[("href", href this)])
            (renderCAuthors (E.author entry) >> putStrTR " [" >>
             putStrR (runEF (select "year") entry) >>
             showOpt opt >>
             putCharR ']')
         showOpt Nothing = return ()
         showOpt (Just txt) = putStrTR ", " >> putStrTR txt
-        href = showLongHRef_ Biblio idn
+        href this = showLongHRef_ this Biblio idn
 
 renderCiteP1 :: Text.Text -> Maybe Text.Text -> RMonad ()
 renderCiteP1 idn opt = maybe err rCiteP =<< lookupBib idn
   where err = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
         rCiteP entry = do
+          this <- reader thisFileR
           putCharR ' '
-          mkTagAttrsC "a" ([],[],[("href", href)])
+          mkTagAttrsC "a" ([],[],[("href", href this)])
            (putStrTR "[" >> renderCAuthors (E.author entry) >> putCharR ' ' >>
             putStrR (runEF (select "year") entry) >>
             showOpt opt >>
             putCharR ']')
         showOpt Nothing = return ()
         showOpt (Just txt) = putStrTR ", " >> putStrTR txt
-        href = showLongHRef_ Biblio idn
+        href this = showLongHRef_ this Biblio idn
 
 renderCitePs :: [(Text.Text, Maybe Text.Text)] -> RMonad ()
 renderCitePs [] = return ()
@@ -249,11 +251,12 @@ renderCitePs cites = putCharR '[' >> rCitePs cites >> putCharR ']'
           (maybe (err idn) (rCite1 idn) =<< lookupBib idn) >>
           putStrTR ", " >> rCitePs rest
        err idn = putStrTR "[{" >> putStrTR idn >> putStrTR "} not found]"
-       rCite1 idn entry =
-          mkTagAttrsC "a" ([],[],[("href", href)])
+       rCite1 idn entry = do
+          this <- reader thisFileR
+          mkTagAttrsC "a" ([],[],[("href", href this)])
             (renderCAuthors (E.author entry) >> putCharR ' ' >>
              putStrR (runEF (select "year") entry))
-         where href = showLongHRef_ Biblio idn
+         where href this = showLongHRef_ this Biblio idn
 
 renderCAuthors [] = return ()
 renderCAuthors [(sur,_)] = putStrR sur
@@ -261,7 +264,7 @@ renderCAuthors [(sur1,_), (sur2,_)] =
   putStrR sur1 >> putStrTR " and " >> putStrR sur2
 renderCAuthors ((sur,_):_) = putStrR sur >> putStrTR " et al."
 
-showLongHRef_ :: FileRole -> Text.Text -> Text.Text
-showLongHRef_ fr lbl =
+showLongHRef_ :: FileRole -> FileRole -> Text.Text -> Text.Text
+showLongHRef_ this fr lbl =
    Text.append (Text.pack (fname ++ "#")) lbl
-  where fname = htmlName fr
+  where fname = relPathToFile this fr
