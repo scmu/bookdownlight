@@ -73,7 +73,7 @@ genTOCLMaps hauxnames =
 genHtml :: Int -> TOC -> LblMap -> BibMap -> IO ()
 genHtml this toc lmap bmap = do
     hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
-    content <- readFile (mdNamePath this)
+    content <- readFile (mdNamePath (Chap [this]))
     runRMonad (Chap [this]) lmap bmap hdl
        (do toc' <- renderTOCPartial toc
            mkPage toc' (htmlRender . markdown def $ content))
@@ -85,6 +85,16 @@ genIndex toc lmap = do
   runRMonad Index lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
          mkPage toc' (Just bookheader, renderTOCsList toc))
+  hClose hdl
+ where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
+                       mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
+genPreface :: TOC -> LblMap -> IO ()
+genPreface toc lmap = do
+  hdl <- openFile (htmlNamePath Preface) WriteMode
+  content <- readFile (mdNamePath Preface)
+  runRMonad Preface lmap Map.empty hdl
+     (do toc' <- renderTOCPartial toc
+         mkPage toc' (htmlRender . markdown def $ content))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")

@@ -31,6 +31,7 @@ mkSideMenu toc =
     mkTagAttrsC "div" (["pure-menu"], [], []) $
      do menuHeader
         menuToCF
+        menuPreface
         menuToC
         menuIx
         menuBiblio
@@ -46,6 +47,12 @@ mkSideMenu toc =
          mkTagAttrsC "p" (selected, [], [])
            (mkTagAttrsC "a" ([], [], [("href", pack (relPathToFile this ToC))])
             (putStrTR "目錄"))
+       menuPreface = do
+         this <- reader thisFileR
+         let selected = if this == Preface then ["pure-menu-selected"] else []
+         mkTagAttrsC "p" (selected, [], [])
+           (mkTagAttrsC "a" ([], [], [("href", pack (relPathToFile this Preface))])
+             (putStrTR "前言"))
        menuToC = do
          mkTagAttrsC "nav" (["nav"], [], [("role", "navigation")])
             (renderTOCsMenu 1 False toc)

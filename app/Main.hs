@@ -45,14 +45,17 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
 phonies :: Rules ()
 phonies = do
   phony "lhs" $
-    need (map (\ch -> lhsChs </> ch <.> "lhs") chapters)
+    need ( (lhsChs </> fileName Preface <.> "lhs")
+         : map (\ch -> lhsChs </> ch <.> "lhs") chapters)
   phony "tex" $
-    need (map (\ch -> texChs </> ch <.> "tex") chapters)
+    need ( (texChs </> fileName Preface <.> "tex")
+         : map (\ch -> texChs </> ch <.> "tex") chapters)
   phony "pdf" $
     need [texBase </> "fpcr.pdf"]
   phony "html" $
     need ( htmlNamePath Index
          : htmlNamePath ToC
+         : htmlNamePath Preface
          : htmlNamePath Ix
          : htmlNamePath Biblio
          : map (\ch -> htmlChs </> ch <.> "html") chapters)
@@ -62,14 +65,14 @@ phonies = do
 lhsRules :: Rules ()
 lhsRules = do
 
- forM_ chapters (\ch ->
+ forM_ (fileName Preface : chapters) (\ch ->
   (lhsChs </> ch <.> "lhs") %> \lhsName -> do
    let mdName = contents </> ch <.> "md"
    need [mdName]
    putInfo ("# md->lhs (for " ++ lhsName ++ ")")
    liftIO (genLHs mdName lhsName (tmpls </> "lhs")))
 
- forM_ chapters (\ch ->
+ forM_ (fileName Preface : chapters) (\ch ->
   (texChs </> ch <.> "tex") %> \texName -> do
    let lhsName = lhsChs </> ch <.> "lhs"
    need [lhsName]
@@ -77,7 +80,7 @@ lhsRules = do
      "lhs2TeX" [".." </> ".." </> lhsName])
 
  (texBase </> "fpcr.pdf") %> \out -> do
-  need (map (\ch -> texChs </> ch <.> "tex") chapters)
+  need (map (\ch -> texChs </> ch <.> "tex") (fileName Preface : chapters))
   need [texBase </> "fpcr.tex"]
   command_ [Cwd texBase] "xelatex" ["fpcr"]
 
@@ -91,7 +94,7 @@ htmlRules = do
 
  forM_ [0..numOfChapters-1] (\i ->
    hauxNamePath i %> \hauxName -> do
-   let mdName = mdNamePath i
+   let mdName = mdNamePath (Chap [i])
    need [mdName]
    putInfo ("# md->haux (for " ++ hauxName ++ ")")
    liftIO (genHAux i mdName hauxName))
@@ -111,7 +114,7 @@ htmlRules = do
 
  forM_ [0.. numOfChapters-1] (\i ->
   htmlNamePath (Chap [i]) %> \htmlName -> do
-   let mdName = mdNamePath i
+   let mdName = mdNamePath (Chap [i])
    need [mdName]
    (_, bibMap) <- buildBiblioMap ()
    (toc, lblMap, _) <- buildTOCLMap ()
@@ -122,6 +125,11 @@ htmlRules = do
    (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# generating index.html")
    liftIO (genIndex toc lblMap)
+
+ htmlNamePath Preface %> \tocFName -> do
+   (toc, lblMap, _) <- buildTOCLMap ()
+   putInfo ("# generating Preface.html")
+   liftIO (genPreface toc lblMap)
 
  htmlNamePath ToC %> \tocFName -> do
    (toc, lblMap, _) <- buildTOCLMap ()

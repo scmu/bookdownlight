@@ -162,7 +162,7 @@ renderDIV c cs ids avs bs =
 renderHeader :: Int -> [Attr] -> Inlines -> LHsMonad ()
 renderHeader hd attrs is =
   do putCharR '\n'
-     putStrR ('\\': seclevel hd ++ "{")
+     putStrR ('\\': seclevel hd ++ ifstar ++"{")
      renderInlines is
      putCharR '}'
      mapM_ renderLabel (attrsId attrs)
@@ -171,6 +171,7 @@ renderHeader hd attrs is =
        seclevel 2 = "section"
        seclevel 3 = "subsection"
        seclevel 4 = "subsubsection"
+       ifstar = if hasClass "nonumber" attrs then "*" else ""
 
 renderLabel xs = putStrTR "\\label{" >> putStrTR xs >> putCharR '}'
 

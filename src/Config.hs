@@ -34,11 +34,6 @@ htmlChs   = htmlBase </> "Chapters"
 tmpls     = root </> "templates"
 tmp       = root </> "tmp"
 
-mdNamePath :: Int -> String
-mdNamePath i = contents </> (chapters !! i) <.> "md"
-
--- Html Specific
-
 data FileRole = Index | Preface | ToC | Chap [Int] | Ix | Biblio
   deriving Eq
 
@@ -49,6 +44,12 @@ fileName ToC          = "ToC"
 fileName (Chap (c:_)) = chapters !! c
 fileName Ix           = "Ix"
 fileName Biblio       = "Biblio"
+
+mdNamePath :: FileRole -> String
+mdNamePath Preface      = contents </> fileName Preface <.> "md"
+mdNamePath (Chap (c:_)) = contents </> (chapters !! c) <.> "md"
+
+-- Html Specific
 
 htmlName :: FileRole -> String
 htmlName fr = fileName fr <.> "html"
