@@ -119,7 +119,7 @@ htmlRules = do
    (_, bibMap) <- buildBiblioMap ()
    (toc, lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genHtml i toc lblMap bibMap))
+   liftIO (genChapterHtmls i toc lblMap bibMap))
 
  htmlNamePath Index %> \tocFName -> do
    (toc, lblMap, _) <- buildTOCLMap ()

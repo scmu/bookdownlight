@@ -18,6 +18,8 @@ import qualified Data.Text.IO as TIO
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import Data.Sequence (Seq(..), breakl)
+
 import Text.BibTeX.Entry as BE
 
 import Config
@@ -30,6 +32,7 @@ import Html.RenderMonad
 import Html.Render
 import Html.Pure
 import Html.Bib
+import Syntax.Util (attrsId)
 
 import Development.Shake.FilePath
 
@@ -54,7 +57,7 @@ genHAux i mdname hauxname = do
 mkHAux :: Int -> Text -> (AuxInfo, Counter)
 mkHAux i contents =
         let doc = markdown def $ contents
-        in runState (scanDoc doc) (initChCounter (i-1))
+        in runState (scanDoc doc) (initChSecCounter (i-1) 0)
 
 readHAux :: String -> IO AuxInfo
 readHAux hauxname = -- decodeFile -- SCM: binary encoded files turned out to be bigger!
@@ -70,6 +73,7 @@ genTOCLMaps hauxnames =
      ((mapTuple concat Map.unions unionIxMaps) . unzip3) <$>
       (mapM genTOCLMap hauxnames)
 
+{-
 genHtml :: Int -> TOC -> LblMap -> BibMap -> IO ()
 genHtml this toc lmap bmap = do
     hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
@@ -78,6 +82,36 @@ genHtml this toc lmap bmap = do
        (do toc' <- renderTOCPartial toc
            mkPage toc' (htmlRender . markdown def $ content))
     hClose hdl
+-}
+
+genChapterHtmls :: Int -> TOC -> LblMap -> BibMap -> IO ()
+genChapterHtmls this toc lmap bmap = do
+    content <- readFile (mdNamePath (Chap [this]))
+    let (Doc _ blocks) = markdown def content
+    let (chTitle, (chPremble, sections)) =
+           (fmap (\ (Header _ attrs is) -> renderHeader 1 attrs is) ***
+            splitSections) . sepChHeader $ blocks
+    genChapter this toc lmap bmap (chTitle, chPremble)
+    mapM_ (genSection toc lmap bmap chTitle) sections
+ where
+  genChapter this toc lmap bmap (chTitle, chPremble) = do
+    hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
+    runRMonad (Chap [this]) lmap bmap hdl
+       (do toc' <- renderTOCPartial toc
+           mkPage toc' (chTitle, renderBlocks chPremble))
+    hClose hdl
+  genSection toc lmap bmap chTitle (attrs, secTitle, secBody) = do
+    hdl <- openFile (htmlNamePath (Chap this)) WriteMode
+    runRMonad (Chap this) lmap bmap hdl
+       (do toc' <- renderTOCPartial toc
+           mkPage toc' (chTitle,
+              renderBlocks (Header 2 attrs secTitle :<| secBody)))
+    hClose hdl
+   where secId = let res = attrsId attrs
+                 in if null res then error (show attrs ++ show secTitle)
+                        else head res
+         Just (secnum, _) = Map.lookup secId lmap
+         this = take 2 secnum
 
 genIndex :: TOC -> LblMap -> IO ()
 genIndex toc lmap = do
@@ -136,3 +170,31 @@ genBiblio bib toc = do
  hClose hdl
 
 mapTuple f g h (x, y, z) = (f x, g y, h z)
+
+---
+{-
+sepChHeader :: Blocks -> (Maybe Block, Blocks)
+sepChHeader Empty = (Nothing, Empty)
+sepChHeader (Header 1 attrs is :<| blocks) =
+  (Just (Header 1 attrs is), blocks)
+sepChHeader (Header hd attrs is :<| blocks) =
+  (Nothing, Header hd attrs is :<| blocks)
+sepChHeader (bl :<| blocks) =
+  (id *** (bl :<|)) $ sepChHeader blocks
+-}
+splitSections :: Blocks -> (Blocks, [([Attr], Inlines -- header info
+                                     , Blocks)])      -- section body
+splitSections Empty = (Empty, [])
+splitSections blocks =
+  let (premble, rest) = breakl isSectHeader blocks
+  in (premble, splitSections' rest)
+
+  -- inv: blocks either empty or starts with Header 2.
+splitSections' :: Blocks -> [([Attr], Inlines, Blocks)]
+splitSections' Empty = []
+splitSections' (Header _ attrs title :<| rest) =
+  let (sec, rest') = breakl isSectHeader rest
+  in ((attrs, title, sec) : splitSections' rest')
+
+isSectHeader (Header 2 _ _) = True
+isSectHeader _              = False

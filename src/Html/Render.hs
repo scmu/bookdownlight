@@ -165,8 +165,7 @@ renderDIV c (cls, ids, avs) bs =
 
 renderHeader :: Int -> [Attr] -> Inlines -> RMonad ()
 renderHeader hd attrs is = do
-  (_, nums) <- if nonumber then return (undefined, [])
-                           else state (newHeader hd)
+  nums <- getnums hd
   let (htag, hcls) = seclevel hd
   mkTagAttrs htag (AtrClass hcls : attrs)
              (printSecNum nums >> renderInlines is)
@@ -175,6 +174,11 @@ renderHeader hd attrs is = do
        seclevel 3 = ("h3", "subsection")
        seclevel 4 = ("h4", "subsubsection")
        nonumber = hasClass "nonumber" attrs
+        -- do not call newHeader for Chapter, since it resets all counters.
+       getnums :: Int -> RMonad [Int]
+       getnums 1  = snd <$> state incChap
+       getnums hd | nonumber  = return []
+                  | otherwise = snd <$> state (newHeader hd)
 
 printSecNum :: [Int] -> RMonad ()
 printSecNum []     = return ()

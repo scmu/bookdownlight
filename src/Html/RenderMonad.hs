@@ -24,11 +24,12 @@ import Html.Counter
 
 runRMonad :: FileRole -> LblMap -> BibMap -> Handle -> RMonad a -> IO a
 runRMonad this lmap bmap h m =
-  evalStateT (runReaderT m renv) (initChCounter chcounter)
+  evalStateT (runReaderT m renv) (uncurry initChSecCounter chcounter)
  where renv = REnv this lmap bmap h
        chcounter = case this of
-                     Chap (i:_) -> i - 1
-                     _ -> -1
+                     Chap [i]     -> (i - 1, 0)
+                     Chap (i:j:_) -> (i - 1, j - 1)
+                     _            -> (-1, 0)
 
 putStrR   xs = ReaderT (liftIO . flip IO.hPutStr xs . outHdlR)
 putCharR  c  = ReaderT (liftIO . flip IO.hPutChar c . outHdlR)

@@ -38,12 +38,13 @@ data FileRole = Index | Preface | ToC | Chap [Int] | Ix | Biblio
   deriving Eq
 
 fileName :: FileRole -> String
-fileName Index        = "index"
-fileName Preface      = "Preface"
-fileName ToC          = "ToC"
-fileName (Chap (c:_)) = chapters !! c
-fileName Ix           = "Ix"
-fileName Biblio       = "Biblio"
+fileName Index          = "index"
+fileName Preface        = "Preface"
+fileName ToC            = "ToC"
+fileName (Chap [c])     = chapters !! c
+fileName (Chap (c:s:_)) = chapters !! c ++ "-" ++ show s
+fileName Ix             = "Ix"
+fileName Biblio         = "Biblio"
 
 mdNamePath :: FileRole -> String
 mdNamePath Preface      = contents </> fileName Preface <.> "md"

@@ -7,12 +7,16 @@ import Cheapskate (Inlines)
 
 import Html.Types
 
-initChCounter :: Int -> Counter
-initChCounter i = Counter i 0 0 0 0 0 0 0 0
+initChSecCounter :: Int -> Int -> Counter
+initChSecCounter i j = Counter i j 0 0 0 0 0 0 0
+
+incChap :: Counter -> (RefNum, Counter)
+incChap cnt = (([ch],[ch]), cnt { chC = ch })
+  where ch = chC cnt + 1
 
 newChap :: Counter -> (RefNum, Counter)
 newChap cnt = (([ch],[ch]), Counter ch 0 0 0 0 0 0 0 0)
-     where ch = chC cnt + 1
+  where ch = chC cnt + 1
 
 newSec :: Counter -> (RefNum, Counter)
 newSec cnt = (([ch, sec], [ch, sec]), cnt')
