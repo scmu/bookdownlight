@@ -7,8 +7,8 @@ import Cheapskate (Inlines)
 
 import Html.Types
 
-initChSecCounter :: Int -> Int -> Counter
-initChSecCounter i j = Counter i j 0 0 0 0 0 0 0
+initChCounter :: Int -> Counter
+initChCounter i = Counter i 0 0 0 0 0 0 0 0
 
 incChap :: Counter -> (RefNum, Counter)
 incChap cnt = (([ch],[ch]), cnt { chC = ch })

@@ -174,9 +174,10 @@ renderHeader hd attrs is = do
        seclevel 3 = ("h3", "subsection")
        seclevel 4 = ("h4", "subsubsection")
        nonumber = hasClass "nonumber" attrs
-        -- do not call newHeader for Chapter, since it resets all counters.
+        -- Do not call newHeader for Chapter, since it resets all counters.
+        -- We do not increase Ch in the rendering phase.
        getnums :: Int -> RMonad [Int]
-       getnums 1  = snd <$> state incChap
+       getnums 1  = (\cnt -> [chC cnt]) <$> get 
        getnums hd | nonumber  = return []
                   | otherwise = snd <$> state (newHeader hd)
 

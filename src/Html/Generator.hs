@@ -57,7 +57,7 @@ genHAux i mdname hauxname = do
 mkHAux :: Int -> Text -> (AuxInfo, Counter)
 mkHAux i contents =
         let doc = markdown def $ contents
-        in runState (scanDoc doc) (initChSecCounter (i-1) 0)
+        in runState (scanDoc doc) (initChCounter (i-1))
 
 readHAux :: String -> IO AuxInfo
 readHAux hauxname = -- decodeFile -- SCM: binary encoded files turned out to be bigger!
@@ -91,27 +91,27 @@ genChapterHtmls this toc lmap bmap = do
     let (chTitle, (chPremble, sections)) =
            (fmap (\ (Header _ attrs is) -> renderHeader 1 attrs is) ***
             splitSections) . sepChHeader $ blocks
-    genChapter this toc lmap bmap (chTitle, chPremble)
-    mapM_ (genSection toc lmap bmap chTitle) sections
+    genChapter (chTitle, chPremble)
+    _ <- genSections chTitle sections (initChCounter this)
+    return ()
  where
-  genChapter this toc lmap bmap (chTitle, chPremble) = do
+  genChapter (chTitle, chPremble) = do
     hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
     runRMonad (Chap [this]) lmap bmap hdl
        (do toc' <- renderTOCPartial toc
+           _ <- state incChap
            mkPage toc' (chTitle, renderBlocks chPremble))
     hClose hdl
-  genSection toc lmap bmap chTitle (attrs, secTitle, secBody) = do
-    hdl <- openFile (htmlNamePath (Chap this)) WriteMode
-    runRMonad (Chap this) lmap bmap hdl
+  genSections chTitle [] cnt = return cnt
+  genSections chTitle ((attrs, secTitle, secBody):secs) cnt = do
+    let (ch, sec) = (chC cnt, secC cnt)
+    hdl <- openFile (htmlNamePath (Chap [ch, sec+1])) WriteMode
+    (_,cnt') <- runRMonadWCounter (Chap [ch, sec+1]) lmap bmap hdl cnt
        (do toc' <- renderTOCPartial toc
            mkPage toc' (chTitle,
               renderBlocks (Header 2 attrs secTitle :<| secBody)))
     hClose hdl
-   where secId = let res = attrsId attrs
-                 in if null res then error (show attrs ++ show secTitle)
-                        else head res
-         Just (secnum, _) = Map.lookup secId lmap
-         this = take 2 secnum
+    genSections chTitle secs cnt'
 
 genIndex :: TOC -> LblMap -> IO ()
 genIndex toc lmap = do
