@@ -177,19 +177,23 @@ renderHeader hd attrs is = do
         -- Do not call newHeader for Chapter, since it resets all counters.
         -- We do not increase Ch in the rendering phase.
        getnums :: Int -> RMonad [Int]
-       getnums 1  = (\cnt -> [chC cnt]) <$> get 
+       getnums 1  = (\cnt -> [chC cnt]) <$> get
        getnums hd | nonumber  = return []
                   | otherwise = snd <$> state (newHeader hd)
 
 printSecNum :: [Int] -> RMonad ()
-printSecNum []     = return ()
-printSecNum [i]    = putStrR (show i) >> putCharR ' '
-printSecNum (i:is) = putStrR (show i) >> putCharR '.' >> printSecNum is
+printSecNum [-1]   = return ()
+printSecNum ns     = pSN ns
+ where pSN []     = return ()
+       pSN [i]    = putStrR (show i) >> putCharR ' '
+       pSN (i:is) = putStrR (show i) >> putCharR '.' >> pSN is
 
 printSecNum' :: [Int] -> RMonad ()
-printSecNum' []     = return ()
-printSecNum' [i]    = putStrR (show i)
-printSecNum' (i:is) = putStrR (show i) >> putCharR '.' >> printSecNum' is
+printSecNum' [-1] = return ()
+printSecNum' ns     = pSN' ns
+ where pSN' []     = return ()
+       pSN' [i]    = putStrR (show i)
+       pSN' (i:is) = putStrR (show i) >> putCharR '.' >> pSN' is
 
 renderInlines :: Inlines -> RMonad ()
 renderInlines = mapM_ renderInline
