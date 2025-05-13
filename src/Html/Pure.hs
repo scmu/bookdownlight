@@ -139,14 +139,18 @@ renderTOCsMenu i c ts =
                  | otherwise = []
 
 renderTOCMenu i (RNode ((url, nums), title, lbl) []) = do
-  mkTagAttrsC "li" (["pure-menu-item"], [], [])
+  this <- reader thisFileR
+  let selected | this == Chap nums = ["pure-menu-selected"]
+               | otherwise         = []
+  mkTagAttrsC "li" (selected ++ ["pure-menu-item"], [], [])
    (mkTagAttrsC "a" ([],[],[("href", url)]) title)
   putCharR '\n'
 renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
   this <- reader thisFileR
   let (checked, selected)
-        | this == Chap nums = ([("checked","")], ["pure-menu-selected"])
-        | otherwise         =  ([],[])
+        | this == Chap nums  = ([("checked","")], ["pure-menu-selected"])
+        | nums `prefix` this = ([("checked","")], [])
+        | otherwise          = ([],[])
   mkTagAttrsC "li" (selected ++ ["pure-menu-item"], [], [])
    (do mkTagAttrsC "a" ([],[],[("href", url)]) title
        mkSCTagAttrsC "input"
@@ -159,6 +163,10 @@ renderTOCMenu i (RNode ((url, nums), title, lbl) ts) = do
        showNums [] = []
        showNums [x] = show x
        showNums (x:xs) = show x ++ "-" ++ showNums xs
+       [] `prefix` (Chap _)          = True
+       (x:xs) `prefix` (Chap [])     = False
+       (x:xs) `prefix` (Chap (y:ys)) | x == y = xs `prefix` Chap ys
+       (x:xs) `prefix` _             = False
 
 replacePath :: Text -> RMonad Text
 replacePath txt = do
