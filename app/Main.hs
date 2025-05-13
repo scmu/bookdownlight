@@ -160,3 +160,12 @@ htmlRules = do
    (toc, _, _) <- buildTOCLMap ()
    putInfo ("# generating Biblio.html")
    liftIO (genBiblio bib toc)
+
+ phony "clean_html" $ do
+   mapM_ (\fl -> command_ [Cwd root] "rm"
+           ["-f", ".." </> htmlNamePath fl])
+        [Index, Preface, ToC, Ix, Biblio]
+   forM_ chapters (\ch -> command_ [Cwd root] "rm"
+           ["-f", ".." </> htmlChs </> ch <.> "html"])
+   forM_ chapters (\ch -> command_ [Cwd root] "rm"
+           [".." </> htmlChs </> (ch ++ "-?") <.> "html"])
