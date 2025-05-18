@@ -162,10 +162,10 @@ htmlRules = do
    liftIO (genBiblio bib toc)
 
  phony "clean_html" $ do
-   mapM_ (\fl -> command_ [Cwd root] "rm"
-           ["-f", ".." </> htmlNamePath fl])
+   mapM_ (\fl -> do
+       putInfo ("Removing " ++ (htmlBase </> htmlName fl))
+       removeFilesAfter htmlBase [htmlName fl])
         [Index, Preface, ToC, Ix, Biblio]
-   forM_ chapters (\ch -> command_ [Cwd root] "rm"
-           ["-f", ".." </> htmlChs </> ch <.> "html"])
-   forM_ chapters (\ch -> command_ [Cwd root] "rm"
-           [".." </> htmlChs </> (ch ++ "-?") <.> "html"])
+   forM_ chapters (\ch -> do
+      putInfo ("Removing " ++ (htmlChs </> (ch ++ "*") <.> "html"))
+      removeFilesAfter htmlChs [ch <.> "html", (ch ++ "-*") <.> "html"])
