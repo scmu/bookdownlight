@@ -287,6 +287,12 @@ renderTOCItem ((fid, nums), title, lbl) = do
      (printSecNum nums >> renderInlines title))
   putCharR '\n'
 
+renderTOCItemHRef :: TOCItem -> RMonad ()
+renderTOCItemHRef ((fid, nums), title, lbl) = do
+  href <- showHRef fid lbl
+  mkTagAttrsC "a" ([],[],[("href", href)])
+     (printSecNum nums >> renderInlines title)
+
 renderTOCPartial :: TOC -> RMonad PRTOC
 renderTOCPartial = mapM renderTOCPartialItem
   where renderTOCPartialItem (RNode ((fid, nums), title, lbl) ts) =

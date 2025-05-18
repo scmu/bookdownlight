@@ -15,12 +15,15 @@ import Config
 import Html.Types
 import Html.RenderMonad
 
-mkPage :: PRTOC -> (Maybe (RMonad ()), RMonad ()) -> RMonad ()
-mkPage toc (title, body) = do
+mkPage :: PRTOC
+       -> (Maybe (RMonad ()), RMonad ())          -- (title, body)
+       -> (Maybe (RMonad ()), Maybe (RMonad ()))  -- (prev, next)
+       -> RMonad ()
+mkPage toc (title, body) (prev, next) = do
   liftIO (T.readFile htmlHeader) >>= replacePath >>= putStrTR
   mkSideMenu toc
   putCharR '\n'
-  mkMain (title, body)
+  mkMain (title, body) (prev, next)
   liftIO (T.readFile htmlFooter) >>= replacePath >>= putStrTR
  where htmlHeader = tmpls </> "html_pure" </> "pure_header.html"
        htmlFooter = tmpls </> "html_pure" </> "pure_footer.html"
@@ -75,13 +78,26 @@ mkSideMenu toc =
                 mkSCTag "br"
                 putStrTR "中央研究院 資訊科學研究所")
 
-mkMain :: (Maybe (RMonad ()), RMonad ()) -> RMonad ()
-mkMain (title, body) =
-  mkTagAttrsC "div" ([],["main"],[])(do
+mkMain :: (Maybe (RMonad ()), RMonad ())
+       -> (Maybe (RMonad ()), Maybe (RMonad ()))
+       -> RMonad ()
+mkMain (title, body) (prev, next) =
+  mkTagAttrsC "div" ([],["main"],[]) $ do
     maybe (return ())
       (mkTagAttrsC "div" (["header"],[],[]))
       title
-    mkTagAttrsC "div" (["content"],[],[]) body)
+    mkNavi (prev, next)
+    mkTagAttrsC "div" (["content"],[],[]) body
+    mkNavi (prev, next)
+
+
+mkNavi :: (Maybe (RMonad ()), Maybe (RMonad ())) -> RMonad ()
+mkNavi (prev, next) =
+  mkTagAttrsC "div" (["navi"], [], [])
+    $ do mapM_ (\prev -> mkTagAttrsC "div" (["previous"], [], [])
+                        (do {putStrTR "&laquo;" ; prev})) prev
+         mapM_ (\next -> mkTagAttrsC "div" (["next"], [], [])
+                        (do {next; putStrTR "&raquo;"})) next
 
 mkBox :: Text -> Text ->
          ([Text], [Text], [(Text, Text)]) -> RMonad () -> RMonad () -> RMonad ()

@@ -69,3 +69,20 @@ parseRose i ((j,x):xs)
              in (RNode x ts : us, zs)
   | i > j  = ([], (j,x):xs)
   | i < j  = parseRose j ((j,x):xs)
+
+buildAdjList :: Int -> [(Int, a)] -> [[(Maybe a, Maybe a)]]
+buildAdjList l =
+     breakByChap . bdAdj . filter ((l >=) . fst)
+ where
+  bdAdj :: [(a, b)] -> [(a, (Maybe b, Maybe b))]
+  bdAdj [] = []
+  bdAdj xs = zip xs1 (zip (Nothing : map Just xs2) (map Just (tail xs2) ++ [Nothing]))
+    where (xs1, xs2) = unzip xs
+  breakByChap :: [(Int, b)] -> [[b]]
+  breakByChap [] = []
+  breakByChap xs | null xs1  = breakByChap' xs2
+                 | otherwise = map snd xs1 : breakByChap' xs2
+    where (xs1, xs2) = break ((1==) . fst) xs
+  breakByChap' [] = [] -- inv: input starts with ((1,_):_)
+  breakByChap' ((_,x): xs) = (x:map snd xs1) : breakByChap' xs2
+    where (xs1, xs2) = break ((1==) . fst) xs

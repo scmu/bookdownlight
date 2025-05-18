@@ -10,7 +10,7 @@ import Data.Text.Encoding (decodeUtf8)
 import qualified Data.Map as Map
 import qualified Data.ByteString as BS (ByteString, readFile)
 import qualified Data.Text.IO as TIO
-import Control.Arrow ((***))
+import Control.Arrow ((***), (&&&))
 import Control.Monad (forM_)
 
 import Config
@@ -19,7 +19,7 @@ import Cheapskate
 
 import LHs.Generator
 import Html.Generator
-import Html.Counter (buildRose)
+import Html.Counter (buildRose, buildAdjList)
 
 import Development.Shake
 import Development.Shake.Command
@@ -103,7 +103,7 @@ htmlRules = do
    let hauxNames = [ tmp </> "html" </> ch <.> "haux" | ch <- chapters]
    need hauxNames
    putInfo ("# building TOC and label map from " ++ show hauxNames)
-   mapTuple (buildRose 1) id id <$>
+   mapTuple (buildRose 1 &&& buildAdjList 2) id id <$>
        liftIO (genTOCLMaps hauxNames)
 
  buildBiblioMap <- newCache $ \() -> do
@@ -117,27 +117,27 @@ htmlRules = do
    let mdName = mdNamePath (Chap [i])
    need [mdName]
    (_, bibMap) <- buildBiblioMap ()
-   (toc, lblMap, _) <- buildTOCLMap ()
+   ((toc, adjl), lblMap, _) <- buildTOCLMap ()
    putInfo ("# md->html (for " ++ htmlName ++ ")")
-   liftIO (genChapterHtmls i toc lblMap bibMap))
+   liftIO (genChapterHtmls i toc (adjl !! i) lblMap bibMap))
 
  htmlNamePath Index %> \tocFName -> do
-   (toc, lblMap, _) <- buildTOCLMap ()
+   ((toc, _), lblMap, _) <- buildTOCLMap ()
    putInfo ("# generating index.html")
    liftIO (genIndex toc lblMap)
 
  htmlNamePath Preface %> \tocFName -> do
-   (toc, lblMap, _) <- buildTOCLMap ()
+   ((toc, _), lblMap, _) <- buildTOCLMap ()
    putInfo ("# generating Preface.html")
    liftIO (genPreface toc lblMap)
 
  htmlNamePath ToC %> \tocFName -> do
-   (toc, lblMap, _) <- buildTOCLMap ()
+   ((toc, _), lblMap, _) <- buildTOCLMap ()
    putInfo ("# generating ToC.html")
    liftIO (genTOC toc lblMap)
 
  htmlNamePath Ix %> \ixFName -> do
-   (toc, lblMap, ix) <- buildTOCLMap ()
+   ((toc, _), lblMap, ix) <- buildTOCLMap ()
    putInfo ("# generating Ix.html")
    liftIO (genIx ix toc lblMap)
 
@@ -157,7 +157,7 @@ htmlRules = do
 
  htmlNamePath Biblio %> \_ -> do
    (bib, _) <- buildBiblioMap ()
-   (toc, _, _) <- buildTOCLMap ()
+   ((toc, _), _, _) <- buildTOCLMap ()
    putInfo ("# generating Biblio.html")
    liftIO (genBiblio bib toc)
 

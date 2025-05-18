@@ -84,41 +84,44 @@ genHtml this toc lmap bmap = do
     hClose hdl
 -}
 
-genChapterHtmls :: Int -> TOC -> LblMap -> BibMap -> IO ()
-genChapterHtmls this toc lmap bmap = do
+genChapterHtmls :: Int -> TOC -> [(Maybe TOCItem, Maybe TOCItem)]
+                -> LblMap -> BibMap -> IO ()
+genChapterHtmls this toc (cadj : sadj) lmap bmap = do
     content <- readFile (mdNamePath (Chap [this]))
     let (Doc _ blocks) = markdown def content
     let (chTitle, (chPremble, sections)) =
            (fmap (\ (Header _ attrs is) -> renderHeader 1 attrs is) ***
             splitSections) . sepChHeader $ blocks
-    genChapter (chTitle, chPremble)
-    _ <- genSections chTitle sections (initChCounter this)
+    genChapter (chTitle, chPremble) cadj
+    _ <- genSections chTitle sections (initChCounter this) sadj
     return ()
  where
-  genChapter (chTitle, chPremble) = do
+  genChapter (chTitle, chPremble) adj = do
     hdl <- openFile (htmlNamePath (Chap [this])) WriteMode
+    let adjM = (fmap renderTOCItemHRef *** fmap renderTOCItemHRef) adj
     runRMonad (Chap [this]) lmap bmap hdl
        (do toc' <- renderTOCPartial toc
            _ <- state incChap
-           mkPage toc' (chTitle, renderBlocks chPremble))
+           mkPage toc' (chTitle, renderBlocks chPremble) adjM)
     hClose hdl
-  genSections chTitle [] cnt = return cnt
-  genSections chTitle ((attrs, secTitle, secBody):secs) cnt = do
+  genSections chTitle [] cnt _ = return cnt
+  genSections chTitle ((attrs, secTitle, secBody):secs) cnt (adj:sadj) = do
     let (ch, sec) = (chC cnt, secC cnt)
     hdl <- openFile (htmlNamePath (Chap [ch, sec+1])) WriteMode
+    let adjM = (fmap renderTOCItemHRef *** fmap renderTOCItemHRef) adj
     (_,cnt') <- runRMonadWCounter (Chap [ch, sec+1]) lmap bmap hdl cnt
        (do toc' <- renderTOCPartial toc
            mkPage toc' (chTitle,
-              renderBlocks (Header 2 attrs secTitle :<| secBody)))
+              renderBlocks (Header 2 attrs secTitle :<| secBody)) adjM)
     hClose hdl
-    genSections chTitle secs cnt'
+    genSections chTitle secs cnt' sadj
 
 genIndex :: TOC -> LblMap -> IO ()
 genIndex toc lmap = do
   hdl <- openFile (htmlNamePath Index) WriteMode
   runRMonad Index lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
-         mkPage toc' (Just bookheader, renderTOCsList toc))
+         mkPage toc' (Just bookheader, renderTOCsList toc) (Nothing, Nothing))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
@@ -128,7 +131,7 @@ genPreface toc lmap = do
   content <- readFile (mdNamePath Preface)
   runRMonad Preface lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
-         mkPage toc' (htmlRender . markdown def $ content))
+         mkPage toc' (htmlRender . markdown def $ content) (Nothing, Nothing))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
@@ -138,7 +141,7 @@ genTOC toc lmap = do
   hdl <- openFile (htmlNamePath ToC) WriteMode
   runRMonad ToC lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
-         mkPage toc' (Just bookheader, renderTOCsList toc))
+         mkPage toc' (Just bookheader, renderTOCsList toc) (Nothing, Nothing))
   hClose hdl
  where bookheader = do mkTag "h1" (putStrTR "函數程設與推論")
                        mkTag "h2" (putStrTR "Functional Program Construction and Reasoning")
@@ -149,7 +152,7 @@ genIx ixMap toc lmap = do
   runRMonad Ix lmap Map.empty hdl
      (do toc' <- renderTOCPartial toc
          mkPage toc' (Just (mkTag "h1" (putStrTR "索引")),
-                            renderIx ixList))
+                            renderIx ixList) (Nothing, Nothing))
   hClose hdl
  where ixList = Map.toAscList ixMap
 
@@ -166,7 +169,7 @@ genBiblio bib toc = do
  runRMonad Biblio Map.empty Map.empty hdl
     (do toc' <- renderTOCPartial toc
         mkPage toc' (Just (mkTag "h1" (putStrTR "參考書目")),
-                           renderBib bib))
+                           renderBib bib) (Nothing, Nothing))
  hClose hdl
 
 mapTuple f g h (x, y, z) = (f x, g y, h z)
