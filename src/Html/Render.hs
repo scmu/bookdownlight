@@ -101,9 +101,12 @@ renderDIV "figure" cs ids avs bs = do
               putStrTR "</figcaption>\n"
             Nothing -> return ()
 -}
-renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
-  where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br/>\n"
-        renderTexOnly b = renderBlock b
+-- renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
+--   where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br/>\n"
+--         renderTexOnly b = renderBlock b
+
+renderDIV "texonly" _ _ = return ()
+
 
 renderDIV c@"infobox" (cls, ids, avs) bs =
    mkInfoBox (c:cls, ids, avs)
