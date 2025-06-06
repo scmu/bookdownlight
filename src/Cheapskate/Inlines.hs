@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Cheapskate.Inlines (
         parseInlines
+      , parseSeqInline
       , pHtmlTag
       , pReference
       , pLinkLabel
@@ -12,7 +13,8 @@ import Cheapskate.Util
 import Cheapskate.Types
 import Data.Char hiding (Space)
 import qualified Data.Sequence as Seq
-import Data.Sequence (singleton, (<|), viewl, ViewL(..))
+import Data.Sequence (Seq(..), singleton, (<|), viewl, ViewL(..), )
+import Data.Foldable (toList)
 import Prelude hiding (takeWhile)
 import Control.Applicative
 import Data.Monoid
@@ -141,13 +143,16 @@ pSatisfy p =
 -- Parse a text into inlines, resolving reference links
 -- using the reference map.
 parseInlines :: ReferenceMap -> Text -> Inlines
-parseInlines refmap t =
-  case parse (msum <$> many (pInline refmap) <* endOfInput) t of
-       Left e   -> error ("parseInlines: " ++ show e) -- should not happen
+parseInlines refmap t = toList (parseSeqInline refmap t)
+
+parseSeqInline :: ReferenceMap -> Text -> SeqInline
+parseSeqInline refmap t =
+  case parse (msum <$> many (pSeqInline refmap) <* endOfInput) t of
+       Left e   -> error ("parseSeqInline: " ++ show e) -- should not happen
        Right r  -> r
 
-pInline :: ReferenceMap -> Parser Inlines
-pInline refmap =
+pSeqInline :: ReferenceMap -> Parser SeqInline
+pSeqInline refmap =
            pAsciiStr
        <|> pContStr
        <|> pSpace
@@ -175,7 +180,7 @@ pInline refmap =
 -- we have a regular space, a line break (two spaces before
 -- a newline), or a soft break (newline without two spaces
 -- before).
-pSpace :: Parser Inlines
+pSpace :: Parser SeqInline
 pSpace = do
   ss <- takeWhile1 isWhitespace
   return $ singleton
@@ -194,7 +199,7 @@ isAsciiAlphaNum c =
 isLabelAlpha :: Char -> Bool
 isLabelAlpha c = isAsciiAlphaNum c || c == ':' || c == '_' || c == '-'
 
-pAsciiStr :: Parser Inlines
+pAsciiStr :: Parser SeqInline
 pAsciiStr = do
   t <- takeWhile1 isAsciiAlphaNum
   mbc <- peekChar
@@ -204,7 +209,7 @@ pAsciiStr = do
                       else return $ singleton $ Str t
        _        -> return $ singleton $ Str t
 
-pContStr :: Parser Inlines
+pContStr :: Parser SeqInline
 pContStr = do t <- takeWhile1 isContChar
               return . singleton . Str $ t
   where isContChar c = not (c `Set.member` specialSet)
@@ -216,7 +221,7 @@ specialSet = Set.fromList (specials ++ whitespaces)
 
 -- Catch all -- parse an escaped character, an escaped
 -- newline, or any remaining symbol character.
-pSym :: Parser Inlines
+pSym :: Parser SeqInline
 pSym = do
   c <- anyChar
   let ch = singleton . Str . T.singleton
@@ -271,7 +276,7 @@ schemeSet :: Set.Set Text
 schemeSet = Set.fromList $ schemes ++ map T.toUpper schemes
 
 -- Parse a URI, using heuristics to avoid capturing final punctuation.
-pUri :: Text -> Parser Inlines
+pUri :: Text -> Parser SeqInline
 pUri scheme = do
   char ':'
   x <- scan (OpenParens 0) uriScanner
@@ -308,7 +313,7 @@ uriScanner st _ = Just st
 
 -- Parses material enclosed in *s, **s, _s, or __s.
 -- Designed to avoid backtracking.
-pEnclosure :: Char -> ReferenceMap -> Parser Inlines
+pEnclosure :: Char -> ReferenceMap -> Parser SeqInline
 pEnclosure c refmap = do
   cs <- takeWhile1 (== c)
   (Str cs <|) <$> pSpace
@@ -319,16 +324,21 @@ pEnclosure c refmap = do
             _  -> return (singleton $ Str cs)
 
 -- singleton sequence or empty if contents are empty
-single :: (Inlines -> Inline) -> Inlines -> Inlines
+-- single :: (Inlines -> Inline) -> Inlines -> Inlines
+-- single constructor ils = if Seq.null ils
+--                             then mempty
+--                             else singleton (constructor ils)
+single :: (Inlines -> Inline) -> SeqInline -> SeqInline
 single constructor ils = if Seq.null ils
                             then mempty
-                            else singleton (constructor ils)
+                            else singleton (constructor (toList ils))
+
 
 -- parse inlines til you hit a c, and emit Emph.
 -- if you never hit a c, emit '*' + inlines parsed.
-pOne :: Char -> ReferenceMap -> Inlines -> Parser Inlines
+pOne :: Char -> ReferenceMap -> SeqInline -> Parser SeqInline
 pOne c refmap prefix = do
-  contents <- msum <$> many ( (nfbChar c >> pInline refmap)
+  contents <- msum <$> many ( (nfbChar c >> pSeqInline refmap)
                              <|> (string (T.pack [c,c]) >>
                                   nfbChar c >> pTwo c refmap mempty) )
   (char c >> return (single Emph $ prefix <> contents))
@@ -336,29 +346,29 @@ pOne c refmap prefix = do
 
 -- parse inlines til you hit two c's, and emit Strong.
 -- if you never do hit two c's, emit '**' plus + inlines parsed.
-pTwo :: Char -> ReferenceMap -> Inlines -> Parser Inlines
+pTwo :: Char -> ReferenceMap -> SeqInline -> Parser SeqInline
 pTwo c refmap prefix = do
   let ender = string $ T.pack [c,c]
-  contents <- msum <$> many (nfb ender >> pInline refmap)
+  contents <- msum <$> many (nfb ender >> pSeqInline refmap)
   (ender >> return (single Strong $ prefix <> contents))
     <|> return (singleton (Str $ T.pack [c,c]) <> (prefix <> contents))
 
 -- parse inlines til you hit one c or a sequence of two c's.
 -- If one c, emit Emph and then parse pTwo.
 -- if two c's, emit Strong and then parse pOne.
-pThree :: Char -> ReferenceMap -> Parser Inlines
+pThree :: Char -> ReferenceMap -> Parser SeqInline
 pThree c refmap = do
-  contents <- msum <$> (many (nfbChar c >> pInline refmap))
+  contents <- msum <$> (many (nfbChar c >> pSeqInline refmap))
   (string (T.pack [c,c]) >> (pOne c refmap (single Strong contents)))
    <|> (char c >> (pTwo c refmap (single Emph contents)))
    <|> return (singleton (Str $ T.pack [c,c,c]) <> contents)
 
 -- Inline code span.
-pCode :: Parser Inlines
+pCode :: Parser SeqInline
 pCode = fst <$> pCode'
 
 -- this is factored out because it needed in pLinkLabel.
-pCode' :: Parser (Inlines, Text)
+pCode' :: Parser (SeqInline, Text)
 pCode' = do
   ticks <- takeWhile1 (== '`')
   let end = string ticks >> nfb (char '`')
@@ -367,7 +377,7 @@ pCode' = do
   contents <- T.concat <$> manyTill (nonBacktickSpan <|> backtickSpan) end
   return (singleton . Code . T.strip $ contents, ticks <> contents <> ticks)
 
-pHsCode :: Parser Inlines
+pHsCode :: Parser SeqInline
 pHsCode = do char '|'
              hs <- pHsCodeAux
              return (singleton . HsCode . T.concat $ hs)
@@ -378,7 +388,7 @@ pHsCode = do char '|'
           (char '|' >> nfb (char '|') >> return [])
 
 
-pTexMath :: Parser Inlines
+pTexMath :: Parser SeqInline
 pTexMath = do char '$'
               hs <- pHsCodeAux
               return (singleton . Tex . T.concat $ hs)
@@ -388,26 +398,26 @@ pTexMath = do char '$'
           (string "\\$" >> (("\\$":) <$> pHsCodeAux)) <|>
           (char '$' >> return [])
 
-pLink :: ReferenceMap -> Parser Inlines
+pLink :: ReferenceMap -> Parser SeqInline
 pLink refmap = do
   lab <- pLinkLabel
-  let lab' = parseInlines refmap lab
-  pInlineLink lab' <|> pReferenceLink refmap lab lab'
+  let lab' = parseSeqInline refmap lab
+  pInlineLink (toList lab') <|> pReferenceLink refmap lab (toList lab')
     -- fallback without backtracking if it's not a link:
     <|> return (singleton (Str "[") <> lab' <> singleton (Str "]"))
 
 -- An inline link: [label](/url "optional title")
-pInlineLink :: Inlines -> Parser Inlines
+pInlineLink :: Inlines -> Parser SeqInline
 pInlineLink lab = do
   char '('
   scanSpaces
   url <- pLinkUrl
   tit <- option "" $ scanSpnl *> pLinkTitle <* scanSpaces
   char ')'
-  return $ singleton $ Link lab url tit
+  return $ singleton $ Link (toList lab) url tit
 
 -- attribute block: {#id .class .class attr="val"}
-pAttributes :: Parser Inlines
+pAttributes :: Parser SeqInline
 pAttributes = singleton . Attrs <$> pAttrs
 
 pAttrs :: Parser [Attr]
@@ -443,32 +453,27 @@ pCodeLangId = do
    endOfInput
    return [AtrClass lang]
 
-pRef :: Parser Inlines
+pRef :: Parser SeqInline
 pRef = do string "\\@ref{"
           t <- takeWhile1 isLabelAlpha
           char '}'
           return $ singleton $ Ref t
 
-pEqRef :: Parser Inlines
+pEqRef :: Parser SeqInline
 pEqRef = do string "\\@eqref{"
             t <- takeWhile1 isLabelAlpha
             char '}'
             return $ singleton $ EqRef t
 
 
-pPageRef :: Parser Inlines
+pPageRef :: Parser SeqInline
 pPageRef = do string "\\@pageref{"
               t <- takeWhile1 isLabelAlpha
               char '}'
               return $ singleton $ PageRef t
 
--- pIdx :: Parser Inlines
--- pIdx = do string "\\index{"
---             t <- takeWhile1 (not . ('}'==))
---             char '}'
---             return $ singleton $ Index t
 
-pIdx :: Parser Inlines
+pIdx :: Parser SeqInline
 pIdx = do string "\\index"
           txt <- T.concat <$> pNest '{' '}'
           return $ singleton $ Idx txt
@@ -492,29 +497,23 @@ pNests open close = do
 
 -- LaTeX commands such as \", \', \`
 --  Just return them verbatim
--- pTexSymCommand :: Parser Inlines
+-- pTexSymCommand :: Parser SeqInline
 -- pTexSymCommand = do char '\\'
 --                     ch <- nextch
 --                     return
 
 -- (inline) footnote: ^[...]
 -- modified from pOne
-pFootnote :: ReferenceMap -> Parser Inlines
+pFootnote :: ReferenceMap -> Parser SeqInline
 pFootnote refmap = do
   string "^["
-  contents <- msum <$> many (nfbChar ']' >> pInline refmap)
+  contents <- msum <$> many (nfbChar ']' >> pSeqInline refmap)
   (char ']' >> return (single Footnote $ contents))
      <|> return (singleton (Str (T.singleton '[')) <> contents)
-  -- t <- pInline refmap
-  -- char ']'
-  -- return $ singleton $ Footnote t
 
 -- [@label, options; @label, options]
-pCiteP :: Parser Inlines
+pCiteP :: Parser SeqInline
 pCiteP = do string "[@"
-            -- ref <- takeWhile1 isLabelAlpha
-            -- char ']'
-            -- return $ singleton $ CiteP [(ref, Nothing)]
             cs <- pCites
             return $ singleton $ CiteP cs
  where pCites :: Parser [(Text, Maybe Text)]
@@ -533,7 +532,7 @@ pCiteP = do string "[@"
                         return (this:cs))
 
 -- @label[options]
-pCiteT :: Parser Inlines
+pCiteT :: Parser SeqInline
 pCiteT = do char '@'
             ref <- takeWhile1 isLabelAlpha
             ((do char '['
@@ -548,7 +547,7 @@ lookupLinkReference :: ReferenceMap
 lookupLinkReference refmap key = M.lookup (normalizeReference key) refmap
 
 -- A reference link: [label], [foo][label], or [label][].
-pReferenceLink :: ReferenceMap -> Text -> Inlines -> Parser Inlines
+pReferenceLink :: ReferenceMap -> Text -> Inlines -> Parser SeqInline
 pReferenceLink refmap rawlab lab = do
   ref <- option rawlab $ scanSpnl >> pLinkLabel
   let ref' = if T.null ref then rawlab else ref
@@ -557,12 +556,12 @@ pReferenceLink refmap rawlab lab = do
        Nothing         -> fail "Reference not found"
 
 -- An image:  ! followed by a link.
-pImage :: ReferenceMap -> Parser Inlines
+pImage :: ReferenceMap -> Parser SeqInline
 pImage refmap = do
   char '!'
   (linkToImage <$> pLink refmap) <|> return (singleton (Str "!"))
 
-linkToImage :: Inlines -> Inlines
+linkToImage :: SeqInline -> SeqInline
 linkToImage ils =
   case viewl ils of
         (Link lab url tit :< x)
@@ -573,7 +572,7 @@ linkToImage ils =
 -- This ensures that entities in the input come out as
 -- entities in the output. Alternatively we could simply
 -- convert them to characters and store them as Str inlines.
-pEntity :: Parser Inlines
+pEntity :: Parser SeqInline
 pEntity = do
   char '&'
   res <- pCharEntity <|> pDecEntity <|> pHexEntity
@@ -597,12 +596,12 @@ pHexEntity = do
   return $ "#" <> T.singleton x <> res
 
 -- Raw HTML tag or comment.
-pRawHtml :: Parser Inlines
+pRawHtml :: Parser SeqInline
 pRawHtml = singleton . RawHtml <$> (snd <$> pHtmlTag <|> pHtmlComment)
 
 -- A link like this: <http://whatever.com> or <me@mydomain.edu>.
 -- Markdown.pl does email obfuscation; we don't bother with that here.
-pAutolink :: Parser Inlines
+pAutolink :: Parser SeqInline
 pAutolink = do
   skip (=='<')
   s <- takeWhile1 (\c -> c /= ':' && c /= '@')
@@ -613,8 +612,8 @@ pAutolink = do
          | s `Set.member` schemeSet -> return $ autoLink (s <> rest)
          | otherwise   -> fail "Unknown contents of <>"
 
-autoLink :: Text -> Inlines
-autoLink t = singleton $ Link (toInlines t) t (T.empty)
+autoLink :: Text -> SeqInline
+autoLink t = singleton $ Link (toList (toInlines t)) t (T.empty)
   where toInlines t' = case parse pToInlines t' of
                          Right r   -> r
                          Left e    -> error $ "autolink: " ++ show e
@@ -623,6 +622,6 @@ autoLink t = singleton $ Link (toInlines t) t (T.empty)
                    <|> pEntity
                    <|> ((singleton . Str) <$> string "&")
 
-emailLink :: Text -> Inlines
-emailLink t = singleton $ Link (singleton $ Str t)
+emailLink :: Text -> SeqInline
+emailLink t = singleton $ Link [Str t]
                                ("mailto:" <> t) (T.empty)

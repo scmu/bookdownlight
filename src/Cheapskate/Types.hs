@@ -68,7 +68,10 @@ data Inline = Str Text
             | CiteT Text (Maybe Text)     -- Name (year, options)
             deriving (Show, Read, Data, Typeable)
 
-type Inlines = Seq Inline
+-- type Inlines = Seq Inline
+type Inlines = [Inline]
+
+type SeqInline = Seq Inline
 
 type ReferenceMap = M.Map Text (Text, Text)
 

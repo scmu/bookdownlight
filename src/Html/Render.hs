@@ -39,7 +39,7 @@ renderBlocks :: Blocks -> RMonad ()
 renderBlocks = mapM_ renderBlock
 
 renderBlock :: Block -> RMonad ()
-renderBlock (Para (Attrs attrs :<| is)) =
+renderBlock (Para (Attrs attrs : is)) =
   mkTagAttrs "p" attrs' (
     do case lookupAttrs "title" attrs of
          Just title -> mkTag "b" (putStrTR title) >> putStrTR " &emsp;"
