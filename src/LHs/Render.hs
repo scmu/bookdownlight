@@ -274,7 +274,14 @@ hdParaHeader attrs = do
   mapM_ renderLabel (attrsId attrs)
 
 renderInlines :: Inlines -> LHsMonad ()
-renderInlines = mapM_ renderInline
+renderInlines = mapM_ renderInline . noBreakFootnote
+
+ -- remove (one) linebreak before a footnote.
+noBreakFootnote :: Inlines -> Inlines
+noBreakFootnote [] = []
+noBreakFootnote (SoftBreak : Footnote ft : xs) = Footnote ft : noBreakFootnote xs
+noBreakFootnote (LineBreak : Footnote ft : xs) = Footnote ft : noBreakFootnote xs
+noBreakFootnote (x:xs) = x : noBreakFootnote xs
 
 renderInline :: Inline -> LHsMonad ()
 renderInline (Str txt) = putStrTR txt
