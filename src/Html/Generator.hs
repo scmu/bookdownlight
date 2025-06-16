@@ -9,6 +9,8 @@ import Control.Arrow ((***))
 import Control.Monad.State
 import Control.Monad.Reader
 
+import Text.Read  -- for readMaybe
+
 -- import Data.Binary (Binary(..), encodeFile, decodeFile)
 import qualified Data.ByteString as BS (ByteString, readFile)
 import Data.Text (Text, pack)
@@ -61,7 +63,9 @@ mkHAux i contents =
 
 readHAux :: String -> IO AuxInfo
 readHAux hauxname = -- decodeFile -- SCM: binary encoded files turned out to be bigger!
-  IO.readFile hauxname >>= (return . read)
+  IO.readFile hauxname >>=
+  (maybe (error ("Read fails to parse HAux: " ++ show hauxname)) return . 
+     readMaybe)
 
 genTOCLMap :: String -> IO (TOCIs, LblMap, IxMap)
 genTOCLMap hauxname =

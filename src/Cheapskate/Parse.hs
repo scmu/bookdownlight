@@ -28,6 +28,7 @@ import Control.Monad.RWS
 import Control.Applicative
 import qualified Data.Map as M
 import Data.List (intercalate)
+import Control.Arrow ((***))
 
 import Debug.Trace
 
@@ -260,10 +261,12 @@ processElts refmap (L _lineNumber lf : rest) =
 
     -- Headers:
     ATXHeader lvl t ->
-       singleton (uncurry (Header lvl) . extractHeaderAttrs . parseInlines refmap $ t) <>
+       singleton (uncurry (Header lvl) . (id *** toList) .
+                    extractHeaderAttrs . parseSeqInline refmap $ t) <>
        processElts refmap rest
     SetextHeader lvl t ->
-       singleton (uncurry (Header lvl) . extractHeaderAttrs . parseInlines refmap $ t) <>
+       singleton (uncurry (Header lvl) . (id *** toList) .
+                    extractHeaderAttrs . parseSeqInline refmap $ t) <>
        processElts refmap rest
 
     -- Horizontal rule:
@@ -368,12 +371,12 @@ extractText :: Elt -> Text
 extractText (L _ (TextLine t)) = t
 extractText _ = mempty
 
-extractHeaderAttrs :: Inlines -> ([Attr], Inlines)
+extractHeaderAttrs :: SeqInline -> ([Attr], SeqInline)
 extractHeaderAttrs Empty = ([], Empty)
 extractHeaderAttrs (is :|> Attrs attrs) = (attrs, stripTrailingSpaces is)
 extractHeaderAttrs is = ([], is)
 
-stripTrailingSpaces :: Inlines -> Inlines
+stripTrailingSpaces :: SeqInline -> SeqInline
 stripTrailingSpaces Empty = Empty
 stripTrailingSpaces (is :|> Space) = stripTrailingSpaces is
 stripTrailingSpaces is = is

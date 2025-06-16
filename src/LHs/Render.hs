@@ -30,7 +30,7 @@ renderBlocks :: Blocks -> LHsMonad ()
 renderBlocks = mapM_ renderBlock
 
 renderBlock :: Block -> LHsMonad ()
-renderBlock (Para (Attrs attrs :<| is)) = do
+renderBlock (Para (Attrs attrs : is)) = do
   hdParaHeader attrs
   renderInlines is
   putCharR '\n'
@@ -109,7 +109,7 @@ renderDIV "infobox" _ _ avs bs = do
  where printTitle avs = case lookup "title" avs of
          Just cap -> putStrTR "{" >> putStrTR cap >> putStrTR "}\n"
          Nothing -> return ()
-       infoindent (Para is) = Para (Str "\\quad " :<| is )
+       infoindent (Para is) = Para (Str "\\quad " : is )
        infoindent b = b
 
 renderDIV "multicols" _ _ avs bs = do
@@ -274,7 +274,14 @@ hdParaHeader attrs = do
   mapM_ renderLabel (attrsId attrs)
 
 renderInlines :: Inlines -> LHsMonad ()
-renderInlines = mapM_ renderInline
+renderInlines = mapM_ renderInline . noBreakFootnote
+
+ -- remove (one) linebreak before a footnote.
+noBreakFootnote :: Inlines -> Inlines
+noBreakFootnote [] = []
+noBreakFootnote (SoftBreak : Footnote ft : xs) = Footnote ft : noBreakFootnote xs
+noBreakFootnote (LineBreak : Footnote ft : xs) = Footnote ft : noBreakFootnote xs
+noBreakFootnote (x:xs) = x : noBreakFootnote xs
 
 renderInline :: Inline -> LHsMonad ()
 renderInline (Str txt) = putStrTR txt
@@ -336,7 +343,7 @@ parseEquations bs = concat <$> mapM pEqList bs
 
        concatPara :: Blocks -> Maybe [Inline]
        concatPara Empty = return []
-       concatPara (Para ins :<| ps) = (toList ins ++) <$> concatPara ps
+       concatPara (Para ins :<| ps) = (ins ++) <$> concatPara ps
        concatPara _ = Nothing
 
        pEq :: [Inline] -> Maybe (Maybe Text, Maybe Text, [Text])
