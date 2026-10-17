@@ -301,6 +301,11 @@ renderInline (HsCode txt) = putCharR '|' >> putStrTR txt >> putCharR '|'
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt
 renderInline (RawHtml txt) = putStrTR txt
+renderInline (Attrs attrs) | hasClass "texonly" attrs
+                           = do case lookupAttrs "ctnt" attrs of
+                                  Just txt -> putStrTR txt
+                                  Nothing  -> return ()
+                                mapM_ renderLabel (attrsId attrs)
 renderInline (Attrs attrs) = mapM_ renderLabel (attrsId attrs)
 renderInline (Footnote is) =
   do putStrR "\\footnote{"

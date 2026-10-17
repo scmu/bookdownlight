@@ -217,6 +217,10 @@ renderInline (HsCode txt) =
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
+renderInline (Attrs attrs) | hasClass "htmlonly" attrs
+                           = case lookupAttrs "ctnt" attrs of
+                                Just txt -> putStrTR txt
+                                Nothing  -> return ()
 renderInline (Attrs attrs) = return () -- deal with this later
 renderInline (Footnote is) = do
      (chs, (i:_)) <- state newFNote
