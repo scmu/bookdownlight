@@ -96,9 +96,9 @@ renderDIV "figure" cs ids avs bs =
            Just cap -> putStrTR "\\caption{" >> putStrTR cap >> putStrTR "}\n"
            Nothing -> return ()
 
-renderDIV "texonly" _ _ _ bs = mapM_ renderTexOnly bs
-  where renderTexOnly (CodeBlock _ code) = putStrTR code >> putCharR '\n'
-        renderTexOnly b = renderBlock b
+renderDIV "lhsonly" _ _ _ bs = mapM_ renderLHsOnly bs
+  where renderLHsOnly (CodeBlock _ code) = putStrTR code >> putCharR '\n'
+        renderLHsOnly b = renderBlock b
 
 renderDIV "infobox" _ _ avs bs = do
    putStrTR "\\begin{infobox}"
@@ -199,7 +199,7 @@ renderCode cls ids avs txt | "equation" `elem` cls =
           putCharR '\n')
  where alignEnv | null ids = "align*"
                 | otherwise = "align"
-renderCode cls _ _ txt | "texonly" `elem` cls =
+renderCode cls _ _ txt | "lhsonly" `elem` cls =
   putStrTR txt >> putCharR '\n'
 renderCode ("verbatim" : cs) ids _ txt  =
   mkEnv "verbatim" (putStrTR txt >> putCharR '\n')
@@ -301,7 +301,7 @@ renderInline (HsCode txt) = putCharR '|' >> putStrTR txt >> putCharR '|'
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt
 renderInline (RawHtml txt) = putStrTR txt
-renderInline (Attrs attrs) | hasClass "texonly" attrs
+renderInline (Attrs attrs) | hasClass "lhsonly" attrs
                            = do case lookupAttrs "ctnt" attrs of
                                   Just txt -> putStrTR txt
                                   Nothing  -> return ()

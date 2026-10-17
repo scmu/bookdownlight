@@ -258,7 +258,7 @@ showLongHRef this fr lbl = do
 
 renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
 renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
-renderCode (cs,ids,avs) txt | "texonly" `elem` cs = return ()
+renderCode (cs,ids,avs) txt | "lhsonly" `elem` cs = return ()
 
 renderCode (cs,ids,avs) txt | "equation" `elem` cs =
   mkTag "pre" (do
