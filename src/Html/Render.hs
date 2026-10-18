@@ -101,12 +101,8 @@ renderDIV "figure" cs ids avs bs = do
               putStrTR "</figcaption>\n"
             Nothing -> return ()
 -}
--- renderDIV "texonly" _ bs = mapM_ renderTexOnly bs
---   where renderTexOnly (CodeBlock _ code) = putStrTR code >> putStrTR "<br/>\n"
---         renderTexOnly b = renderBlock b
 
-renderDIV "texonly" _ _ = return ()
-
+renderDIV "lhsonly" _ _ = return ()
 
 renderDIV c@"infobox" (cls, ids, avs) bs =
    mkInfoBox (c:cls, ids, avs)
@@ -217,8 +213,8 @@ renderInline (HsCode txt) =
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt -- not sure what to do yet
 renderInline (RawHtml txt) = putStrTR txt
-renderInline (Attrs attrs) | hasClass "htmlonly" attrs
-                           = case lookupAttrs "ctnt" attrs of
+renderInline (Attrs attrs) | hasClass "discern" attrs
+                           = case lookupAttrs "html" attrs of
                                 Just txt -> putStrTR txt
                                 Nothing  -> return ()
 renderInline (Attrs attrs) = return () -- deal with this later

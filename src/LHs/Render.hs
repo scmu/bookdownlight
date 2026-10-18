@@ -100,6 +100,8 @@ renderDIV "lhsonly" _ _ _ bs = mapM_ renderLHsOnly bs
   where renderLHsOnly (CodeBlock _ code) = putStrTR code >> putCharR '\n'
         renderLHsOnly b = renderBlock b
 
+renderDIV "htmlonly" _ _ _ _ = return ()
+
 renderDIV "infobox" _ _ avs bs = do
    putStrTR "\\begin{infobox}"
    printTitle avs
@@ -301,8 +303,8 @@ renderInline (HsCode txt) = putCharR '|' >> putStrTR txt >> putCharR '|'
 renderInline (Tex txt) = putCharR '$' >> putStrTR txt >> putCharR '$'
 renderInline (Entity txt) = putStrTR txt
 renderInline (RawHtml txt) = putStrTR txt
-renderInline (Attrs attrs) | hasClass "lhsonly" attrs
-                           = do case lookupAttrs "ctnt" attrs of
+renderInline (Attrs attrs) | hasClass "discern" attrs
+                           = do case lookupAttrs "lhs" attrs of
                                   Just txt -> putStrTR txt
                                   Nothing  -> return ()
                                 mapM_ renderLabel (attrsId attrs)
