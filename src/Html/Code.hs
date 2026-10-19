@@ -3,8 +3,9 @@ module Html.Code where
 
 import Data.Void
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
-import Html.Types
+import qualified Data.Map as Map
 
 --import Data.Text.ICU
 --import Data.Text.ICU.Replace
@@ -14,18 +15,22 @@ import Text.Replace
 import Text.Regex.TDFA
 import Text.Regex.TDFA.Text
 
+import Config (FileRole(..), relPathToFile)
+import Html.Types
+import Html.RenderMonad (mkTagAttrsC)
+
 formatLineCode :: Text -> Text
 formatLineCode =
   L.toStrict . inInlineCodeL . replaceWithTrie blockTrie . L.fromStrict
 
-formatBlockCode :: Text -> Text
-formatBlockCode = formatComments .
+formatBlockCode :: (FileRole, LblMap) -> Text -> Text
+formatBlockCode ctxt = formatComments ctxt .
   L.toStrict . replaceWithTrie blockTrie . L.fromStrict
 
 blockTrie = listToTrie . map (uncurry Replace) $ blockReplaces
 
 blockReplaces =
-   [("<", "&lt;")
+   [ ("<", "&lt;")
     ,(">", "&gt;")
 
     ,("{-\"~~,\"-}", "")
@@ -75,8 +80,8 @@ inInlineCodeL txt = case txt =~ ("\\|+" :: L.Text) :: (L.Text, L.Text, L.Text) o
   (pre, "||||", rest) -> pre <> "⋁" <> inInlineCodeL rest
   (pre, other, rest) -> pre <> other <> inInlineCodeL rest
 
-formatComments :: Text -> Text
-formatComments = wrapComments . map hdlLineCode . extractComments
+formatComments :: (FileRole, LblMap) -> Text -> Text
+formatComments ctxt = wrapComments . map hdlLineCode . extractComments
   where wrapComments [] = ""
         wrapComments [Left txt] = txt
         wrapComments [Right txt] = "<comment>{-" <> txt <> "-}</comment>"
@@ -84,7 +89,8 @@ formatComments = wrapComments . map hdlLineCode . extractComments
         wrapComments (Right txt : rest) =
           "<comment>{-" <> txt <> "-}</comment>" <> wrapComments rest
         hdlLineCode seg@(Left _) = seg
-        hdlLineCode (Right txt) = Right (handleLineCode txt)
+        hdlLineCode (Right txt) =
+           Right (handleRefs ctxt (handleLineCode txt))
 
 extractComments :: Text -> [Either Text Text]
 extractComments txt = case txt =~ ("{-" :: Text) :: (Text, Text, Text) of
@@ -102,3 +108,43 @@ grabComment txt =
            let (cmt, rest)  = grabComment more
                (suf, rest') = grabComment rest
            in (pre <> "{-" <> cmt <> "-}" <> suf, rest')
+
+handleRefs :: (FileRole, LblMap) -> Text -> Text
+handleRefs (this, lmap) = T.concat . map hdlRef . extractRefs
+  where hdlRef (Left txt) = txt
+        hdlRef (Right lbl) = case Map.lookup lbl lmap of
+          Nothing -> "[RefUndefined]"
+          Just (ch, nums) ->
+              let href = mkRef (ch, nums) lbl
+              in mkHLink href (secNums nums)
+
+        mkRef (ch, nums) lbl
+          | this == Chap ch  = T.cons '#' lbl
+          | otherwise =
+               let fname = relPathToFile this (Chap ch)
+               in T.pack fname <> (T.cons '#' lbl)
+
+extractRefs :: Text -> [Either Text Text]
+extractRefs txt = case txt =~ ("\\\\ref{[^}]*}" :: Text) :: (Text, Text, Text) of
+  (_, "", _) -> [Left txt]
+  (pre, ref, rest) -> Left pre : Right (getLbl ref ): extractRefs rest
+ where getLbl :: Text -> Text
+       getLbl = T.drop 5 . T.init
+
+-- Unfortunately we have to define pure versions
+-- of some functions.
+
+  -- a pure version of Html.RenderMonad.mkTagAttrsC
+
+mkHLink :: Text -> Text -> Text
+mkHLink href txt =
+  "<a href=\"" <> href <> "\">" <> txt <> "</a>"
+
+  -- a pure version of Html.Render.printSecNum
+
+secNums :: [Int] -> Text
+secNums [-1]   = ""
+secNums ns     = pSN ns
+ where pSN []     = ""
+       pSN [i]    = T.pack (show i)
+       pSN (i:is) = T.pack (show i) <> T.cons '.' (pSN is)

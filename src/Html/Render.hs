@@ -9,7 +9,7 @@ import qualified Data.Text as Text (cons, append, pack)
 import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Control.Arrow ((***))
+import Control.Arrow ((***), (&&&))
 import Control.Monad.State
 import Control.Monad.Reader
 
@@ -259,16 +259,18 @@ renderCode (cs,ids,avs) txt | "lhsonly" `elem` cs = return ()
 renderCode (cs,ids,avs) txt | "equation" `elem` cs =
   mkTag "pre" (do
     (_, nums) <- state newEq
+    (fr, lmap) <- (thisFileR &&& lMapR) <$> ask
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR (formatBlockCode txt))
+      (putStrTR (formatBlockCode (fr, lmap) txt))
     putStrTR "    ("
     printSecNum nums
     putStrTR ")\n")
 
-renderCode (cs,ids,avs) txt =
+renderCode (cs,ids,avs) txt = do
+  (fr, lmap) <- (thisFileR &&& lMapR) <$> ask
   mkTag "pre" (
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR (formatBlockCode txt) >> putCharR '\n'))
+      (putStrTR (formatBlockCode (fr, lmap) txt) >> putCharR '\n'))
 
 --- TOC
 
