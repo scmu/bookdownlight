@@ -10,6 +10,7 @@ import qualified Data.Text.IO as T (hPutStr)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Arrow ((***), (&&&))
+import Control.Monad (unless)
 import Control.Monad.State
 import Control.Monad.Reader
 
@@ -57,7 +58,7 @@ renderBlock (List _ lt items) =
  where ltype (Bullet _)     = "ul"
        ltype (Numbered _ _) = "ol"
        renderLItem bs = mkTag "li" (renderBlocks bs)
-renderBlock (CodeBlock attrs txt) = renderCode (sortAttrs attrs) txt
+renderBlock (CodeBlock attrs txt) = renderCodeBlock (sortAttrs attrs) txt
 renderBlock (DIV attrs bs)
      | []     <- cls = renderBlocks bs
      | (c:cs) <- cls = renderDIV c (cs,ids,avs) bs
@@ -252,21 +253,23 @@ showLongHRef this fr lbl = do
    Text.append (Text.pack (fname ++ "#")) lbl
   where fname = relPathToFile this fr
 
-renderCode :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
-renderCode (cs,ids,avs) txt | "invisible" `elem` cs = return ()
-renderCode (cs,ids,avs) txt | "lhsonly" `elem` cs = return ()
+renderCodeBlock :: ([Text], [Text], [(Text, Text)]) -> Text -> RMonad ()
+renderCodeBlock (cs,ids,avs) txt | "invisible" `elem` cs = return ()
+renderCodeBlock (cs,ids,avs) txt | "lhsonly" `elem` cs = return ()
 
-renderCode (cs,ids,avs) txt | "equation" `elem` cs =
+renderCodeBlock (cs,ids,avs) txt | "equation" `elem` cs =
   mkTag "pre" (do
-    (_, nums) <- state newEq
     (fr, lmap) <- (thisFileR &&& lMapR) <$> ask
     mkTagAttrsC "code" (cs, ids, avs)
-      (putStrTR (formatBlockCode (fr, lmap) txt))
-    putStrTR "    ("
-    printSecNum nums
-    putStrTR ")\n")
+      (putStrTR (formatCodeInMath txt))
+      -- (putStrTR (formatBlockCode (fr, lmap) txt))
+    unless (null ids)
+     (do (_, nums) <- state newEq
+         putStrTR "    ("
+         printSecNum nums
+         putStrTR ")\n"))
 
-renderCode (cs,ids,avs) txt = do
+renderCodeBlock (cs,ids,avs) txt = do
   (fr, lmap) <- (thisFileR &&& lMapR) <$> ask
   mkTag "pre" (
     mkTagAttrsC "code" (cs, ids, avs)
@@ -330,7 +333,7 @@ renderIx = mkTag "ul" . mapM_ renderIx1
                           renderIRefs rfs
                           renderSubs subs
                           )
-          where name = maybe term handleLineCode pn
+          where name = maybe term (handleLineCode "<code class=\"haskell\">" "</code>") pn
         renderIRefs [] = return ()
         renderIRefs [rf] = renderIRef rf
         renderIRefs (rf:rfs) = renderIRef rf >> putStrTR "&nbsp;" >>

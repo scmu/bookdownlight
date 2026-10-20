@@ -54,6 +54,10 @@ scanBlock (Para is) = scanInlines is
 scanBlock (Header hd attrs is) =
   scanHeader hd attrs is
 
+scanBlock (CodeBlock attrs txt) = do
+  ds <- scanCodeBlock (sortAttrs attrs) -- need we not look into the code?
+  return ([], ds, [])
+
 scanBlock (DIV attrs bs)
          | []    <- cls = scanBlocks bs
          | (c:_) <- cls = scanDIV c ids bs
@@ -73,6 +77,12 @@ scanHeader hd attrs is = do
  where ids = attrsId attrs
        idn = if null ids then "" else head ids
 
+scanCodeBlock :: ([Text], [Text], [(Text, Text)]) -> LMonad Dict
+scanCodeBlock (cs,ids,_) | "equation"  `elem` cs && not (null ids) = do
+  nums <- state newEq
+  return (map (\lbl -> (lbl, nums)) ids)
+scanCodeBlock _ = return []
+
 scanDIV :: Text -> [Text] -> Blocks -> LMonad AuxInfo
 scanDIV c ids bs | c `elem` thmEnvs = do
    nums <- state newThm
@@ -88,7 +98,7 @@ scanInlines is = do
   ixs <- concat <$> mapM scanInline is
   return ([], [], ixs)
 
-  -- for now, inlines contain indices only
+  -- for now, only indices in inline need be processed
 
 scanInline :: Inline -> LMonad IDict
 scanInline (Idx idx) = do

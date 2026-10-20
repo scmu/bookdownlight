@@ -27,6 +27,11 @@ formatBlockCode :: (FileRole, LblMap) -> Text -> Text
 formatBlockCode ctxt = formatComments ctxt .
   L.toStrict . replaceWithTrie blockTrie . L.fromStrict
 
+
+formatCodeInMath :: Text -> Text
+formatCodeInMath = L.toStrict . replaceWithTrie blockTrie . L.fromStrict .
+                   handleLineCode "" ""
+
 blockTrie = listToTrie . map (uncurry Replace) $ blockReplaces
 
 blockReplaces =
@@ -38,6 +43,7 @@ blockReplaces =
     ,("{-\"~\"-}", " ")
     ,("{-\"\\,\"-}", " ")
     ,("{-\"~\\,\"-}", " ")
+    ,("\\mbox{~~.}", "")
 
     ,(":*", "×")
     ,("`min`", "↓")
@@ -50,32 +56,34 @@ blockReplaces =
     ,("`intersect`", "∩")
     ,("&&", "⋀")
 
+    ,("forall ", "∀ ")
+    ,("exists ", "∃ ")
+
     ,("`otimes`", "⊗")
     ,("`oplus`",  "⊕")
     ,("`odot`",   "⊙")
     ]
 
-handleLineCode :: Text -> Text
-handleLineCode txt = case txt =~ ("\\|+" :: Text) :: (Text, Text, Text) of
+handleLineCode :: Text -> Text -> Text -> Text
+handleLineCode opn cls txt = case txt =~ ("\\|+" :: Text) :: (Text, Text, Text) of
   (_, "", _) -> txt
-  (pre, "|", more) ->  pre <> "<code class=\"haskell\">" <>
-                         inInlineCode more
-  (pre, "||", rest) -> pre <> "|" <> handleLineCode rest
-  (pre, "||||", rest) -> pre <> "⋁" <> handleLineCode rest
-  (pre, other, rest) -> pre <> other <> handleLineCode rest
-
-inInlineCode :: Text -> Text
-inInlineCode txt = case txt =~ ("\\|+" :: Text) :: (Text, Text, Text) of
-  (_, "", _) -> txt
-  (pre, "|", more) ->  pre <> "</code>" <> handleLineCode more
-  (pre, "||", rest) -> pre <> "|" <> inInlineCode rest
-  (pre, "||||", rest) -> pre <> "⋁" <> inInlineCode rest
-  (pre, other, rest) -> pre <> other <> inInlineCode rest
+  (pre, "|", more) ->  pre <> opn <>
+                         inInlineCode cls more
+  (pre, "||", rest) -> pre <> "|" <> handleLineCode opn cls rest
+  (pre, "||||", rest) -> pre <> "⋁" <> handleLineCode opn cls rest
+  (pre, other, rest) -> pre <> other <> handleLineCode opn cls rest
+ where
+   inInlineCode :: Text -> Text -> Text
+   inInlineCode cls txt = case txt =~ ("\\|+" :: Text) :: (Text, Text, Text) of
+     (_, "", _) -> txt
+     (pre, "|", more) ->  pre <> cls <> handleLineCode opn cls more
+     (pre, "||", rest) -> pre <> "|" <> inInlineCode cls rest
+     (pre, "||||", rest) -> pre <> "⋁" <> inInlineCode cls rest
+     (pre, other, rest) -> pre <> other <> inInlineCode cls rest
 
 inInlineCodeL :: L.Text -> L.Text
 inInlineCodeL txt = case txt =~ ("\\|+" :: L.Text) :: (L.Text, L.Text, L.Text) of
   (_, "", _) -> txt
-  -- (pre, "|", more) ->  pre <> "</code>" <> handleLineCode more
   (pre, "||", rest) -> pre <> "|" <> inInlineCodeL rest
   (pre, "||||", rest) -> pre <> "⋁" <> inInlineCodeL rest
   (pre, other, rest) -> pre <> other <> inInlineCodeL rest
@@ -90,7 +98,7 @@ formatComments ctxt = wrapComments . map hdlLineCode . extractComments
           "<comment>{-" <> txt <> "-}</comment>" <> wrapComments rest
         hdlLineCode seg@(Left _) = seg
         hdlLineCode (Right txt) =
-           Right (handleRefs ctxt (handleLineCode txt))
+           Right (handleRefs ctxt (handleLineCode "<code class=\"haskell\">" "</code>" txt))
 
 extractComments :: Text -> [Either Text Text]
 extractComments txt = case txt =~ ("{-" :: Text) :: (Text, Text, Text) of
